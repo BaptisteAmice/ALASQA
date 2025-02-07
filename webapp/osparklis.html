@@ -31,6 +31,10 @@
 <!-- TEST JS API - example extension -->
 <!-- <script src="example_extension.js"></script> -->
 <script src="qa_extension.js"></script>
+
+<!-- LLM-augmented QA system -->
+<script src="testLLM.js"></script> 
+
 </head>
 
 <body>
@@ -346,6 +350,13 @@
       <span class="texte lang-es">NUEVO en 2016 : agregaciones anidadas y expresiones de cómputo/filtrado !!</span>
 	  <span class="texte lang-nl">Nieuw in 2016: nested aggregations en berekening/filtering expressions !!</span>
 -->
+
+<!-- LLM-augmented QA system -->
+<div>
+	<input class="form-control" type="text" id="user-input" placeholder="Type your prompt..." style="width: 400px;">
+	<button onclick="sendPrompt()">Send</button>
+	<p id="response"></p>
+</div>
 
 <div id="config-endpoint-modal" class="modal fade" role="dialog">
   <div class="modal-dialog modal-lg">
