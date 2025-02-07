@@ -1,0 +1,7 @@
+# Deny access to log files
+<Files hitlog.txt>
+deny from all
+</Files>
+<Files querylog.txt>
+deny from all
+</Files>
