@@ -12,7 +12,7 @@ def main():
     logging.debug('Evaluation.py Start')
 
     #inputs
-    benchmark_name = extraction.mintaka1k #todo
+    benchmark_name = extraction.MINTAKA1K #todo
     tested_system = 'dummy' #todo
     file = script_dir + '/Inputs/' + 'Mintaka1k_final.json' #todo
 

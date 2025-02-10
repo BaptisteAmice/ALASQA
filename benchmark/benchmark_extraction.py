@@ -2,8 +2,8 @@ from abc import abstractmethod
 import json
 import logging
 
-mintaka1k = 'Mintaka1k_final'
-qald10 = 'QALD-10'
+MINTAKA1K = 'Mintaka1k_final'
+QALD10 = 'QALD-10'
 
 class Extractor:
     @abstractmethod
@@ -47,9 +47,9 @@ class ExtractorQald:
 #####################################
 
 def extractorFactory(benchmark_name: str) -> Extractor:
-    if benchmark_name == mintaka1k:
+    if benchmark_name == MINTAKA1K:
         return ExtractorMintaka()
-    elif benchmark_name == qald10:
+    elif benchmark_name == QALD10:
         return ExtractorQald()
     else:
         raise ValueError('Unknown benchmark name')

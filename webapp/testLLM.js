@@ -101,30 +101,6 @@ async function sendPrompt() {
 
 //todo option télécharger log conversation
 
-//Question
-//todo question entrée, await response
-//faire ca pour batch de questions
-//async testDataset(inputs,expectedOutputs) -> [bool, output] ->crée fichier        doit pouvoir attendre réponses système sparklis: async testQUestion -> écrit dans fichier
-//testbenchadapter(nb_questions) mintake1k ->[inputs,outputs]        filter: entity, entities, bool
-//dummy responses
-
-//avoir mm chose basé sur  id
-
-//test méthode
-//-> fichier json question/réponse
-
-//groundtruth
-//->lier fichier de base -> génère liste question/réponse réelle
-
-
-
-//minkata_sparklis_2502051602
-//json:
-//id {
-//    question:
-//    réponse:
-//}
-
 
 //todo peut écrire steps et les met danx le champ QA
 

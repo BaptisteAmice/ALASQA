@@ -17,3 +17,7 @@ comparer 2 stratégies simples
 -? construire directement suite commande en input utilisant qa_extension
 -? choix mot de départ -> filtre et cherche dans les deux listes (pas de rep demande synonyme)-> lecture retour fr + rep -> doit continuer ? -> si oui filtre et recherche dans les deux listes -> etc 
 
+
+-----------------------------------
+TEXT2SPARQL workshop
+https://text2sparql.aksw.org/#knowledge-graphs-for-evaluation
