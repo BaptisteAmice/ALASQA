@@ -26,10 +26,10 @@ def main():
     system_answers = test_system.dummy(ids) #todo
     
     #evaluate
-    data = evaluation(ids, questions, ground_truths, system_answers)
+    data = evaluation(ids, questions, ground_truths, system_answers) #todo ground truth peut etre liste / rappel precision pour chaque question / on se base sur la précision de la liste obtenue sur la liste attendue
     
     #stats
-    stats = statistics(data)
+    stats = statistics(data) #todo moyennes
 
     #create file with results
     details = metadata(benchmark_name, tested_system) 
