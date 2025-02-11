@@ -96,12 +96,3 @@ async function sendPrompt() {
 //The user question is : "..."
 //You have made the question: "..." in Sparklis.
 //Do you think the question is sufficient ? FInish your answer by: Response[Yes] or Response[No]
-
-
-
-//todo option télécharger log conversation
-
-
-//todo peut écrire steps et les met danx le champ QA
-
-

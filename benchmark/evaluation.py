@@ -12,9 +12,11 @@ def main():
     logging.debug('Evaluation.py Start')
 
     #inputs
-    benchmark_name = extraction.MINTAKA1K #todo
+    #benchmark_name = extraction.MINTAKA1K #todo
+    benchmark_name = extraction.QALD10
     tested_system = 'dummy' #todo
-    file = script_dir + '/Inputs/' + 'Mintaka1k_final.json' #todo
+    #file = script_dir + '/Inputs/' + 'Mintaka1k_final.json' #todo
+    file = script_dir + '/Inputs/' + 'qald_10.json'
 
     #extract data from benchmark file
     extractor = extraction.extractorFactory(benchmark_name)

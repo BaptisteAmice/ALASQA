@@ -1,3 +1,7 @@
+//todo option télécharger log conversation
+
+//todo div llm target -> transform ou active qd extension active
+____________
 Jeux de données
 
 base entrainement et evaluation

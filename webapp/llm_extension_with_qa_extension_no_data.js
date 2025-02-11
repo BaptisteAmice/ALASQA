@@ -67,7 +67,7 @@ async function qa_control() {
 
 
         //todo check error avant prompt 2//if output ="" -> no result
-        //todo prompt 2
+        //todo automated input list -> output save
 
         ////REASONING
 

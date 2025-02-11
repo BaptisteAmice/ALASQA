@@ -32,14 +32,25 @@ class ExtractorMintaka:
 
 class ExtractorQald:
     def extractData(self, file_name: str) -> list[list]:
-        with open(file_name, 'r') as file:
+        with open(file_name, encoding='utf-8') as file:
             data = json.load(file)
         ids = []
         questions = {}
         ground_truths = {} 
-        for item in data:
-            #todo
-            pass
+        for item in data["questions"]:
+            print(item)
+            ids.append(item['id'])
+                # Find the English question
+            english_question = None
+            for q in item["question"]:
+                if q["language"] == "en":
+                    english_question = q["string"]
+                    break  # Stop searching once found
+            questions[item['id']] = english_question
+            ground_truths[item['id']] = item['answers'][0]['results']['bindings'][0]['result']['value']
+            #todo patch
+                    
+
         return [ids, questions, ground_truths] 
 
 
