@@ -7,6 +7,7 @@ todo
 
 ## Installation
 local llm
+    mistral-nemo-instruct-2407
 
 
 ### benchmark

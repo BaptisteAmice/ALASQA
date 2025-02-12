@@ -9,7 +9,7 @@ function usualPrompt(systemPrompt, userPrompt) {
     ];
 }
 
-async function sendPrompt(input, streamOption = true, outputField = null) {
+async function sendPrompt(input, streamOption = true, updateCallback = null) {
     //careful the first parameter can be interpreted as several parameters...
     try {
         const response = await fetch(API, {
@@ -38,16 +38,16 @@ async function sendPrompt(input, streamOption = true, outputField = null) {
                 let chunkData = JSON.parse(chunkDataString);
                 text += chunkData.choices[0].delta["content"] || '';
 
-                if (outputField != null) {
-                    outputField.textContent = text;
+                if (updateCallback != null) {
+                    updateCallback(text);
                 }   
             }
         } else {
             const data = await response.json();
             text = data["choices"][0]["message"]["content"] || "No response"
 
-            if (outputField != null) {
-                outputField.textContent = text;
+            if (updateCallback != null) {
+                updateCallback(text);
             }
         }
         return text;

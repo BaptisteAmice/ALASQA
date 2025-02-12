@@ -9,18 +9,41 @@ def simulated_user(url: str, interactions, driver = webdriver.Firefox()):
 
 def sparklisllm_question(driver, question):
     driver.implicitly_wait(0.5)
+
+    #deploy llm menu
+    llm_menu_button = driver.find_element(by=By.ID, value="chatbot-menu-button")
+    llm_menu_button.click()
+
+    # clear all previous messages 
+    clear_button = driver.find_element(by=By.ID, value="chatbot-clear-button")
+    clear_button.click()
+
+    # Locate the text box and send the question
+    print("INPUT: ", question)
     text_box = driver.find_element(by=By.ID, value="user-input")
     text_box.send_keys(question)
-    #simulate enter key on text box (event.keyCode == 13)
-    #todo fonctionne pas
-    driver.execute_script("var event = new KeyboardEvent('keydown', { 'keyCode': 13 }); document.getElementById('user-input').dispatchEvent(event);")
-    # sleep for 20 seconds to allow the answer to be computed
-    answer = driver.find_element(by=By.ID, value="response") #todo temp à changer
+  
+    # Submit the question
+    input_send_button = driver.find_element(by=By.ID, value="input-send-button")
+    input_send_button.click()
+    
+    # Locate the chatbot-response-container and find the last chatbot-qa div
+    chatbot_qa_elements = driver.find_elements(By.CSS_SELECTOR, "#chatbot-response-container .chatbot-qa")
+
+    # Get the last chatbot-qa div
+    last_chatbot_qa = chatbot_qa_elements[-1]
+
+    # Find the chatbot-question inside the last chatbot-qa div
+    chatbot_answer = last_chatbot_qa.find_element(By.CLASS_NAME, "chatbot-answer")
+
+    # Extract and print the text
+    print(chatbot_answer.text)
+
     # while do not contain </commands>
-    while answer.text.find("</commands>") == -1: # todo changer pour mieux
+    while chatbot_answer.text.find("</commands>") == -1: # todo changer pour mieux
         driver.implicitly_wait(0.5)
 
-    return answer.text
+    return chatbot_answer.text
 
 def example_interactions(driver):
     driver.implicitly_wait(0.5)

@@ -19,15 +19,20 @@ async function qa_control() {
 
     let input_field = document.getElementById("user-input");
     let input_question = input_field.value;
-    let responseTextBalise = document.getElementById("response");
-    let responseTextBalise2 = document.getElementById("response2");
 
-    let systemMessage = "Your task is to build commands to query the knowledge graph to find data that answers the given question. Several successive commands can be used and should be separated by a semicolon. For example, to find the parent of Einstein, you can use the following reasoning and commands: \n <think>Einstein is a person, and his parents are the people who have him as a child</think>. \n<commands>a person; has child; Albert Einstein</commands>.\n Another example with the question 'Which animal is from the camelini family?':<think>I need to find ANIMALS, that are members of a FAMILY, and this family needs to be camelini.</think><commands>a animal ; has family ; camelini</commands> \n As in the examples, you don't need to anwer to the question but to make a quick reasonning about which kind of entity you need to find in the graphe and then construct a command in the same format to find the corresponding data in the knowledge graph.";
+    let systemMessage = "Your task is to build commands to query the knowledge graph to find data that answers the given question. Several successive commands can be used and should be separated by a semicolon. For example, to find the parent of Einstein, you can use the following reasoning and commands: \n <think>Einstein is a person, and his parents are the people who have him as a child</think>. \n<commands>a person; has child; Albert Einstein;</commands>.\n Another example with the question 'Which animal is from the camelini family?':<think>I need to find ANIMALS, that are members of a FAMILY, and this family needs to be camelini.</think><commands>a animal ; has family ; camelini;</commands> \n As in the examples, you don't need to anwer to the question but to make a quick reasonning about which kind of entity you need to find in the graphe and then construct a command in the same format to find the corresponding data in the knowledge graph.";
     let userMessage;
 
     ////EXTRACTION
+
+    questionId = addLLMQuestion(input_question);
    
-    let output = await sendPrompt(usualPrompt(systemMessage, input_question), streamOption = true, outputField = responseTextBalise);
+    let output = await sendPrompt(
+        usualPrompt(systemMessage, input_question), 
+        true, 
+        (text) => updateReasoning(questionId, text) // Capture `questionId` et passe `text`
+    );    
+
     //let output = 'blablabla<commands>a animal ; has family ; camelini</commands>dsfsd';
     //get commands from regular expression <commands>...</commands>
     let match = output.match(/<commands>(.*?)<\/commands>/s);
@@ -58,7 +63,7 @@ async function qa_control() {
 
     place.onEvaluated(async () => {
         console.log("evaluated");
-        let results = place.results();
+        let results = place.results(); //todo c'est pas la réponse en fait...
         console.log(results);
         console.log('rows',results.rows);
         let rows = results.rows;
@@ -68,14 +73,10 @@ async function qa_control() {
 
         //todo check error avant prompt 2//if output ="" -> no result
         //todo automated input list -> output save
+        //todo catch if commands halted
 
-        ////REASONING
-
-        let systemMessage2 = "Your task was to build commands to query the knowledge graph to find data that answers the given question. The question will be repeated to you, with the results you found. Use them to answer the question. Just write the answer and nothing else.";
-        let userMessage2 = input_question + " : " + resultText;
-        //todo très lent et résultat très mauvais
-        let output2 = await sendPrompt(usualPrompt(systemMessage2, userMessage2), streamOption = true, outputField = responseTextBalise2);
-        console.log("output",output);
+        updateAnswer(questionId, resultText)
+        
     });    
     
 }

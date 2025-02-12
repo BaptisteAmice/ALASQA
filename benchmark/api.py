@@ -36,8 +36,7 @@ async def get_answer(question: str, dataset: str):
 #todo use playwright? or cypress(non payant)? selenium?//or just trigger events
 #todo acceder page locale
 @app.get("/fetch")
-def fetch_local_page():
-    question = "What is the capital of Germany?" #todo
+def fetch_local_page(question: str):
     response = interactions.simulated_user(
         "http://127.0.0.1:8000/static/osparklis.html",
         lambda driver: interactions.sparklisllm_question(driver, question)
