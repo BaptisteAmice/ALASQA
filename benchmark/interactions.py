@@ -39,9 +39,10 @@ def sparklisllm_question(driver, question):
     # Extract and print the text
     print(chatbot_answer.text)
 
-    # while do not contain </commands>
-    while chatbot_answer.text.find("</commands>") == -1: # todo changer pour mieux
-        driver.implicitly_wait(0.5)
+    # while text is empty, wait
+    while chatbot_answer.text == "A: ...": #todo trouver mieux
+        driver.implicitly_wait(2)
+        print("waiting for response")
 
     return chatbot_answer.text
 

@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", function () {
         .chatbot-menu-container {
             position: fixed;
             right: 20px;
-            top: 20px;
+            top: 60px;
             z-index: 1000;
             font-family: Arial, sans-serif;
         }
@@ -137,7 +137,7 @@ document.addEventListener("DOMContentLoaded", function () {
     
     let responseContainer = document.createElement("div");
     responseContainer.classList.add("chatbot-response-container");
-    responseContainer.id = "response-container"
+    responseContainer.id = "chatbot-response-container"
     
     menu.appendChild(input_div);
     menu.appendChild(fileUpload);
@@ -162,7 +162,7 @@ function saveQuestionsData() {
 function clearQuestionData() {
     sessionStorage.removeItem("questionsData");
     questionsData = [];
-    document.getElementById("response-container").innerHTML = "";
+    document.getElementById("chatbot-response-container").innerHTML = "";
     questionCounter = 0;
 }
 
@@ -188,7 +188,7 @@ function addLLMQuestion(question) {
     qaDiv.appendChild(reasoningDiv);
     qaDiv.appendChild(answerDiv);
     
-    let responseContainer = document.getElementById("response-container");
+    let responseContainer = document.getElementById("chatbot-response-container");
     responseContainer.appendChild(qaDiv);
     responseContainer.scrollTop = responseContainer.scrollHeight;
     
@@ -221,7 +221,7 @@ function loadQuestionsFromSession() {
         qaDiv.appendChild(reasoningDiv);
         qaDiv.appendChild(answerDiv);
         
-        document.getElementById("response-container").appendChild(qaDiv);
+        document.getElementById("chatbot-response-container").appendChild(qaDiv);
     });
 }
 

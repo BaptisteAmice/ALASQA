@@ -1,0 +1,68 @@
+llm_extension_with_qa_extension_no_data
+
+v1
+Your task is to build commands to query the knowledge graph to find data that answers the given question. Several successive commands can be used and should be separated by a semicolon. For example, to find the parent of Einstein, you can use the following reasoning and commands: \n <think>Einstein is a person, and his parents are the people who have him as a child</think>. \n<commands>a person; has child; Albert Einstein;</commands>.\n Another example with the question 'Which animal is from the camelini family?':<think>I need to find ANIMALS, that are members of a FAMILY, and this family needs to be camelini.</think><commands>a animal ; has family ; camelini;</commands> \n As in the examples, you don't need to anwer to the question but to make a quick reasonning about which kind of entity you need to find in the graphe and then construct a command in the same format to find the corresponding data in the knowledge graph.
+
+-----
+
+v2
+"Your goal is to construct commands that retrieve data from a knowledge graph to answer a given question. Commands should follow a structured syntax and be separated by semicolons (`;`).  
+
+### Syntax of Commands  
+
+- **Entity Type Selection**:  
+  - `a <class>` → Retrieves all entities of a given class.  
+    - Example: `a person` (finds all persons).  
+
+- **Property Filtering**:  
+  - `has <property>` → Retrieves entities that have a specified property.  
+    - Example: `has child` (finds entities that have a child).  
+    - Example: `has director` (finds entities with a director).  
+
+- **Reverse Property Querying**:  
+  - `is <property> of` → Finds entities that are related in reverse.  
+    - Example: `is director of` (finds entities that are directed by something).  
+
+- **Value Constraints**:  
+  - `> <value>` → Finds entities where the property is greater than a value.  
+  - `< <value>` → Finds entities where the property is less than a value.  
+  - `between <value1> and <value2>` → Filters values within a range.  
+    - Example: `has budget; > 1e7` (finds entities with a budget greater than 10 million).  
+
+- **Time Constraints**:  
+  - `after <date>` → Finds entities with a property after a certain date.  
+  - `before <date>` → Finds entities with a property before a certain date.  
+    - Example: `has birthdate; after 1980` (finds entities born after 1980).  
+
+- **Sorting**:  
+  - `asc` → Sorts results in ascending order.  
+  - `desc` → Sorts results in descending order.  
+    - Example: `has budget; desc` (sorts results by budget in descending order).  
+
+- **Logical Operations**:  
+  - `and` → Combines multiple conditions.  
+  - `or` → Allows alternative conditions.  
+  - `not` → Excludes results.  
+    - Example: `a film; has director; Tim Burton; or; Spielberg` (finds films directed by either Tim Burton or Spielberg).  
+
+- **Navigating the Query**:  
+  - `up` → Moves to a broader entity or property.  
+  - `down` → Moves to a more specific entity or property.  
+
+### Example Queries  
+
+- **Who are Einstein’s parents?**  
+  - `<think>Einstein is a person, and his parents are the people who have him as a child.</think>`  
+  - `<commands>a person; has child; Albert Einstein;</commands>`  
+
+- **Which animals belong to the Camelini family?**  
+  - `<think>I need to find ANIMALS, that are members of a FAMILY, and this family needs to be camelini.</think>`  
+  - `<commands>a animal; has family; camelini;</commands>`  
+
+- **What are movies directed by Spielberg or Tim Burton that were released after 1980?**  
+  - `<think>I need to find FILMS, that have a DIRECTOR, and the director should be either Tim Burton or Spielberg. Then, I need to filter the release date to be after 1980.</think>`  
+  - `<commands>a film; has director; Tim Burton; or; Spielberg; has release date; after 1980;</commands>`  
+
+Construct your queries in this structured format to ensure clarity and precision."  
+
+-----
