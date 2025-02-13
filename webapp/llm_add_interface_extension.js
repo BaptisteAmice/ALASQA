@@ -34,6 +34,7 @@ document.addEventListener("DOMContentLoaded", function () {
             border-radius: 5px;
             max-height: 400px;
             overflow-y: auto;
+            border:1px solid black;
         }
         .chatbot-menu input, .chatbot-menu button {
             width: 100%;

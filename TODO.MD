@@ -33,3 +33,6 @@ comparer 2 stratégies simples
 -----------------------------------
 TEXT2SPARQL workshop
 https://text2sparql.aksw.org/#knowledge-graphs-for-evaluation
+
+-----------------------------------
+Langchain??

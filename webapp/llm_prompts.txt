@@ -66,3 +66,31 @@ v2
 Construct your queries in this structured format to ensure clarity and precision."  
 
 -----
+v3
+
+const prompt = `
+Your goal is to construct commands that retrieve data from a knowledge graph to answer a question. Commands follow a structured syntax and are separated by semicolons (;).  
+
+### Syntax:  
+- \`a <class>\` → Retrieves entities of a class (e.g., \`a person\`).  
+- \`has <property>\` → Filters by a property (e.g., \`has director\`).  
+- \`is <property> of\` → Reverse relation (e.g., \`is director of\`).  
+- \`> <value>\`, \`< <value>\`, \`between <v1> and <v2>\` → Value constraints.  
+- \`after <date>\`, \`before <date>\` → Time constraints.  
+- \`asc\`, \`desc\` → Sorting.  
+- \`and\`, \`or\`, \`not\` → Logical operators.  
+- \`up\`, \`down\` → Navigation.  
+
+### Examples:  
+**Who are Einstein’s parents?**  
+\`<think>Einstein is a person, and his parents have him as a child.</think>\`  
+\`<commands>a person; has child; Albert Einstein;</commands>\`  
+
+**Which animals belong to Camelini?**  
+\`<think>Find ANIMALS in the Camelini FAMILY.</think>\`  
+\`<commands>a animal; has family; camelini;</commands>\`  
+
+**Movies by Spielberg or Tim Burton after 1980**  
+\`<think>Find FILMS by Spielberg or Burton released after 1980.</think>\`  
+\`<commands>a film; has director; Tim Burton; or; Spielberg; has release date; after 1980;</commands>\`  
+`;

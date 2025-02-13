@@ -12,9 +12,8 @@ app = fastapi.FastAPI(
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
 
-# Serve static files (HTML, JS, CSS) #todo test
+# Serve static files (HTML, JS, CSS)
 app.mount("/static", StaticFiles(directory=script_dir+"/../webapp/"), name="static")
-#http://127.0.0.1:8000/static/osparklis.html
 
 KNOWN_DATASETS = [
     "https://text2sparql.aksw.org/2025/dbpedia/",

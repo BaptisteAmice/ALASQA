@@ -42,7 +42,6 @@ def sparklisllm_question(driver, question):
     # while text is empty, wait
     while chatbot_answer.text == "A: ...": #todo trouver mieux
         driver.implicitly_wait(2)
-        print("waiting for response")
 
     return chatbot_answer.text
 
