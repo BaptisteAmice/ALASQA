@@ -1,6 +1,32 @@
-def dummy(ids: list) -> dict:
-    return {id : 'dummy' for id in ids}
+from abc import abstractmethod
+import interactions
+class TestSystem:
+    @abstractmethod
+    def create_query(self, question: str) -> str:  
+        pass
+
+#####################################
+
+class Dummy(TestSystem):
+    def create_query(self, question: str) -> str:
+        return 'SELECT ?s WHERE { ?s <http://example.com/nonexistentPredicate> ?o.}'
 
 
-def sparklisllm(ids: list) -> dict:
-    pass #todo
+class Sparklisllm(TestSystem):
+    def create_query(self, question: str) -> str:
+        response = interactions.simulated_user(
+            "http://127.0.0.1:8000/static/osparklis.html",
+            lambda driver: interactions.sparklisllm_question(driver, question)
+        )
+        return response
+
+
+#####################################
+
+def TestSystemFactory(benchmark_name: str) -> TestSystem:
+    if benchmark_name == "dummy":
+        return Dummy()
+    elif benchmark_name == "sparklisllm":
+        return Sparklisllm()
+    else:
+        raise ValueError('Unknown test system name')

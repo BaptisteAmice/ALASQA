@@ -3,7 +3,7 @@
 
 # api.py
 fastapi[standard]
-
+sparqlwrapper
 
 # interactions.py
 selenium==4.28.1

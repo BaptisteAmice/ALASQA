@@ -20,14 +20,16 @@ class ExtractorMintaka:
             data = json.load(file)
     
         ids = []
-        questions = {}
-        ground_truths = {} 
+        questions = []
+        sparql_requests = [] 
             
         for item in data:
             ids.append(item['ID'])
-            questions[item['ID']] = item['Question']
-            ground_truths[item['ID']] = item['Sparklis ID based']
-        return [ids, questions, ground_truths]
+            questions.append(item['Question'])
+            sparql_requests.append(item['Sparql ID based'])
+        print(ids)
+        print(sparql_requests)
+        return [ids, questions, sparql_requests]
     
 
 class ExtractorQald:
@@ -36,7 +38,7 @@ class ExtractorQald:
             data = json.load(file)
         ids = []
         questions = {}
-        ground_truths = {} 
+        sparql_requests = {} 
         for item in data["questions"]:
             print(item)
             ids.append(item['id'])
@@ -47,11 +49,10 @@ class ExtractorQald:
                     english_question = q["string"]
                     break  # Stop searching once found
             questions[item['id']] = english_question
-            ground_truths[item['id']] = item['answers'][0]['results']['bindings'][0]['result']['value']
+            sparql_requests[item['id']] = item['answers'][0]['results']['bindings'][0]['result']['value']
             #todo patch
                     
-
-        return [ids, questions, ground_truths] 
+        return [ids, questions, sparql_requests] 
 
 
 

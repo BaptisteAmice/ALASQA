@@ -70,7 +70,7 @@ async function qa_control() {
         console.log(results);
         console.log('rows',results.rows);
         let rows = results.rows;
-        let resultText = rows.map(item => item[0].uri).join(', '); //todo check
+        let resultText = "Query: " + sparql + "\n" + "Results: \n" + rows.map(row => row.join(', ')).join('\n');
         console.log("result",resultText);
 
 
@@ -92,11 +92,15 @@ async function qa_control() {
 }
 
 const prompt_template = `
-Your goal is to construct commands that retrieve data from a knowledge graph to answer a question. Commands follow a structured syntax and are separated by semicolons (;).  
+Your goal is to generate commands that query a knowledge graph to find answers to a given question.  
 
-### Syntax:  
-- \`a <class>\` → Retrieves entities of a class (e.g., \`a person\`).  
-- \`has <property>\` → Filters by a property (e.g., \`has director\`).  
+## Format:  
+1. Always start by reasoning about what entities and relationships are needed. Wrap this in \`<think>...</think>\`.  
+2. Translate this reasoning into structured commands, separated by semicolons (;), and wrap them in \`<commands>...</commands>\`.  
+
+## Command Syntax:  
+- \`a <class>\` → Retrieve entities of a class (e.g., \`a person\`).  
+- \`has <property>\` → Filter by property (e.g., \`has director\`).  
 - \`is <property> of\` → Reverse relation (e.g., \`is director of\`).  
 - \`> <value>\`, \`< <value>\`, \`between <v1> and <v2>\` → Value constraints.  
 - \`after <date>\`, \`before <date>\` → Time constraints.  
@@ -104,9 +108,9 @@ Your goal is to construct commands that retrieve data from a knowledge graph to 
 - \`and\`, \`or\`, \`not\` → Logical operators.  
 - \`up\`, \`down\` → Navigation.  
 
-### Examples:  
+## Examples:  
 **Who are Einstein’s parents?**  
-\`<think>Einstein is a person, and his parents have him as a child.</think>\`  
+\`<think>Einstein is a person. His parents are people who have him as a child.</think>\`  
 \`<commands>a person; has child; Albert Einstein;</commands>\`  
 
 **Which animals belong to Camelini?**  
