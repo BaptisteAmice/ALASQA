@@ -2,21 +2,21 @@ from abc import abstractmethod
 import interactions
 class TestSystem:
     @abstractmethod
-    def create_query(self, question: str) -> str:  
+    def create_query(self, question: str, endpoint: str) -> str:
         pass
 
 #####################################
 
 class Dummy(TestSystem):
-    def create_query(self, question: str) -> str:
+    def create_query(self, question: str, endpoint: str) -> str:
         return 'SELECT ?s WHERE { ?s <http://example.com/nonexistentPredicate> ?o.}'
 
 
 class Sparklisllm(TestSystem):
-    def create_query(self, question: str) -> str:
+    def create_query(self, question: str, endpoint: str) -> str:
         response = interactions.simulated_user(
             "http://127.0.0.1:8000/static/osparklis.html",
-            lambda driver: interactions.sparklisllm_question(driver, question)
+            lambda driver: interactions.sparklisllm_question(driver, question, endpoint)
         )
         return response
 

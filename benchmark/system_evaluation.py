@@ -14,7 +14,7 @@ def main(benchmark_file: str, benchmark_name: str, tested_system: str, endpoint:
 
     meta: dict = metadata(benchmark_name, tested_system, endpoint, used_llm)
     questions_ids, questions, benchmark_queries = extract_benchmark(benchmark_file, benchmark_name)
-    system_queries = system_queries_generation(questions, tested_system)
+    system_queries = system_queries_generation(questions, tested_system, endpoint)
     benchmark_results, system_results = queries_evaluation(benchmark_queries, system_queries, endpoint)
     precisions, recalls, f1_scores = stats_calculation(benchmark_results, system_results)
 
@@ -49,10 +49,10 @@ def extract_benchmark(benchmark_file: str, benchmark_name: str) -> list:
     extractor = benchmark_extraction.extractorFactory(benchmark_name)
     return extractor.extractData(benchmark_file)
 
-def system_queries_generation(questions: list, system_name: str) -> list:
+def system_queries_generation(questions: list, system_name: str, endpoint_sparql: str) -> list:
     logging.debug('System queries generation Start')
     system = test_system.TestSystemFactory(system_name)
-    return [system.create_query(question) for question in questions]
+    return [system.create_query(question, endpoint_sparql) for question in questions]
 
 def queries_evaluation(benchmark_queries: list, system_queries: list, endpoint: str) -> list:
     logging.debug('Queries evaluation Start')
@@ -116,11 +116,12 @@ def make_dict(meta: dict, questions_ids: list, questions: list, benchmark_querie
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG) # DEBUG, INFO, WARNING, ERROR, CRITICAL
 
-    benchmark_file = script_dir + '/Inputs/' + 'Mintaka10.json' #todo
+    benchmark_file = script_dir + '/Inputs/' + 'Mintaka2.json' #todo
     #benchmark_file = script_dir + '/Inputs/' + 'qald_10.json'
     
     benchmark_name = benchmark_extraction.MINTAKA1K #todo
-    tested_system = 'dummy' #todo
+    #tested_system = 'dummy' #todo
+    tested_system = 'sparklisllm'
 
     #endpoint = 'https://dbpedia.org/sparql' #todo
     endpoint = 'https://query.wikidata.org/sparql'

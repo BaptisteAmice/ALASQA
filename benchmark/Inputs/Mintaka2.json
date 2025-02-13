@@ -1,0 +1,26 @@
+[
+    {
+        "Question": "Did Tom Brady win a Super Bowl before 2005?",
+        "ID": "a0888a5b",
+        "Entities": "Q32096:Super Bowl,Q313381:Tom Brady,2005:None",
+        "Mintaka Answer": "TRUE",
+        "Sparklis label based": "[Tom Brady] has a <member of sports team> that is the <winner> of a [Super Bowl] that has a <point in time> before 2005",
+        "Sparklis ID based": "<Q313381> has a <P54> that is the <P1346> of a <Q32096> that has a <P585> before 2005",
+        "Sparql label based": "ASK { wd:[Tom Brady] p:<member of sports team> [ ps:<member of sports team> ?p54_155 ] . ?q32096_258 wdt:<instance of> wd:[Super Bowl] . ?q32096_258 p:<winner> [ ps:<winner> ?p54_155 ] . ?q32096_258 p:<point in time> [ ps:<point in time> ?p585_297 ] . filter ( str(?p585_297) <= \"2005\" ) }",
+        "Sparql ID based": "ASK { wd:Q313381 p:P54 [ ps:P54 ?p54_155 ] . ?q32096_258 wdt:P31 wd:Q32096 . ?q32096_258 p:P1346 [ ps:P1346 ?p54_155 ] . ?q32096_258 p:P585 [ ps:P585 ?p585_297 ] . filter ( str(?p585_297) <= \"2005\" ) }",
+        "Squall label based": "whether [Tom Brady] has <member of sports team> a <winner> of a [Super Bowl] that has a <point in time> lesser or equal to 2005?",
+        "Squall ID based": "whether <Q313381> has <P54> a <P1346> of a <Q32096> that has a <P585> lesser or equal to 2005?"
+    },
+    {
+        "Question": "Which Sonic game did Tails not appear in?",
+        "ID": "a67b72e6",
+        "Entities": "Q194135:Miles \"Tails\" Prower",
+        "Mintaka Answer": "Q37123:Sonic the Hedgehog",
+        "Sparklis label based": "give me every [video game] that has as a <part of the series> [Sonic the Hedgehog] and that not has as a <characters> [Miles Tails\" Prower\"]",
+        "Sparklis ID based": "give me every <Q7889> that has as a <P179> <Q22974163> and that not has as a <P674> <Q194135>",
+        "Sparql label based": "SELECT DISTINCT ?Q7889_8 WHERE { ?Q7889_8 wdt:<instance of> wd:[Video Game] . ?Q7889_8 p:<part of the series> [ ps:<part of the series> wd:[Sonic The Hedgehog] ] . FILTER ( NOT EXISTS { ?Q7889_8 p:<characters> [ ps:<characters> wd:[Miles Tails\" Prower\"] ] . } ) }",
+        "Sparql ID based": "SELECT DISTINCT ?Q7889_8 WHERE { ?Q7889_8 wdt:P31 wd:Q7889 . ?Q7889_8 p:P179 [ ps:P179 wd:Q22974163 ] . FILTER ( NOT EXISTS { ?Q7889_8 p:P674 [ ps:P674 wd:Q194135 ] . } ) }",
+        "Squall label based": "which [Video Game] has <part of the series> [Sonic The Hedgehog] and has not <characters> [Miles Tails\" Prower\"]?",
+        "Squall ID based": "which <Q7889> has <P179> <Q22974163> and has not <P674> <Q194135>?"
+    }
+]

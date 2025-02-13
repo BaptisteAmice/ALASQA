@@ -1,3 +1,6 @@
+#todo adapter prompt, changer endpoint
+
+
 se concentrer sur l'extraction
 //todo réessayer en listant les commandes
 //todo evoquer spaklis, donner structure model et langage des commandes

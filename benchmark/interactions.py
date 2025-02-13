@@ -7,8 +7,15 @@ def simulated_user(url: str, interactions, driver = webdriver.Firefox()):
     driver.quit()
     return result
 
-def sparklisllm_question(driver, question):
+def sparklisllm_question(driver, question, endpoint_sparql):
     driver.implicitly_wait(0.5)
+
+    # Set the sparql endpoint
+    sparql_endpoint_input = driver.find_element(by=By.ID, value="sparql-endpoint-input")
+    sparql_endpoint_input.clear()
+    sparql_endpoint_input.send_keys(endpoint_sparql)
+    sparql_endpoint_button = driver.find_element(by=By.ID, value="sparql-endpoint-button")
+    sparql_endpoint_button.click()
 
     #deploy llm menu
     llm_menu_button = driver.find_element(by=By.ID, value="chatbot-menu-button")
