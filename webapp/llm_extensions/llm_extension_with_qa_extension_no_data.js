@@ -65,7 +65,8 @@ async function qa_control() {
 
     place.onEvaluated(async () => {
         console.log("evaluated");
-        let results = place.results(); //todo c'est pas la réponse en fait...
+        let sparql = place.sparql();
+        let results = await sparklis.evalSparql(sparql); 
         console.log(results);
         console.log('rows',results.rows);
         let rows = results.rows;

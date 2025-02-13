@@ -35,7 +35,8 @@ async function sendPrompt() {
         console.log("valeurs",await place.getTermSuggestions(false,constNoConstraint)); //chercher valeur
         console.log("valeurs",await place.getModifierSuggestions(false,constNoConstraint));
 
-        
+        //let results = place.results(); //ca retourne des suggestions je crois 
+
         //sparklis.setConceptConstr(constr: sparklis-constr):
         
         //console.log(sparklis.propertyLabels());
