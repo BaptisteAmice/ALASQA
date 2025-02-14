@@ -1,7 +1,11 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.firefox.options import Options
 
-def simulated_user(url: str, interactions, driver = webdriver.Firefox()):
+options = Options()
+#options.headless = True #to not open the browser
+
+def simulated_user(url: str, interactions, driver = webdriver.Firefox(options=options)):
     driver.get(url)
     result = interactions(driver)
     driver.quit()

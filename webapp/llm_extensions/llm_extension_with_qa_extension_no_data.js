@@ -95,29 +95,29 @@ const prompt_template = `
 Your goal is to generate commands that query a knowledge graph to find answers to a given question.  
 
 ## Format:  
-1. Always start by reasoning about what entities and relationships are needed. Wrap this in \`<think>...</think>\`.  
-2. Translate this reasoning into structured commands, separated by semicolons (;), and wrap them in \`<commands>...</commands>\`.  
+1. Always start by reasoning about what entities and relationships are needed. Wrap this in <think>...</think>.  
+2. Translate this reasoning into structured commands, separated by semicolons (;), and wrap them in <commands>...</commands>.  
 
 ## Command Syntax:  
-- \`a <class>\` → Retrieve entities of a class (e.g., \`a person\`).  
-- \`has <property>\` → Filter by property (e.g., \`has director\`).  
-- \`is <property> of\` → Reverse relation (e.g., \`is director of\`).  
-- \`> <value>\`, \`< <value>\`, \`between <v1> and <v2>\` → Value constraints.  
-- \`after <date>\`, \`before <date>\` → Time constraints.  
-- \`asc\`, \`desc\` → Sorting.  
-- \`and\`, \`or\`, \`not\` → Logical operators.  
-- \`up\`, \`down\` → Navigation.  
+- a <class> → Retrieve entities of a class (e.g., a person).  
+- has <property> → Filter by property (e.g., has director).  
+- is <property> of → Reverse relation (e.g., is director of).  
+- > <value>, < <value>, between <v1> and <v2> → Value constraints.  
+- after <date>, before <date> → Time constraints.  
+- asc, desc → Sorting.  
+- and, or, not → Logical operators.  
+- up, down → Navigation.  
 
 ## Examples:  
 **Who are Einstein’s parents?**  
-\`<think>Einstein is a person. His parents are people who have him as a child.</think>\`  
-\`<commands>a person; has child; Albert Einstein;</commands>\`  
+<think>Einstein is a person. His parents are people who have him as a child.</think>  
+<commands>a person; has child; Albert Einstein;</commands>  
 
 **Which animals belong to Camelini?**  
-\`<think>Find ANIMALS in the Camelini FAMILY.</think>\`  
-\`<commands>a animal; has family; camelini;</commands>\`  
+<think>Find ANIMALS in the Camelini FAMILY.</think>  
+<commands>a animal; has family; camelini;</commands>  
 
 **Movies by Spielberg or Tim Burton after 1980**  
-\`<think>Find FILMS by Spielberg or Burton released after 1980.</think>\`  
-\`<commands>a film; has director; Tim Burton; or; Spielberg; has release date; after 1980;</commands>\`  
+<think>Find FILMS by Spielberg or Burton released after 1980.</think>  
+<commands>a film; has director; Tim Burton; or; Spielberg; has release date; after 1980;</commands>  
 `;

@@ -37,20 +37,18 @@ class ExtractorQald:
         with open(file_name, encoding='utf-8') as file:
             data = json.load(file)
         ids = []
-        questions = {}
-        sparql_requests = {} 
+        questions = []
+        sparql_requests = [] 
         for item in data["questions"]:
-            print(item)
             ids.append(item['id'])
-                # Find the English question
+            # Find the English question
             english_question = None
             for q in item["question"]:
                 if q["language"] == "en":
                     english_question = q["string"]
                     break  # Stop searching once found
-            questions[item['id']] = english_question
-            sparql_requests[item['id']] = item['answers'][0]['results']['bindings'][0]['result']['value']
-            #todo patch
+            questions.append(english_question)
+            sparql_requests.append(item['query']['sparql'])
                     
         return [ids, questions, sparql_requests] 
 

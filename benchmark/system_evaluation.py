@@ -56,29 +56,37 @@ def system_queries_generation(questions: list, system_name: str, endpoint_sparql
 
 def queries_evaluation(benchmark_queries: list, system_queries: list, endpoint: str) -> list:
     logging.debug('Queries evaluation Start')
-    sparql = SPARQLWrapper(endpoint)  # Instantiate once
+    #todo revoir user agent
+    user_agent = 'SparklisLLM/0.1 ; baptiste.amice@irisa.fr' # Without it we get 403 error from Wikidata after a few queries
+    sparql = SPARQLWrapper(endpoint, agent=user_agent)
     sparql.setReturnFormat(JSON)
     logging.debug('Wrapper set')
     benchmark_results = []
     system_results = []
     for i, (b_query, s_query) in enumerate(zip(benchmark_queries, system_queries)):
-        try:
-            # Execute benchmark query
-            sparql.setQuery(b_query)
-            benchmark_results.append(sparql.query().convert()["results"]["bindings"])
-            
-            # Execute system query
-            sparql.setQuery(s_query)
-            system_results.append(sparql.query().convert()["results"]["bindings"])
-            
-            logging.debug(f'Query {i} evaluated')
-
-        except Exception as e:
-            logging.error(f"Error executing query {i}: {e}")
-            benchmark_results.append(None)
-            system_results.append(None)
-
+        # Execute benchmark query
+        benchmark_results.append(execute_query(sparql, b_query, i, 'Benchmark'))
+        
+        # Execute system query
+        system_results.append(execute_query(sparql, s_query, i, 'System'))
+        
+        logging.debug(f'Query {i} evaluated')
     return benchmark_results, system_results
+
+def execute_query(sparql, query, query_index, query_type):
+    """Executes a SPARQL query with retry logic on 429 errors."""
+    while True:
+        try:
+            sparql.setQuery(query)
+            return sparql.query().convert()["results"]["bindings"]
+        except Exception as e:
+            if "429" in str(e):  # Detect 429 error
+                retry_after = int(e.headers.get("Retry-After", 5))  # Default to 5 seconds
+                logging.warning(f"Query {query_index} ({query_type}) hit 429 Too Many Requests. Retrying after {retry_after} seconds.")
+                datetime.time.sleep(retry_after)
+            else:
+                logging.error(f"Error executing query {query_index} ({query_type}): {e}")
+                return None
 
 def stats_calculation(benchmark_results: list, system_results: list) -> list:
     logging.debug('Stats calculation Start')
@@ -116,15 +124,16 @@ def make_dict(meta: dict, questions_ids: list, questions: list, benchmark_querie
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG) # DEBUG, INFO, WARNING, ERROR, CRITICAL
 
-    benchmark_file = script_dir + '/Inputs/' + 'Mintaka2.json' #todo
-    #benchmark_file = script_dir + '/Inputs/' + 'qald_10.json'
+    #benchmark_file = script_dir + '/Inputs/' + 'Mintaka2.json' #todo
+    benchmark_file = script_dir + '/Inputs/' + 'qald3_10.json'
     
-    benchmark_name = benchmark_extraction.MINTAKA1K #todo
+    benchmark_name = benchmark_extraction.QALD10 #todo
     #tested_system = 'dummy' #todo
     tested_system = 'sparklisllm'
 
     #endpoint = 'https://dbpedia.org/sparql' #todo
-    endpoint = 'https://query.wikidata.org/sparql'
+    #endpoint = 'https://query.wikidata.org/sparql'
+    endpoint = 'https://skynet.coypu.org/wikidata/'
 
     used_llm = 'mistral-nemo-instruct-2407' #todo
 
