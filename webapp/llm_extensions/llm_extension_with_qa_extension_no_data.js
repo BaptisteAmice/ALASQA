@@ -57,8 +57,20 @@ async function qa_control() {
     let event = new KeyboardEvent('keyup', { 'keyCode': 13 });
     qa.dispatchEvent(event);
 
-    //wait for the endpoint to be ready //todo plus élégamment
-    await new Promise(r => setTimeout(r, 2000));
+    //wait for the endpoint to be ready //todo plus élégamment (compliqué tant que je me base sur l'input field et pas l'api)
+    await new Promise(r => setTimeout(r, 1000));
+    let i = 0;
+    while (qa.value != "" && i < 10) {
+        console.log("Waiting for commands to finish");
+        await new Promise(r => setTimeout(r, 1000));
+        i++;
+    }
+    if (qa.value != "") {
+        console.log("Commands failed to finish");
+        //todo voir si on fait ca
+        let resultText = "Commands failed to finish";
+        updateAnswer(questionId, resultText);
+    }
     
     //get sparklis results from the commands
     let place = sparklis.currentPlace();
@@ -72,17 +84,7 @@ async function qa_control() {
         let rows = results.rows;
         let resultText = "Query: " + sparql + "\n" + "Results: \n" + rows.map(row => row.join(', ')).join('\n');
         console.log("result",resultText);
-
-
-        //todo check error avant prompt 2//if output ="" -> no result
-        //todo automated input list -> output save
        
-       
-        //to answer : check if command has halted, and test if command field is empty
-        //command failed: failing command
-
-        //todo trouver vrai réponse
-        //todo regler probleme empty string
         //todo desactiver boutons et input pdt generation
 
         updateAnswer(questionId, resultText)
@@ -109,15 +111,15 @@ Your goal is to generate commands that query a knowledge graph to find answers t
 - up, down → Navigation.  
 
 ## Examples:  
-**Who are Einstein’s parents?**  
-<think>Einstein is a person. His parents are people who have him as a child.</think>  
+Q: Who are Einstein’s parents?  
+A: <think>Einstein is a person. His parents are people who have him as a child.</think>  
 <commands>a person; has child; Albert Einstein;</commands>  
 
-**Which animals belong to Camelini?**  
-<think>Find ANIMALS in the Camelini FAMILY.</think>  
+Q: Which animals belong to Camelini?  
+A: <think>Find ANIMALS in the Camelini FAMILY.</think>  
 <commands>a animal; has family; camelini;</commands>  
 
-**Movies by Spielberg or Tim Burton after 1980**  
-<think>Find FILMS by Spielberg or Burton released after 1980.</think>  
+Q: Movies by Spielberg or Tim Burton after 1980?
+A: <think>Find FILMS by Spielberg or Burton released after 1980.</think>  
 <commands>a film; has director; Tim Burton; or; Spielberg; has release date; after 1980;</commands>  
 `;
