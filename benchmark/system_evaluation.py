@@ -93,19 +93,43 @@ def stats_calculation(benchmark_results: list, system_results: list) -> list:
     precisions = []
     recalls = []
     f1_scores = []
-    for i in range(len(benchmark_results)):
-        precisions.append(0) #todo
-        recalls.append(0) #todo
-        f1_scores.append(0) #todo
+    for i in range(len(benchmark_results)): #todo cas pas de prédiction (system ou benchmark) -> les compter et pas les prendre en compte?
+        benchmark_list = []
+        system_list = []
+        print(benchmark_results[i])
+        #tets if not of type none and if len >0
+        if (not benchmark_results[i] is None) and len(benchmark_results[i]) > 0:  
+            benchmark_list = [result['result']['value'] for result in benchmark_results[i]]
+        if (not system_results[i] is None) and len(system_results[i]) > 0:
+            system_list = [result['result']['value'] for result in system_results[i]]
+        if len(benchmark_list) > 0 and len(system_list) > 0:
+            #todo recheck tt ca, ca a l'air bon
+            intersection = len(set(benchmark_list) & set(system_list))
+            precisions.append(intersection / len(system_list))
+            recalls.append(intersection / len(benchmark_list))
+            f1_scores.append(2 * intersection / (len(benchmark_list) + len(system_list)))
+        else:
+            precisions.append(None)
+            recalls.append(None)
+            f1_scores.append(None)
     return precisions, recalls, f1_scores
 
 def make_dict(meta: dict, questions_ids: list, questions: list, benchmark_queries: list, system_queries: list, benchmark_results: list, system_results: list, precisions: list, recalls: list, f1_scores: list) -> dict:
     logging.debug('Make dict Start')
     stats = {}
+    valid_precisions = [p for p in precisions if p is not None]
+    valid_recalls = [r for r in recalls if r is not None]
+    valid_f1_scores = [f for f in f1_scores if f is not None]
     stats['NbQuestions'] = len(questions_ids)
-    stats['MeanPrecision']  = sum(precisions) / len(precisions)
-    stats['MeanRecall'] = sum(recalls) / len(recalls)
-    stats['MeanF1Score'] = sum(f1_scores) / len(f1_scores)
+    stats['NbValidQuestions'] = min(len(valid_precisions), len(valid_recalls), len(valid_f1_scores))
+    if len(valid_precisions) > 0:
+        stats['MeanPrecision']  = sum(valid_precisions) / len(valid_precisions)
+        stats['MeanRecall'] = sum(valid_recalls) / len(valid_recalls)
+        stats['MeanF1Score'] = sum(valid_f1_scores) / len(valid_f1_scores)
+    else:
+        stats['MeanPrecision']  = None
+        stats['MeanRecall'] = None
+        stats['MeanF1Score'] = None
 
     data = {}
     for i in range(len(questions_ids)):
@@ -132,8 +156,8 @@ if __name__ == "__main__":
     tested_system = 'sparklisllm'
 
     #endpoint = 'https://dbpedia.org/sparql' #todo
-    #endpoint = 'https://query.wikidata.org/sparql'
-    endpoint = 'https://skynet.coypu.org/wikidata/'
+    endpoint = 'https://query.wikidata.org/sparql'
+    #endpoint = 'https://skynet.coypu.org/wikidata/'
 
     used_llm = 'mistral-nemo-instruct-2407' #todo
 

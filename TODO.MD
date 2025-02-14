@@ -1,4 +1,9 @@
-#todo adapter prompt, changer endpoint
+#todo url pour traduire entitées wikidata
+#todo revoir output pour api
+#en interface <rep><questionsparklis><requetesparql><reponse></rep>
+
+#todo prompt premiere question -> lire retour -> suite
+#todo slide pour fin semaine/debut 24/02
 
 
 se concentrer sur l'extraction
@@ -8,9 +13,6 @@ se concentrer sur l'extraction
 #todo ce qu'on attend c'ets les requetes, mais ce qu'on veut comparer ces les résultats pour une mm version
 #type
 
-//todo trouver comment automatiser test ET englobe rca dans API
-
-//todo div llm target -> transform ou active qd extension active
 ____________
 Jeux de données
 
@@ -38,3 +40,33 @@ https://text2sparql.aksw.org/#knowledge-graphs-for-evaluation
 
 -----------------------------------
 Langchain??
+
+-----------------------------------
+
+http://127.0.0.1:8000/static/osparklis.html?
+
+title=Wikidata
+endpoint=https%3A//query.wikidata.org/sparql&wikidata_mode=true
+class_hierarchy=false
+property_hierarchy=false
+intentional_init_concepts=false
+nary_relations=true
+entity_lexicon_select=http%3A//www.w3.org/2000/01/rdf-schema%23label
+entity_lexicon_lang=en
+concept_lexicons_select=http%3A//www.w3.org/2000/01/rdf-schema%23label
+concept_lexicons_lang=en
+auto-filtering=false
+
+
+traduit entités
+entity_lexicon_select=http%3A//www.w3.org/2000/01/rdf-schema%23label
+traduit relations
+concept_lexicons_select=http%3A//www.w3.org/2000/01/rdf-schema%23label
+
+http://127.0.0.1:8000/static/osparklis.html?title=Wikidata&endpoint=https%3A//query.wikidata.org/sparql&wikidata_mode=true&class_hierarchy=false&property_hierarchy=false&intentional_init_concepts=false&nary_relations=true&entity_lexicon_select=http%3A//www.w3.org/2000/01/rdf-schema%23label&entity_lexicon_lang=en&concept_lexicons_select=http%3A//www.w3.org/2000/01/rdf-schema%23label&concept_lexicons_lang=en&auto-filtering=false
+
+http://127.0.0.1:8000/static/osparklis.html?title=Core%20English%20DBpedia&endpoint=https%3A//query.wikidata.org/sparql
+
+http://127.0.0.1:8000/static/osparklis.html?title=Core%20English%20DBpedia&endpoint=https%3A//query.wikidata.org/sparql
+
+&wikidata_mode=true&entity_lexicon_select=http%3A//www.w3.org/2000/01/rdf-schema%23label&entity_lexicon_lang=en&concept_lexicons_select=http%3A//www.w3.org/2000/01/rdf-schema%23label&concept_lexicons_lang=en&auto-filtering=false

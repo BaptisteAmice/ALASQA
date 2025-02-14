@@ -86,6 +86,7 @@ async function qa_control() {
         console.log("result",resultText);
        
         //todo desactiver boutons et input pdt generation
+        //ajoute class à tt ce que tu veux desactiver
 
         updateAnswer(questionId, resultText)
         

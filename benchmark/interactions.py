@@ -8,11 +8,20 @@ options = Options()
 def simulated_user(url: str, interactions, driver = webdriver.Firefox(options=options)):
     driver.get(url)
     result = interactions(driver)
-    driver.quit()
     return result
 
 def sparklisllm_question(driver, question, endpoint_sparql):
     driver.implicitly_wait(0.5)
+
+    #todo temp solution
+    if "wikidata" in endpoint_sparql:
+        #Open config modal
+        #config_trigger = driver.find_element(By.CSS_SELECTOR, '[data-toggle="modal"][data-target="#config-language-modal"]')
+        #config_trigger.click()
+        #For the labels of entities, use property *rdfs:label* with language *en*
+        #For the labels of classes, properties, and qualifiers, use property *rdfs:label* *en*
+        url_extension = '&wikidata_mode=true&entity_lexicon_select=http%3A//www.w3.org/2000/01/rdf-schema%23label&entity_lexicon_lang=en&concept_lexicons_select=http%3A//www.w3.org/2000/01/rdf-schema%23label&concept_lexicons_lang=en&auto-filtering=false'
+        driver.get(driver.current_url + url_extension)
 
     # Set the sparql endpoint
     sparql_endpoint_input = driver.find_element(by=By.ID, value="sparql-endpoint-input")
