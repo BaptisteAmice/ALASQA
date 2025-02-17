@@ -8,8 +8,6 @@ se concentrer sur l'extraction
 //todo réessayer en listant les commandes
 //todo evoquer spaklis, donner structure model et langage des commandes
     // a qq ; has ...; is ... of ... ; ...    
-#todo ce qu'on attend c'ets les requetes, mais ce qu'on veut comparer ces les résultats pour une mm version
-#type
 
 //wikidata requests -> popup comme quoi pas valides qui bloque le reste (alors que sans popup marcherait)
 

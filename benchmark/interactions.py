@@ -6,11 +6,17 @@ options = Options()
 #options.headless = True #to not open the browser #do not seems to work
 
 def simulated_user(url: str, interactions, driver = webdriver.Firefox(options=options)):
+    """
+    Simulate a given user interaction with a web page
+    """
     driver.get(url)
     result = interactions(driver)
     return result
 
 def sparklisllm_question(driver, question, endpoint_sparql):
+    """
+    Interaction with the SparklisLLM system to ask a question
+    """
     driver.implicitly_wait(0.5)
 
     #todo temp solution

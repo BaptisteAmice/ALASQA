@@ -10,6 +10,9 @@ import config
 
 
 def main(benchmark_file: str, benchmark_name: str, tested_system: str, endpoint: str, used_llm: str):
+    """
+    Evaluation of a system on a benchmark, based on the configuration in config.py
+    """
     logging.debug('System evaluation Start')
 
     meta: dict = metadata(benchmark_name, tested_system, endpoint, used_llm)
@@ -30,7 +33,7 @@ def main(benchmark_file: str, benchmark_name: str, tested_system: str, endpoint:
 
 def metadata(benchmark_name: str, tested_system: str, endpoint: str, used_llm: str) -> dict:
     """
-    Create metadata dictionary
+    Create a metadata dictionary
     """
     logging.debug('Creation and metadata Start')
     return {
@@ -88,6 +91,9 @@ def execute_query(sparql, query, query_index, query_type):
                 return None
 
 def stats_calculation(benchmark_results: list, system_results: list) -> list:
+    """
+    Calculate precision, recall and F1 score for each question
+    """
     logging.debug('Stats calculation Start')
     precisions = []
     recalls = []
@@ -114,6 +120,9 @@ def stats_calculation(benchmark_results: list, system_results: list) -> list:
     return precisions, recalls, f1_scores
 
 def make_dict(meta: dict, questions_ids: list, questions: list, benchmark_queries: list, system_queries: list, benchmark_results: list, system_results: list, precisions: list, recalls: list, f1_scores: list) -> dict:
+    """
+    Create a dictionary with all the data
+    """
     logging.debug('Make dict Start')
     stats = {}
     valid_precisions = [p for p in precisions if p is not None]
@@ -145,6 +154,9 @@ def make_dict(meta: dict, questions_ids: list, questions: list, benchmark_querie
     return {**meta, 'Stats' : stats, 'Data' : data}
 
 def getModelName(model_api):
+    """
+    Get the name of the used LLM model from the model API
+    """
     try:
         response = requests.get(model_api)
         response.raise_for_status()  # Raise an error for bad responses (4xx and 5xx)

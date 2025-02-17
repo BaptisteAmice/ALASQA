@@ -6,6 +6,9 @@ MINTAKA1K = 'Mintaka1k_final'
 QALD10 = 'QALD-10'
 
 class Extractor:
+    """
+    Abstract class for extracting data from a benchmark file
+    """
     @abstractmethod
     def extractData(self) -> list[list]:
         pass
@@ -15,6 +18,9 @@ class Extractor:
 
 
 class ExtractorMintaka:
+    """
+    Extracts data from the Mintaka1k benchmark
+    """
     def extractData(self, file_name: str) -> list[list]:
         with open(file_name, 'r') as file:
             data = json.load(file)
@@ -33,6 +39,9 @@ class ExtractorMintaka:
     
 
 class ExtractorQald:
+    """
+    Extracts data from the QALD-10 benchmark
+    """
     def extractData(self, file_name: str) -> list[list]:
         with open(file_name, encoding='utf-8') as file:
             data = json.load(file)
@@ -57,6 +66,9 @@ class ExtractorQald:
 #####################################
 
 def extractorFactory(benchmark_name: str) -> Extractor:
+    """
+    Factory method for creating an Extractor object
+    """
     if benchmark_name == MINTAKA1K:
         return ExtractorMintaka()
     elif benchmark_name == QALD10:

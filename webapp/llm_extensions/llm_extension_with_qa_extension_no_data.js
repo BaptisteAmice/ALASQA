@@ -88,9 +88,6 @@ async function qa_control() {
             row.map(item => typeof item === 'object' ? JSON.stringify(item) : item).join(', ')
         ).join('\n');
         console.log("result",resultText);
-       
-        //todo desactiver boutons et input pdt generation
-        //ajoute class à tt ce que tu veux desactiver
 
         updateAnswer(questionId, resultText, "???", sparql); //todo sparklis_request
 

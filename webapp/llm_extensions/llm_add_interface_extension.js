@@ -1,3 +1,8 @@
+const CHATBOT_WIDTH = 500;
+const CHATBOT_MAX_HEIGHT = 600;
+const CHATBOT_RESPONSE_MAX_HEIGHT = CHATBOT_MAX_HEIGHT / 2;
+
+
 document.addEventListener("DOMContentLoaded", function () {
     let style = document.createElement("style");
     style.textContent = `
@@ -26,12 +31,13 @@ document.addEventListener("DOMContentLoaded", function () {
             position: absolute;
             right: 0;
             top: 50px;
-            width: 300px;
+            width: ${CHATBOT_WIDTH}px;
+            resize: both;
             background: white;
             padding: 15px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             border-radius: 5px;
-            max-height: 400px;
+            max-height: ${CHATBOT_MAX_HEIGHT}px;
             overflow-y: auto;
             border:1px solid black;
         }
@@ -67,7 +73,7 @@ document.addEventListener("DOMContentLoaded", function () {
             border-top: 1px solid #ddd;
             margin-top: 10px;
             padding-top: 10px;
-            max-height: 200px;
+            max-height: ${CHATBOT_RESPONSE_MAX_HEIGHT}px;
             overflow-y: auto;
         }
         .chatbot-response {
@@ -75,6 +81,12 @@ document.addEventListener("DOMContentLoaded", function () {
             padding: 10px;
             margin-bottom: 5px;
             border-radius: 5px;
+        }
+        .chatbot-qa {
+            border: 1px solid rgb(75, 74, 74);
+            margin-bottom: 10px;
+            border-radius: 5px;
+            padding: 10px;
         }
     `;
     document.head.appendChild(style);
@@ -136,6 +148,13 @@ document.addEventListener("DOMContentLoaded", function () {
     clearSessionButton.onclick = function () {
         clearQuestionData();
     };
+
+    let buttonsDiv = document.createElement("div");
+    //aligned
+    buttonsDiv.style.display = "flex";
+    buttonsDiv.appendChild(downloadButton);
+    buttonsDiv.appendChild(clearSessionButton);
+    
     
     let responseContainer = document.createElement("div");
     responseContainer.classList.add("chatbot-responses-container");
@@ -143,8 +162,7 @@ document.addEventListener("DOMContentLoaded", function () {
     
     menu.appendChild(input_div);
     //menu.appendChild(fileUpload);
-    menu.appendChild(downloadButton);
-    menu.appendChild(clearSessionButton);
+    menu.appendChild(buttonsDiv);
     menu.appendChild(responseContainer);
     container.appendChild(button);
     container.appendChild(menu);
@@ -177,31 +195,32 @@ function addLLMQuestion(question) {
     let questionDiv = document.createElement("div");
     questionDiv.classList.add("chatbot-question");
     questionDiv.textContent = question;
-    let questionHeader = document.createElement("h6");
-    questionHeader.textContent = "Question";
+
+    let questionHeader = document.createElement("h4");
+    questionHeader.textContent = "Question " + questionCounter;
     
     let reasoningDiv = document.createElement("div");
     reasoningDiv.classList.add("chatbot-reasoning");
     reasoningDiv.textContent = "...";
-    let reasoningHeader = document.createElement("h6");
+    let reasoningHeader = document.createElement("h4");
     reasoningHeader.textContent = "Reasoning";
 
     let sparklisRequestDiv = document.createElement("div");
     sparklisRequestDiv.classList.add("sparklis-request");
     sparklisRequestDiv.textContent =  "...";
-    let sparklisHeader = document.createElement("h6");
+    let sparklisHeader = document.createElement("h4");
     sparklisHeader.textContent = "Sparklis Request";
 
     let sparqlRequestDiv = document.createElement("div");
     sparqlRequestDiv.classList.add("sparql-request");
     sparqlRequestDiv.textContent = "...";
-    let sparqlHeader = document.createElement("h6");
+    let sparqlHeader = document.createElement("h4");
     sparqlHeader.textContent = "Sparql Request";
     
     let answerDiv = document.createElement("div");
     answerDiv.classList.add("chatbot-answer");
     answerDiv.textContent = "...";
-    let answerHeader = document.createElement("h6");
+    let answerHeader = document.createElement("h4");
     answerHeader.textContent = "Answer";
     
     qaDiv.appendChild(questionHeader);
@@ -228,6 +247,7 @@ function addLLMQuestion(question) {
 }
 
 function loadQuestionsFromSession() {
+    let questionNumber = 0;
     questionsData.forEach(data => {
         let qaDiv = document.createElement("div");
         qaDiv.classList.add("chatbot-qa");
@@ -236,31 +256,32 @@ function loadQuestionsFromSession() {
         let questionDiv = document.createElement("div");
         questionDiv.classList.add("chatbot-question");
         questionDiv.textContent = data.question;
-        let questionHeader = document.createElement("h6");
-        questionHeader.textContent = "Question";
+        let questionHeader = document.createElement("h4");
+        questionHeader.textContent = "Question " + questionNumber;
+        questionNumber++;
         
         let reasoningDiv = document.createElement("div");
         reasoningDiv.classList.add("chatbot-reasoning");
         reasoningDiv.textContent = data.reasoning;
-        let reasoningHeader = document.createElement("h6");
+        let reasoningHeader = document.createElement("h4");
         reasoningHeader.textContent = "Reasoning";
 
         let sparklisRequestDiv = document.createElement("div");
         sparklisRequestDiv.classList.add("sparklis-request");
         sparklisRequestDiv.textContent = data.sparklis_request;
-        let sparklisHeader = document.createElement("h6");
+        let sparklisHeader = document.createElement("h4");
         sparklisHeader.textContent = "Sparklis Request";
 
         let sparqlRequestDiv = document.createElement("div");
         sparqlRequestDiv.classList.add("sparql-request");
         sparqlRequestDiv.textContent = data.sparql_request;
-        let sparqlHeader = document.createElement("h6");
+        let sparqlHeader = document.createElement("h4");
         sparqlHeader.textContent = "Sparql Request";
         
         let answerDiv = document.createElement("div");
         answerDiv.classList.add("chatbot-answer");
         answerDiv.textContent = data.answer;
-        let answerHeader = document.createElement("h6");
+        let answerHeader = document.createElement("h4");
         answerHeader.textContent = "Answer";
         
         qaDiv.appendChild(questionHeader);
