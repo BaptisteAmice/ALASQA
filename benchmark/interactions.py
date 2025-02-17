@@ -60,8 +60,8 @@ def sparklisllm_question(driver, question, endpoint_sparql):
     # Extract and print the text
     print(chatbot_answer.text)
 
-    # while text is empty, wait
-    while chatbot_answer.text == "A: ...": #todo trouver mieux
+    #while the inputs are disabled, we can consider the system is still processing the question
+    while text_box.get_attribute("disabled") == "true":
         driver.implicitly_wait(2)
 
     sparql_request = last_chatbot_qa.find_element(By.CLASS_NAME, "sparql-request")

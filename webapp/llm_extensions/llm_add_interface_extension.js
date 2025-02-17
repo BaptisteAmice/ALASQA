@@ -1,4 +1,3 @@
-
 document.addEventListener("DOMContentLoaded", function () {
     let style = document.createElement("style");
     style.textContent = `
@@ -102,6 +101,7 @@ document.addEventListener("DOMContentLoaded", function () {
     input.type = "text";
     input.placeholder = "Type your question here";
     input.id = "user-input";
+    input.classList.add("disabled-during-request");
     input_div.appendChild(input);
 
     let input_button = document.createElement("button");
@@ -110,6 +110,7 @@ document.addEventListener("DOMContentLoaded", function () {
         qa_control();
     };
     input_button.id = "input-send-button";
+    input_button.classList.add("disabled-during-request");
     input_div.appendChild(input_button);
 
     
@@ -141,7 +142,7 @@ document.addEventListener("DOMContentLoaded", function () {
     responseContainer.id = "chatbot-responses-container";
     
     menu.appendChild(input_div);
-    menu.appendChild(fileUpload);
+    //menu.appendChild(fileUpload);
     menu.appendChild(downloadButton);
     menu.appendChild(clearSessionButton);
     menu.appendChild(responseContainer);
@@ -175,28 +176,43 @@ function addLLMQuestion(question) {
     
     let questionDiv = document.createElement("div");
     questionDiv.classList.add("chatbot-question");
-    questionDiv.textContent = "Q: " + question;
+    questionDiv.textContent = question;
+    let questionHeader = document.createElement("h6");
+    questionHeader.textContent = "Question";
     
     let reasoningDiv = document.createElement("div");
     reasoningDiv.classList.add("chatbot-reasoning");
-    reasoningDiv.textContent = "Reasoning: ...";
+    reasoningDiv.textContent = "...";
+    let reasoningHeader = document.createElement("h6");
+    reasoningHeader.textContent = "Reasoning";
 
     let sparklisRequestDiv = document.createElement("div");
     sparklisRequestDiv.classList.add("sparklis-request");
-    sparklisRequestDiv.textContent = "Sparklis Request: ...";
+    sparklisRequestDiv.textContent =  "...";
+    let sparklisHeader = document.createElement("h6");
+    sparklisHeader.textContent = "Sparklis Request";
 
     let sparqlRequestDiv = document.createElement("div");
     sparqlRequestDiv.classList.add("sparql-request");
-    sparqlRequestDiv.textContent = "Sparql Request: ...";
+    sparqlRequestDiv.textContent = "...";
+    let sparqlHeader = document.createElement("h6");
+    sparqlHeader.textContent = "Sparql Request";
     
     let answerDiv = document.createElement("div");
     answerDiv.classList.add("chatbot-answer");
-    answerDiv.textContent = "A: ...";
+    answerDiv.textContent = "...";
+    let answerHeader = document.createElement("h6");
+    answerHeader.textContent = "Answer";
     
+    qaDiv.appendChild(questionHeader);
     qaDiv.appendChild(questionDiv);
+    qaDiv.appendChild(reasoningHeader);
     qaDiv.appendChild(reasoningDiv);
+    qaDiv.appendChild(sparklisHeader);
     qaDiv.appendChild(sparklisRequestDiv);
+    qaDiv.appendChild(sparqlHeader);
     qaDiv.appendChild(sparqlRequestDiv);
+    qaDiv.appendChild(answerHeader);
     qaDiv.appendChild(answerDiv);
     
     let responseContainer = document.getElementById("chatbot-responses-container");
@@ -219,28 +235,43 @@ function loadQuestionsFromSession() {
         
         let questionDiv = document.createElement("div");
         questionDiv.classList.add("chatbot-question");
-        questionDiv.textContent = "Q: " + data.question;
+        questionDiv.textContent = data.question;
+        let questionHeader = document.createElement("h6");
+        questionHeader.textContent = "Question";
         
         let reasoningDiv = document.createElement("div");
         reasoningDiv.classList.add("chatbot-reasoning");
-        reasoningDiv.textContent = "Reasoning: " + data.reasoning;
+        reasoningDiv.textContent = data.reasoning;
+        let reasoningHeader = document.createElement("h6");
+        reasoningHeader.textContent = "Reasoning";
 
         let sparklisRequestDiv = document.createElement("div");
         sparklisRequestDiv.classList.add("sparklis-request");
-        sparklisRequestDiv.textContent = "Sparklis Request: " + data.sparklis_request;
+        sparklisRequestDiv.textContent = data.sparklis_request;
+        let sparklisHeader = document.createElement("h6");
+        sparklisHeader.textContent = "Sparklis Request";
 
         let sparqlRequestDiv = document.createElement("div");
         sparqlRequestDiv.classList.add("sparql-request");
-        sparqlRequestDiv.textContent = "Sparql Request: " + data.sparql_request;
+        sparqlRequestDiv.textContent = data.sparql_request;
+        let sparqlHeader = document.createElement("h6");
+        sparqlHeader.textContent = "Sparql Request";
         
         let answerDiv = document.createElement("div");
         answerDiv.classList.add("chatbot-answer");
-        answerDiv.textContent = "A: " + data.answer;
+        answerDiv.textContent = data.answer;
+        let answerHeader = document.createElement("h6");
+        answerHeader.textContent = "Answer";
         
+        qaDiv.appendChild(questionHeader);
         qaDiv.appendChild(questionDiv);
+        qaDiv.appendChild(reasoningHeader);
         qaDiv.appendChild(reasoningDiv);
+        qaDiv.appendChild(sparklisHeader);
         qaDiv.appendChild(sparklisRequestDiv);
+        qaDiv.appendChild(sparqlHeader);
         qaDiv.appendChild(sparqlRequestDiv);
+        qaDiv.appendChild(answerHeader);
         qaDiv.appendChild(answerDiv);
         
         document.getElementById("chatbot-responses-container").appendChild(qaDiv);
@@ -252,7 +283,7 @@ document.addEventListener("DOMContentLoaded", loadQuestionsFromSession);
 function updateReasoning(questionId, reasoning) {
     let qa = document.querySelector(`.chatbot-qa[data-id='${questionId}']`);
     if (qa) {
-        qa.querySelector(".chatbot-reasoning").textContent = "Reasoning: " + reasoning;
+        qa.querySelector(".chatbot-reasoning").textContent = reasoning;
         let questionData = questionsData.find(q => q.id === questionId);
         if (questionData) {
             questionData.reasoning = reasoning;
@@ -264,9 +295,9 @@ function updateReasoning(questionId, reasoning) {
 function updateAnswer(questionId, answer, sparklis_request = "", sparql_request = "") {
     let qa = document.querySelector(`.chatbot-qa[data-id='${questionId}']`);
     if (qa) {
-        qa.querySelector(".sparklis-request").textContent = "Sparklis Request: " + sparklis_request;
-        qa.querySelector(".sparql-request").textContent = "Sparql Request: " + sparql_request;
-        qa.querySelector(".chatbot-answer").textContent = "A: " + answer;
+        qa.querySelector(".sparklis-request").textContent = sparklis_request;
+        qa.querySelector(".sparql-request").textContent = sparql_request;
+        qa.querySelector(".chatbot-answer").textContent = answer;
         let questionData = questionsData.find(q => q.id === questionId);
         if (questionData) {
             questionData.sparklis_request = sparklis_request;
@@ -275,4 +306,15 @@ function updateAnswer(questionId, answer, sparklis_request = "", sparql_request 
             saveQuestionsData();
         }
     }
+}
+
+
+function disableInputs() {
+    let inputs = document.querySelectorAll(".disabled-during-request");
+    inputs.forEach(input => input.disabled = true);
+}
+
+function enableInputs() {
+    let inputs = document.querySelectorAll(".disabled-during-request");
+    inputs.forEach(input => input.disabled = false);
 }

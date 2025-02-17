@@ -18,6 +18,9 @@ async function qa_control() {
     //reset sparklis
     sparklis.home();
 
+    //disable some interactions
+    disableInputs();
+
     let input_field = document.getElementById("user-input");
     let input_question = input_field.value;
 
@@ -90,6 +93,9 @@ async function qa_control() {
         //ajoute class à tt ce que tu veux desactiver
 
         updateAnswer(questionId, resultText, "???", sparql); //todo sparklis_request
+
+        //re-enable interactions
+        enableInputs();
         
     });    
     
