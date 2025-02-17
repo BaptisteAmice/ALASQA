@@ -13,6 +13,8 @@ se concentrer sur l'extraction
 #todo ce qu'on attend c'ets les requetes, mais ce qu'on veut comparer ces les résultats pour une mm version
 #type
 
+//todo wikidata requetes marchent pas...
+
 ____________
 Jeux de données
 

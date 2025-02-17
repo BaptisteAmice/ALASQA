@@ -1,9 +1,13 @@
 # Python 3.12.9
 
-
-# api.py
+# API
 fastapi[standard]
+
+# SPARQL requests
 sparqlwrapper
 
-# interactions.py
+# HTTP requests
+requests
+
+# User simulation
 selenium==4.28.1

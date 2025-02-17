@@ -138,7 +138,7 @@ document.addEventListener("DOMContentLoaded", function () {
     
     let responseContainer = document.createElement("div");
     responseContainer.classList.add("chatbot-response-container");
-    responseContainer.id = "chatbot-response-container"
+    responseContainer.id = "chatbot-response-container"; //todo enlever l'id
     
     menu.appendChild(input_div);
     menu.appendChild(fileUpload);
@@ -163,7 +163,7 @@ function saveQuestionsData() {
 function clearQuestionData() {
     sessionStorage.removeItem("questionsData");
     questionsData = [];
-    document.getElementById("chatbot-response-container").innerHTML = "";
+    document.getElementsByClassName("chatbot-response-container")[0].innerHTML = "";
     questionCounter = 0;
 }
 
@@ -180,6 +180,14 @@ function addLLMQuestion(question) {
     let reasoningDiv = document.createElement("div");
     reasoningDiv.classList.add("chatbot-reasoning");
     reasoningDiv.textContent = "Reasoning: ...";
+
+    let sparklisRequestDiv = document.createElement("div");
+    sparklisRequestDiv.classList.add("sparklis-request");
+    sparklisRequestDiv.textContent = "Sparklis Request: ...";
+
+    let sparqlRequestDiv = document.createElement("div");
+    sparqlRequestDiv.classList.add("sparql-request");
+    sparqlRequestDiv.textContent = "Sparql Request: ...";
     
     let answerDiv = document.createElement("div");
     answerDiv.classList.add("chatbot-answer");
@@ -187,13 +195,16 @@ function addLLMQuestion(question) {
     
     qaDiv.appendChild(questionDiv);
     qaDiv.appendChild(reasoningDiv);
+    qaDiv.appendChild(sparklisRequestDiv);
+    qaDiv.appendChild(sparqlRequestDiv);
     qaDiv.appendChild(answerDiv);
     
     let responseContainer = document.getElementById("chatbot-response-container");
     responseContainer.appendChild(qaDiv);
     responseContainer.scrollTop = responseContainer.scrollHeight;
     
-    questionsData.push({ id: questionId, question, reasoning: "", answer: "" });
+    questionsData.push({ id: questionId, question, reasoning: "", sparklis_request: "",
+        sparql_request: "", answer: "" });
     saveQuestionsData();
     
     questionCounter++;
@@ -213,6 +224,14 @@ function loadQuestionsFromSession() {
         let reasoningDiv = document.createElement("div");
         reasoningDiv.classList.add("chatbot-reasoning");
         reasoningDiv.textContent = "Reasoning: " + data.reasoning;
+
+        let sparklisRequestDiv = document.createElement("div");
+        sparklisRequestDiv.classList.add("sparklis-request");
+        sparklisRequestDiv.textContent = "Sparklis Request: " + data.sparklis_request;
+
+        let sparqlRequestDiv = document.createElement("div");
+        sparqlRequestDiv.classList.add("sparql-request");
+        sparqlRequestDiv.textContent = "Sparql Request: " + data.sparql_request;
         
         let answerDiv = document.createElement("div");
         answerDiv.classList.add("chatbot-answer");
@@ -220,6 +239,8 @@ function loadQuestionsFromSession() {
         
         qaDiv.appendChild(questionDiv);
         qaDiv.appendChild(reasoningDiv);
+        qaDiv.appendChild(sparklisRequestDiv);
+        qaDiv.appendChild(sparqlRequestDiv);
         qaDiv.appendChild(answerDiv);
         
         document.getElementById("chatbot-response-container").appendChild(qaDiv);
@@ -240,12 +261,16 @@ function updateReasoning(questionId, reasoning) {
     }
 }
 
-function updateAnswer(questionId, answer) {
+function updateAnswer(questionId, answer, sparklis_request = "", sparql_request = "") {
     let qa = document.querySelector(`.chatbot-qa[data-id='${questionId}']`);
     if (qa) {
+        qa.querySelector(".sparklis-request").textContent = "Sparklis Request: " + sparklis_request;
+        qa.querySelector(".sparql-request").textContent = "Sparql Request: " + sparql_request;
         qa.querySelector(".chatbot-answer").textContent = "A: " + answer;
         let questionData = questionsData.find(q => q.id === questionId);
         if (questionData) {
+            questionData.sparklis_request = sparklis_request;
+            questionData.sparql_request = sparql_request;
             questionData.answer = answer;
             saveQuestionsData();
         }

@@ -1,5 +1,6 @@
 from abc import abstractmethod
 import interactions
+import config
 class TestSystem:
     @abstractmethod
     def create_query(self, question: str, endpoint: str) -> str:
@@ -15,7 +16,7 @@ class Dummy(TestSystem):
 class Sparklisllm(TestSystem):
     def create_query(self, question: str, endpoint: str) -> str:
         response = interactions.simulated_user(
-            "http://127.0.0.1:8000/static/osparklis.html",
+            config.sparklis_file,
             lambda driver: interactions.sparklisllm_question(driver, question, endpoint)
         )
         return response

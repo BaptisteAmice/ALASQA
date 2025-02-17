@@ -1,13 +1,13 @@
 import json
 import logging
-import os
 import datetime
 from SPARQLWrapper import SPARQLWrapper, JSON
+import requests
 import benchmark_extraction
 import test_system
+import config
 
-script_dir = os.path.dirname(os.path.realpath(__file__))
-output_folder = script_dir + '/Outputs/'
+
 
 def main(benchmark_file: str, benchmark_name: str, tested_system: str, endpoint: str, used_llm: str):
     logging.debug('System evaluation Start')
@@ -22,7 +22,7 @@ def main(benchmark_file: str, benchmark_name: str, tested_system: str, endpoint:
 
     now = datetime.datetime.now()
     filename = benchmark_name+'_'+tested_system+'_'+now.strftime('%Y%m%d_%H%M%S')+'.json'
-    with open(output_folder+filename, 'w') as file:
+    with open(config.output_folder+filename, 'w') as file:
         json.dump(data, file, indent=4)
 
     logging.debug('System evaluation End')
@@ -56,8 +56,7 @@ def system_queries_generation(questions: list, system_name: str, endpoint_sparql
 
 def queries_evaluation(benchmark_queries: list, system_queries: list, endpoint: str) -> list:
     logging.debug('Queries evaluation Start')
-    #todo revoir user agent
-    user_agent = 'SparklisLLM/0.1 ; baptiste.amice@irisa.fr' # Without it we get 403 error from Wikidata after a few queries
+    user_agent = config.user_agent # Without it we get 403 error from Wikidata after a few queries
     sparql = SPARQLWrapper(endpoint, agent=user_agent)
     sparql.setReturnFormat(JSON)
     logging.debug('Wrapper set')
@@ -145,24 +144,20 @@ def make_dict(meta: dict, questions_ids: list, questions: list, benchmark_querie
         }
     return {**meta, 'Stats' : stats, 'Data' : data}
 
+def getModelName(model_api):
+    try:
+        response = requests.get(model_api)
+        response.raise_for_status()  # Raise an error for bad responses (4xx and 5xx)
+        data = response.json()  # Convert response to JSON
+        return data["data"][0]["id"]
+    except requests.exceptions.RequestException as e:
+        print("Error:", e)
+
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG) # DEBUG, INFO, WARNING, ERROR, CRITICAL
 
-    #benchmark_file = script_dir + '/Inputs/' + 'Mintaka2.json' #todo
-    benchmark_file = script_dir + '/Inputs/' + 'qald3_10.json'
-    
-    benchmark_name = benchmark_extraction.QALD10 #todo
-    #tested_system = 'dummy' #todo
-    tested_system = 'sparklisllm'
-
-    #endpoint = 'https://dbpedia.org/sparql' #todo
-    endpoint = 'https://query.wikidata.org/sparql'
-    #endpoint = 'https://skynet.coypu.org/wikidata/'
-
-    used_llm = 'mistral-nemo-instruct-2407' #todo
-
-
-    main(benchmark_file, benchmark_name, tested_system, endpoint, used_llm)
+    used_llm = getModelName('http://192.168.56.1:1234/v1/models') #todo llm api in config
+    main(config.benchmark_file, config.benchmark_name, config.tested_system, config.endpoint, used_llm)
 
 
 

@@ -31,8 +31,6 @@ async def get_answer(question: str, dataset: str):
     }
 
 
-
-#todo use playwright? or cypress(non payant)? selenium?//or just trigger events
 #todo acceder page locale
 @app.get("/fetch")
 def fetch_local_page(question: str, endpoint_sparql: str):

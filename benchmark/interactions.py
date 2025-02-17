@@ -3,7 +3,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options
 
 options = Options()
-#options.headless = True #to not open the browser
+#options.headless = True #to not open the browser #do not seems to work
 
 def simulated_user(url: str, interactions, driver = webdriver.Firefox(options=options)):
     driver.get(url)
@@ -24,6 +24,7 @@ def sparklisllm_question(driver, question, endpoint_sparql):
         driver.get(driver.current_url + url_extension)
 
     # Set the sparql endpoint
+    #todo crash parfois ici
     sparql_endpoint_input = driver.find_element(by=By.ID, value="sparql-endpoint-input")
     sparql_endpoint_input.clear()
     sparql_endpoint_input.send_keys(endpoint_sparql)
@@ -63,25 +64,5 @@ def sparklisllm_question(driver, question, endpoint_sparql):
     while chatbot_answer.text == "A: ...": #todo trouver mieux
         driver.implicitly_wait(2)
 
-    return chatbot_answer.text
-
-def example_interactions(driver):
-    driver.implicitly_wait(0.5)
-    text_box = driver.find_element(by=By.NAME, value="my-text")
-    submit_button = driver.find_element(by=By.CSS_SELECTOR, value="button")
-    text_box.send_keys("Selenium")
-    submit_button.click()
-    message = driver.find_element(by=By.ID, value="message")
-    return message.text
-    
-# Example of usage
-#if __name__ == "__main__":
-#    #simulated_user("https://www.selenium.dev/selenium/web/web-form.html", example_interactions)
-#    question = "What is the capital of Germany?"
-#    response = simulated_user(
-#        "http://127.0.0.1:8000/static/osparklis.html",
-#        lambda driver: sparklisllm_question(driver, question)
-#    )
-#    print("Reponse: ", response)
-
-    
+    sparql_request = last_chatbot_qa.find_element(By.CLASS_NAME, "sparql-request")
+    return sparql_request.text

@@ -67,7 +67,6 @@ async function qa_control() {
     }
     if (qa.value != "") {
         console.log("Commands failed to finish");
-        //todo voir si on fait ca
         let resultText = "Commands failed to finish";
         updateAnswer(questionId, resultText);
     }
@@ -82,13 +81,15 @@ async function qa_control() {
         console.log(results);
         console.log('rows',results.rows);
         let rows = results.rows;
-        let resultText = "Query: " + sparql + "\n" + "Results: \n" + rows.map(row => row.join(', ')).join('\n');
+        let resultText = "Results: \n" + rows.map(row => 
+            row.map(item => typeof item === 'object' ? JSON.stringify(item) : item).join(', ')
+        ).join('\n');
         console.log("result",resultText);
        
         //todo desactiver boutons et input pdt generation
         //ajoute class à tt ce que tu veux desactiver
 
-        updateAnswer(questionId, resultText)
+        updateAnswer(questionId, resultText, "???", sparql); //todo sparklis_request
         
     });    
     
