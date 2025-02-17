@@ -1,6 +1,4 @@
 #todo url pour traduire entitées wikidata
-#todo revoir output pour api
-#en interface <rep><questionsparklis><requetesparql><reponse></rep>
 
 #todo prompt premiere question -> lire retour -> suite
 #todo slide pour fin semaine/debut 24/02
@@ -13,7 +11,7 @@ se concentrer sur l'extraction
 #todo ce qu'on attend c'ets les requetes, mais ce qu'on veut comparer ces les résultats pour une mm version
 #type
 
-//todo wikidata requetes marchent pas...
+//wikidata requests -> popup comme quoi pas valides qui bloque le reste (alors que sans popup marcherait)
 
 ____________
 Jeux de données

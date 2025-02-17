@@ -48,8 +48,8 @@ def sparklisllm_question(driver, question, endpoint_sparql):
     input_send_button = driver.find_element(by=By.ID, value="input-send-button")
     input_send_button.click()
     
-    # Locate the chatbot-response-container and find the last chatbot-qa div
-    chatbot_qa_elements = driver.find_elements(By.CSS_SELECTOR, "#chatbot-response-container .chatbot-qa")
+    # Locate the chatbot-responses-container and find the last chatbot-qa div
+    chatbot_qa_elements = driver.find_elements(By.CSS_SELECTOR, "#chatbot-responses-container .chatbot-qa")
 
     # Get the last chatbot-qa div
     last_chatbot_qa = chatbot_qa_elements[-1]

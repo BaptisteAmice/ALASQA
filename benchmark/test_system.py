@@ -16,7 +16,7 @@ class Dummy(TestSystem):
 class Sparklisllm(TestSystem):
     def create_query(self, question: str, endpoint: str) -> str:
         response = interactions.simulated_user(
-            config.sparklis_file,
+            config.SPARKLIS_FILE,
             lambda driver: interactions.sparklisllm_question(driver, question, endpoint)
         )
         return response

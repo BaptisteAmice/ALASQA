@@ -64,7 +64,7 @@ document.addEventListener("DOMContentLoaded", function () {
         .chatbot-download-button:hover {
             background: #e0a800;
         }
-        .chatbot-response-container {
+        .chatbot-responses-container {
             border-top: 1px solid #ddd;
             margin-top: 10px;
             padding-top: 10px;
@@ -137,8 +137,8 @@ document.addEventListener("DOMContentLoaded", function () {
     };
     
     let responseContainer = document.createElement("div");
-    responseContainer.classList.add("chatbot-response-container");
-    responseContainer.id = "chatbot-response-container"; //todo enlever l'id
+    responseContainer.classList.add("chatbot-responses-container");
+    responseContainer.id = "chatbot-responses-container";
     
     menu.appendChild(input_div);
     menu.appendChild(fileUpload);
@@ -163,7 +163,7 @@ function saveQuestionsData() {
 function clearQuestionData() {
     sessionStorage.removeItem("questionsData");
     questionsData = [];
-    document.getElementsByClassName("chatbot-response-container")[0].innerHTML = "";
+    document.getElementsByClassName("chatbot-responses-container")[0].innerHTML = "";
     questionCounter = 0;
 }
 
@@ -199,7 +199,7 @@ function addLLMQuestion(question) {
     qaDiv.appendChild(sparqlRequestDiv);
     qaDiv.appendChild(answerDiv);
     
-    let responseContainer = document.getElementById("chatbot-response-container");
+    let responseContainer = document.getElementById("chatbot-responses-container");
     responseContainer.appendChild(qaDiv);
     responseContainer.scrollTop = responseContainer.scrollHeight;
     
@@ -243,7 +243,7 @@ function loadQuestionsFromSession() {
         qaDiv.appendChild(sparqlRequestDiv);
         qaDiv.appendChild(answerDiv);
         
-        document.getElementById("chatbot-response-container").appendChild(qaDiv);
+        document.getElementById("chatbot-responses-container").appendChild(qaDiv);
     });
 }
 

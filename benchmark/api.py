@@ -2,15 +2,15 @@
 
 import fastapi
 from fastapi.staticfiles import StaticFiles
-import os
 import interactions
+import config
 
 
 app = fastapi.FastAPI(
     title="TEXT2SPARQL API Example",
 )
 
-script_dir = os.path.dirname(os.path.realpath(__file__))
+script_dir = config.script_dir
 
 # Serve static files (HTML, JS, CSS)
 app.mount("/static", StaticFiles(directory=script_dir+"/../webapp/"), name="static")
@@ -30,12 +30,10 @@ async def get_answer(question: str, dataset: str):
         "query": "... SPARQL here ..."
     }
 
-
-#todo acceder page locale
 @app.get("/fetch")
 def fetch_local_page(question: str, endpoint_sparql: str):
     response = interactions.simulated_user(
-        "http://127.0.0.1:8000/static/osparklis.html",
+        config.SPARKLIS_FILE,
         lambda driver: interactions.sparklisllm_question(driver, question, endpoint_sparql)
     )
     return response

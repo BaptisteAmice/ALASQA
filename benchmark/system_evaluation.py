@@ -157,7 +157,8 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG) # DEBUG, INFO, WARNING, ERROR, CRITICAL
 
     used_llm = getModelName('http://192.168.56.1:1234/v1/models') #todo llm api in config
-    main(config.benchmark_file, config.benchmark_name, config.tested_system, config.endpoint, used_llm)
+    main(config.BENCHMARK_FILE, config.BENCHMARK_NAME, config.TESTED_SYSTEM, 
+         config.SPARQL_ENDPOINT, used_llm)
 
 
 
