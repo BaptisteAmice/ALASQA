@@ -155,7 +155,7 @@ def make_dict(meta: dict, questions_ids: list, questions: list, benchmark_querie
     for i in range(len(questions_ids)):
         data[questions_ids[i]] = {
             'Question' : questions[i],
-            **({'Error': errors[i]} if errors[i] != '' else {}), # only add error if not None
+            **({'Error': errors[i]} if errors[i] != '' else {}), # only add if it's not an empty string
             'Precision' : precisions[i],
             'Recall' : recalls[i],
             'F1Score' : f1_scores[i],

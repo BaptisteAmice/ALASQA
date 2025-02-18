@@ -17,7 +17,7 @@ def simulated_user(url: str, interactions, driver = webdriver.Firefox(options=op
 def sparklisllm_question(driver, question, endpoint_sparql): #todo catch error ici (bien spécifier que c pas idéal, mais empeche crash)
     """
     Interaction with the SparklisLLM system to ask a question
-    """
+    """ # todo UnhandledAlertException handling
     driver.implicitly_wait(0.5)
 
     #todo temp solution
@@ -54,6 +54,10 @@ def sparklisllm_question(driver, question, endpoint_sparql): #todo catch error i
     # Submit the question
     input_send_button = driver.find_element(by=By.ID, value="input-send-button")
     input_send_button.click()
+
+    #while the inputs are disabled, we can consider the system is still processing the question
+    while text_box.get_attribute("disabled") == "true":
+        driver.implicitly_wait(2)
     
     # Locate the chatbot-responses-container and find the last chatbot-qa div
     chatbot_qa_elements = driver.find_elements(By.CSS_SELECTOR, "#chatbot-responses-container .chatbot-qa")
@@ -61,16 +65,14 @@ def sparklisllm_question(driver, question, endpoint_sparql): #todo catch error i
     # Get the last chatbot-qa div
     last_chatbot_qa = chatbot_qa_elements[-1]
 
-    # Find the chatbot-question inside the last chatbot-qa div
+    # Find the chatbot-answer inside the last chatbot-qa div
     chatbot_answer = last_chatbot_qa.find_element(By.CLASS_NAME, "chatbot-answer")
     #if begin by "Error:" then it is an error
     error = ''
     if chatbot_answer.text.startswith("Error:"):
         error = chatbot_answer.text + "(error of the system)"
-
-    #while the inputs are disabled, we can consider the system is still processing the question
-    while text_box.get_attribute("disabled") == "true":
-        driver.implicitly_wait(2)
+    elif chatbot_answer.text == "":
+        error = "Error: empty answer (error of the system)"
 
     sparql_request = last_chatbot_qa.find_element(By.CLASS_NAME, "sparql-request")
     return sparql_request.text, error

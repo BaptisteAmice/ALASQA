@@ -6,7 +6,7 @@ script_dir = os.path.dirname(os.path.realpath(__file__))
 # FILE TO BE MODIFIED BY THE USER
 
 # Logging level
-logging.basicConfig(level=logging.INFO) # NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL
+logging.basicConfig(level=logging.INFO) # NOTSET | DEBUG | INFO | WARNING | ERROR | CRITICAL
 
 # Location of the Sparklis file (local or remote)
 SPARKLIS_FILE = "http://127.0.0.1:8000/static/osparklis.html"
@@ -26,7 +26,7 @@ BENCHMARK_FILE = script_dir + '/Inputs/' + 'Mintaka2.json'
 # Benchmark name and tested system
 BENCHMARK_NAME = benchmark_extraction.MINTAKA1K #todo
 #TESTED_SYSTEM = 'dummy' #todo
-TESTED_SYSTEM = 'sparklisllm'
+TESTED_SYSTEM = 'sparklisllm' # dummy | sparklisllm
 
 # SPARQL endpoint, only used in scripts and not by the API
 #SPARQL_ENDPOINT = 'https://dbpedia.org/sparql' #todo
