@@ -14,7 +14,7 @@ def simulated_user(url: str, interactions, driver = webdriver.Firefox(options=op
     result, error = interactions(driver)
     return result, error
 
-def sparklisllm_question(driver, question, endpoint_sparql):
+def sparklisllm_question(driver, question, endpoint_sparql): #todo catch error ici (bien spécifier que c pas idéal, mais empeche crash)
     """
     Interaction with the SparklisLLM system to ask a question
     """

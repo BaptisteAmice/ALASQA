@@ -1,8 +1,12 @@
 import os
+import logging
 import benchmark_extraction
 script_dir = os.path.dirname(os.path.realpath(__file__))
 
 # FILE TO BE MODIFIED BY THE USER
+
+# Logging level
+logging.basicConfig(level=logging.INFO) # NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL
 
 # Location of the Sparklis file (local or remote)
 SPARKLIS_FILE = "http://127.0.0.1:8000/static/osparklis.html"
@@ -17,10 +21,10 @@ OUTPUT_FOLDER = script_dir + '/Outputs/'
 
 # Input json file containing the benchmark
 #benchmark_file = script_dir + '/Inputs/' + 'Mintaka2.json' #todo
-BENCHMARK_FILE = script_dir + '/Inputs/' + 'qald3_10.json'
+BENCHMARK_FILE = script_dir + '/Inputs/' + 'Mintaka2.json'
 
 # Benchmark name and tested system
-BENCHMARK_NAME = benchmark_extraction.QALD10 #todo
+BENCHMARK_NAME = benchmark_extraction.MINTAKA1K #todo
 #TESTED_SYSTEM = 'dummy' #todo
 TESTED_SYSTEM = 'sparklisllm'
 

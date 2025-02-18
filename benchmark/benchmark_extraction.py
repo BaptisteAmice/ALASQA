@@ -33,8 +33,6 @@ class ExtractorMintaka:
             ids.append(item['ID'])
             questions.append(item['Question'])
             sparql_requests.append(item['Sparql ID based'])
-        print(ids)
-        print(sparql_requests)
         return [ids, questions, sparql_requests]
     
 

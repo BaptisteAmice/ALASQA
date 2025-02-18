@@ -57,9 +57,15 @@ def extract_benchmark(benchmark_file: str, benchmark_name: str) -> list:
 def system_queries_generation(questions: list, system_name: str, endpoint_sparql: str) -> tuple[list, list]:
     logging.info('System queries generation Start')
     system = test_system.TestSystemFactory(system_name)
-    return zip(*[system.create_query(question, endpoint_sparql) for question in questions])
+    queries = []
+    errors = []
+    for question in questions:
+        query, error = system.create_query(question, endpoint_sparql)
+        queries.append(query)
+        errors.append(error)
+    return queries, errors
 
-def queries_evaluation(benchmark_queries: list, system_queries: list, errors: list, endpoint: str) -> list[list]:
+def queries_evaluation(benchmark_queries: list, system_queries: list, errors: list, endpoint: str) -> tuple[list, list, list]:
     logging.info('Queries evaluation Start')
     user_agent = config.USER_AGENT # Without it we get 403 error from Wikidata after a few queries
     sparql = SPARQLWrapper(endpoint, agent=user_agent)
@@ -173,8 +179,6 @@ def getModelName(model_api):
         print("Error:", e)
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO) # NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL
-
     used_llm = getModelName('http://192.168.56.1:1234/v1/models') #todo llm api in config
     main(config.BENCHMARK_FILE, config.BENCHMARK_NAME, config.TESTED_SYSTEM, 
          config.SPARQL_ENDPOINT, used_llm)
