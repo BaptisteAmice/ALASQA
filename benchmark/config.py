@@ -24,10 +24,10 @@ OUTPUT_FOLDER = script_dir + '/Outputs/'
 
 # Input json file containing the benchmark
 #benchmark_file = script_dir + '/Inputs/' + 'Mintaka2.json' #todo
-BENCHMARK_FILE = script_dir + '/Inputs/' + 'Mintaka2.json'
+BENCHMARK_FILE = script_dir + '/Inputs/' + 'qald3_10.json'
 
 # Benchmark name and tested system
-BENCHMARK_NAME = benchmark_extraction.MINTAKA1K #todo
+BENCHMARK_NAME = benchmark_extraction.QALD10 #todo
 #TESTED_SYSTEM = 'dummy' #todo
 TESTED_SYSTEM = 'sparklisllm' # dummy | sparklisllm
 

@@ -14,6 +14,13 @@ class Extractor:
         pass
 
 
+def trim_request(request: str) -> str: #todo doesn't work for mintaka
+    """
+    Removes the backslashes from the request
+    """
+    return request.replace("\\", "")
+
+
 #####################################
 
 
@@ -32,7 +39,9 @@ class ExtractorMintaka:
         for item in data:
             ids.append(item['ID'])
             questions.append(item['Question'])
-            sparql_requests.append(item['Sparql ID based'])
+            request = item['Sparql ID based']
+            request_trimmed = trim_request(request)
+            sparql_requests.append(request_trimmed)
         return [ids, questions, sparql_requests]
     
 
@@ -55,7 +64,9 @@ class ExtractorQald:
                     english_question = q["string"]
                     break  # Stop searching once found
             questions.append(english_question)
-            sparql_requests.append(item['query']['sparql'])
+            request = item['query']['sparql']
+            request_trimmed = trim_request(request)
+            sparql_requests.append(request_trimmed)
                     
         return [ids, questions, sparql_requests] 
 

@@ -75,7 +75,6 @@ def queries_evaluation(benchmark_queries: list, system_queries: list, errors: li
     system_results = []
     for i, (b_query, s_query) in enumerate(zip(benchmark_queries, system_queries)):
         # Execute benchmark query
-        #todo remove \ from query
         benchmark_result, benchmark_error = execute_query(sparql, b_query, i, 'Benchmark')
         benchmark_results.append(benchmark_result)
         errors[i] += benchmark_error
@@ -128,9 +127,9 @@ def stats_calculation(benchmark_results: list, system_results: list) -> list:
                 intersection = [d for d in benchmark_list if d in system_list]
             except:
                 print("Error in intersection") #todo revoir intersection
-            precisions.append(intersection / len(system_list))
-            recalls.append(intersection / len(benchmark_list))
-            f1_scores.append(2 * intersection / (len(benchmark_list) + len(system_list)))
+            precisions.append(len(intersection) / len(system_list))
+            recalls.append(len(intersection) / len(benchmark_list))
+            f1_scores.append(2 * len(intersection) / (len(benchmark_list) + len(system_list)))
         else:
             precisions.append(None)
             recalls.append(None)
