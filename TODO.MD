@@ -3,6 +3,8 @@
 #pour le moment faire tourner qld de manière robuste > 40% format valide
 #ajouter raisonnement sur bien ou pas à la fin (à faire plus tard)
 
+#todo? add tps par requete et tps global? -> peut etre fait dans test_system abstrait
+
 #todo enlever \ dans questions extraites
 
 #todo semaine

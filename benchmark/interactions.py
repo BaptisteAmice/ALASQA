@@ -1,7 +1,10 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.common.exceptions import UnexpectedAlertPresentException, TimeoutException
 import logging
+import config
 
 options = Options()
 #options.headless = True #to not open the browser #do not seems to work
@@ -13,6 +16,33 @@ def simulated_user(url: str, interactions, driver = webdriver.Firefox(options=op
     driver.get(url)
     result, error = interactions(driver)
     return result, error
+
+def wait_and_handle_alert(driver, timeout: int, end_condition) -> str:
+    """
+    Wait until the condition is met, while dismissing unexpected alerts.
+    """
+    try:
+        WebDriverWait(driver, timeout).until(lambda d: 
+            end_condition(d)
+        )
+    except UnexpectedAlertPresentException:
+        try:
+            alert = driver.switch_to.alert
+            alert_text = alert.text
+            alert.dismiss()
+            logging.warning(f"Unhandled alert detected and dismissed: {alert_text}")
+        except:
+            logging.warning("An alert was dismissed before it could be read.") #todo veut peut etre dire qu'on s'y prend mal
+        return wait_and_handle_alert(driver, timeout, end_condition)  # Retry waiting after dismissing the alert
+
+    except TimeoutException:
+        logging.error("Timeout while waiting for system response.")
+        return "Error: System timeout"
+    except Exception as e:
+        logging.error(f"Error while waiting for system response: {e}")
+        return "Error: System error " + str(e)
+
+    return ""
 
 def sparklisllm_question(driver, question, endpoint_sparql): #todo catch error ici (bien spécifier que c pas idéal, mais empeche crash)
     """
@@ -56,8 +86,10 @@ def sparklisllm_question(driver, question, endpoint_sparql): #todo catch error i
     input_send_button.click()
 
     #while the inputs are disabled, we can consider the system is still processing the question
-    while text_box.get_attribute("disabled") == "true":
-        driver.implicitly_wait(2)
+    logging.info("Waiting for system response...")
+    error = wait_and_handle_alert(driver, config.SYSTEM_TIMEOUT, 
+                                  lambda d: not text_box.get_attribute("disabled"))
+    logging.info("System response received.")
     
     # Locate the chatbot-responses-container and find the last chatbot-qa div
     chatbot_qa_elements = driver.find_elements(By.CSS_SELECTOR, "#chatbot-responses-container .chatbot-qa")
@@ -68,7 +100,6 @@ def sparklisllm_question(driver, question, endpoint_sparql): #todo catch error i
     # Find the chatbot-answer inside the last chatbot-qa div
     chatbot_answer = last_chatbot_qa.find_element(By.CLASS_NAME, "chatbot-answer")
     #if begin by "Error:" then it is an error
-    error = ''
     if chatbot_answer.text.startswith("Error:"):
         error = chatbot_answer.text + "(error of the system)"
     elif chatbot_answer.text == "":

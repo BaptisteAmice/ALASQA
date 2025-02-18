@@ -8,8 +8,11 @@ script_dir = os.path.dirname(os.path.realpath(__file__))
 # Logging level
 logging.basicConfig(level=logging.INFO) # NOTSET | DEBUG | INFO | WARNING | ERROR | CRITICAL
 
+# time constraints
+SYSTEM_TIMEOUT = 500
+
 # Location of the Sparklis file (local or remote)
-SPARKLIS_FILE = "http://127.0.0.1:8000/static/osparklis.html"
+SPARKLIS_FILE = "http://localhost:8000/static/osparklis.html"
 
 # User agent for the simulated browser (to avoid being blocked)
 USER_AGENT = 'SparklisLLM/0.1 ; baptiste.amice@irisa.fr'
