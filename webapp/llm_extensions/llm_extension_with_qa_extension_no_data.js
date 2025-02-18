@@ -1,6 +1,7 @@
 //Dependencies: qa_extension.js, llm_add_interface_extension.js, llm_utils.js
 console.log("LLM with QA extension active");
 
+ERROR_PREFIX = "Error: ";
 
 // upon window load... create text field and ENTER handler
 window.addEventListener(
@@ -26,7 +27,6 @@ async function qa_control() {
 
     //let systemMessage = "Your task is to build commands to query the knowledge graph to find data that answers the given question. Several successive commands can be used and should be separated by a semicolon. For example, to find the parent of Einstein, you can use the following reasoning and commands: \n <think>Einstein is a person, and his parents are the people who have him as a child</think>. \n<commands>a person; has child; Albert Einstein;</commands>.\n Another example with the question 'Which animal is from the camelini family?':<think>I need to find ANIMALS, that are members of a FAMILY, and this family needs to be camelini.</think><commands>a animal ; has family ; camelini;</commands> \n As in the examples, you don't need to anwer to the question but to make a quick reasonning about which kind of entity you need to find in the graphe and then construct a command in the same format to find the corresponding data in the knowledge graph.";
     let systemMessage = prompt_template;
-    let userMessage;
 
     ////EXTRACTION
 
@@ -48,8 +48,8 @@ async function qa_control() {
     if (commands) {
         qa.value = commands;  // Safe access since we checked if commands is not null
     } else {
-        console.error("No match found for <commands>...</commands>");
-        qa.value = "Error";
+        console.log(ERROR_PREFIX + "No match found for <commands>...</commands>");
+        qa.value = ERROR_PREFIX + "No match found for <commands>...</commands>";
         return;
     }
 
@@ -69,8 +69,8 @@ async function qa_control() {
         i++;
     }
     if (qa.value != "") {
-        console.log("Commands failed to finish");
-        let resultText = "Commands failed to finish";
+        console.log(ERROR_PREFIX + "Commands failed to finish");
+        let resultText = ERROR_PREFIX + "Commands failed to finish";
         updateAnswer(questionId, resultText);
     }
     
@@ -80,13 +80,19 @@ async function qa_control() {
     place.onEvaluated(async () => {
         console.log("evaluated");
         let sparql = place.sparql();
-        let results = await sparklis.evalSparql(sparql); 
+        let results;
+        try { 
+            results = await sparklis.evalSparql(sparql);
+        } catch (e) {
+            //todo understand why this error is thrown
+            //catch error thrown by wikidata endpoint
+            console.log(ERROR_PREFIX + "error while evaluating SPARQL query", e);
+            results = ERROR_PREFIX + "error while evaluating SPARQL query";
+        }
         console.log(results);
         console.log('rows',results.rows);
         let rows = results.rows;
-        let resultText = "Results: \n" + rows.map(row => 
-            row.map(item => typeof item === 'object' ? JSON.stringify(item) : item).join(', ')
-        ).join('\n');
+        let resultText = JSON.stringify(rows);
         console.log("result",resultText);
 
         updateAnswer(questionId, resultText, "???", sparql); //todo sparklis_request

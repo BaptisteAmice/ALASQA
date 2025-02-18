@@ -21,10 +21,10 @@ BENCHMARK_FILE = script_dir + '/Inputs/' + 'qald3_10.json'
 
 # Benchmark name and tested system
 BENCHMARK_NAME = benchmark_extraction.QALD10 #todo
-#tested_system = 'dummy' #todo
+#TESTED_SYSTEM = 'dummy' #todo
 TESTED_SYSTEM = 'sparklisllm'
 
-# SPARQL endpoint
-#endpoint = 'https://dbpedia.org/sparql' #todo
+# SPARQL endpoint, only used in scripts and not by the API
+#SPARQL_ENDPOINT = 'https://dbpedia.org/sparql' #todo
 SPARQL_ENDPOINT = 'https://query.wikidata.org/sparql'
-#endpoint = 'https://skynet.coypu.org/wikidata/'
+#SPARQL_ENDPOINT = 'https://skynet.coypu.org/wikidata/'

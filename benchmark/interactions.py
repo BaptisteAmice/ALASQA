@@ -1,6 +1,7 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options
+import logging
 
 options = Options()
 #options.headless = True #to not open the browser #do not seems to work
@@ -10,8 +11,8 @@ def simulated_user(url: str, interactions, driver = webdriver.Firefox(options=op
     Simulate a given user interaction with a web page
     """
     driver.get(url)
-    result = interactions(driver)
-    return result
+    result, error = interactions(driver)
+    return result, error
 
 def sparklisllm_question(driver, question, endpoint_sparql):
     """
@@ -46,7 +47,7 @@ def sparklisllm_question(driver, question, endpoint_sparql):
     clear_button.click()
 
     # Locate the text box and send the question
-    print("INPUT: ", question)
+    logging.info(f"INPUT: {question}")
     text_box = driver.find_element(by=By.ID, value="user-input")
     text_box.send_keys(question)
   
@@ -62,13 +63,14 @@ def sparklisllm_question(driver, question, endpoint_sparql):
 
     # Find the chatbot-question inside the last chatbot-qa div
     chatbot_answer = last_chatbot_qa.find_element(By.CLASS_NAME, "chatbot-answer")
-
-    # Extract and print the text
-    print(chatbot_answer.text)
+    #if begin by "Error:" then it is an error
+    error = ''
+    if chatbot_answer.text.startswith("Error:"):
+        error = chatbot_answer.text + "(error of the system)"
 
     #while the inputs are disabled, we can consider the system is still processing the question
     while text_box.get_attribute("disabled") == "true":
         driver.implicitly_wait(2)
 
     sparql_request = last_chatbot_qa.find_element(By.CLASS_NAME, "sparql-request")
-    return sparql_request.text
+    return sparql_request.text, error

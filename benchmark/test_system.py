@@ -3,23 +3,23 @@ import interactions
 import config
 class TestSystem:
     @abstractmethod
-    def create_query(self, question: str, endpoint: str) -> str:
+    def create_query(self, question: str, endpoint: str) -> tuple[str, str]:
         pass
 
 #####################################
 
 class Dummy(TestSystem):
-    def create_query(self, question: str, endpoint: str) -> str:
-        return 'SELECT ?s WHERE { ?s <http://example.com/nonexistentPredicate> ?o.}'
+    def create_query(self, question: str, endpoint: str) -> tuple[str, str]:
+        return 'SELECT ?s WHERE { ?s <http://example.com/nonexistentPredicate> ?o.}', 'Error: dummy'
 
 
 class Sparklisllm(TestSystem):
-    def create_query(self, question: str, endpoint: str) -> str:
-        response = interactions.simulated_user(
+    def create_query(self, question: str, endpoint: str) -> tuple[str, str]:
+        response, error = interactions.simulated_user(
             config.SPARKLIS_FILE,
             lambda driver: interactions.sparklisllm_question(driver, question, endpoint)
         )
-        return response
+        return response, error
 
 
 #####################################

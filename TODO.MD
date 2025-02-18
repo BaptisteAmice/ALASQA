@@ -1,3 +1,21 @@
+#faire ticket
+#jeudi aprem vers 15h30 réunion 
+#pour le moment faire tourner qld de manière robuste > 40% format valide
+#ajouter raisonnement sur bien ou pas à la fin (à faire plus tard)
+
+#todo enlever \ dans questions extraites
+
+#todo semaine
+fixer v0 (faire marcher avec wikidata)
+faire passer toutes les requetes qald10 / 2 runs
+classer les requetes qald10
+
+#brainstorming des méthodes: pas à pas à la react, raisonneur à la fin
+#v1 2 llm en concurrence
+
+#todo etre plus fin sur els echecs : systeme, pas aboutis
+#todo passer f1, rcall, ... à 0 si pas de réponses
+
 #todo url pour traduire entitées wikidata
 
 #todo prompt premiere question -> lire retour -> suite
