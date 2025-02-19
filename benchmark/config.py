@@ -17,6 +17,10 @@ BATCH_SIZE = 10
 # Location of the Sparklis file (local or remote)
 SPARKLIS_FILE = "http://localhost:8000/static/osparklis.html"
 
+# Location of the LLM API
+LLM_API = 'http://localhost:1234/v1/'
+LLM_API_MODEL = LLM_API + 'models'
+
 # User agent for the simulated browser (to avoid being blocked)
 USER_AGENT = 'SparklisLLM/0.1 ; baptiste.amice@irisa.fr'
 

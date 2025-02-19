@@ -1,6 +1,7 @@
 import json
 import logging
 import datetime
+import os
 from SPARQLWrapper import SPARQLWrapper, JSON
 import requests
 import benchmark_extraction
@@ -57,6 +58,7 @@ def main(benchmark_file: str, benchmark_name: str, tested_system: str, endpoint:
                          all_benchmark_results, all_system_results, all_errors, 
                          all_precisions, all_recalls, all_f1_scores)
         
+        os.makedirs(config.OUTPUT_FOLDER, exist_ok=True)  # Ensure the directory exists
         with open(config.OUTPUT_FOLDER + filename, 'w') as file:
             json.dump(data, file, indent=4)
         
@@ -211,33 +213,44 @@ def getModelName(model_api):
         response = requests.get(model_api)
         response.raise_for_status()  # Raise an error for bad responses (4xx and 5xx)
         data = response.json()  # Convert response to JSON
-        return data["data"][0]["id"]
+        model_name = data["data"][0]["id"]
+        logging.info(f"Used LLM model: {model_name}")
+        return model_name
     except requests.exceptions.RequestException as e:
-        print("Error:", e)
+        logging.error("Failed to retrieve the LLM model name. The model may be unavailable, or the API endpoint could be incorrect.")
+        exit(1)
+
+def is_file_available(file_url: str) -> bool:
+    """
+    Checks if a file is available either locally or over the network.
+    
+    - If it's a local file path, it checks if the file exists.
+    - If it's a URL, it sends a request to verify availability.
+    
+    Returns:
+        bool: True if the file is accessible, False otherwise.
+    """
+    if file_url.startswith("http://") or file_url.startswith("https://"):
+        try:
+            response = requests.head(file_url, timeout=5)
+            return response.status_code == 200
+        except requests.RequestException:
+            return False
+    else:
+        return os.path.exists(file_url)
 
 if __name__ == "__main__":
-    used_llm = getModelName('http://192.168.56.1:1234/v1/models') #todo llm api in config
+    # Test that the files are available (local or remote)
+    if not is_file_available(config.BENCHMARK_FILE):
+        logging.error(f"Benchmark file '{config.BENCHMARK_FILE}' is not available.")
+        exit(1)
+    if not is_file_available(config.SPARKLIS_FILE):
+        logging.error(f"Sparklis file '{config.SPARKLIS_FILE}' is not available.")
+        exit(1)
+
+    # Get the name of the used LLM model
+    used_llm = getModelName(config.LLM_API_MODEL)
+
+    # Start the evaluation
     main(config.BENCHMARK_FILE, config.BENCHMARK_NAME, config.TESTED_SYSTEM, 
-         config.SPARQL_ENDPOINT, used_llm)
-
-
-
-# 1. metadata
-# Ajout nom jeu de données, système, date, endpoint, used_llm
-
-# 2. benchmark_extraction
-# extrait depuis jeu de données 
-# id questions
-# questions
-# BenchmarkSPARQL
-# nbre_questions (metadata)
-
-# 3. system_queries_generation
-# appel système pour créer SystemSPARQL
-
-# 4. queries_evaluation
-# evalue BenchmarkSPARQL et SystemSPARQL
-
-# 5. stats_calculation
-# calcul des stats locales
-# calcul des stats globales
+         config.SPARQL_ENDPOINT, used_llm) #todo tester sparql_endpoint
