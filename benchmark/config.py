@@ -5,8 +5,15 @@ script_dir = os.path.dirname(os.path.realpath(__file__))
 
 # FILE TO BE MODIFIED BY THE USER
 
-# Logging level
-logging.basicConfig(level=logging.INFO) # NOTSET | DEBUG | INFO | WARNING | ERROR | CRITICAL
+# Logging level and file
+log_file = script_dir + '/app.log'
+logging.basicConfig(
+    level=logging.INFO, # NOTSET | DEBUG | INFO | WARNING | ERROR | CRITICAL
+    handlers=[
+        logging.StreamHandler(),  # Prints to console
+        logging.FileHandler(log_file, mode="w")  # Writes to a file
+    ]
+)
 
 # time constraints
 SYSTEM_TIMEOUT = 500

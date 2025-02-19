@@ -17,7 +17,7 @@ def main(benchmark_file: str, benchmark_name: str, tested_system_name: str, endp
     """
     Evaluation of a system on a benchmark, based on the configuration in config.py
     """
-    logging.info('##### System evaluation Start #####')
+    logging.info('########## System evaluation Start ##########')
 
     #This part is only done one time
     now = datetime.datetime.now()
@@ -71,7 +71,7 @@ def main(benchmark_file: str, benchmark_name: str, tested_system_name: str, endp
         #close the system
         system.end_system()
 
-    logging.info('##### System evaluation End #####')
+    logging.info('########## System evaluation End ##########')
 
 
 def metadata(benchmark_name: str, tested_system_name: str, endpoint: str, used_llm: str) -> dict:
