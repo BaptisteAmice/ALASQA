@@ -16,7 +16,7 @@ def main(benchmark_file: str, benchmark_name: str, tested_system: str, endpoint:
     """
     Evaluation of a system on a benchmark, based on the configuration in config.py
     """
-    logging.info('System evaluation Start')
+    logging.info('##### System evaluation Start #####')
 
     #This part is only done one time
     now = datetime.datetime.now()
@@ -64,7 +64,7 @@ def main(benchmark_file: str, benchmark_name: str, tested_system: str, endpoint:
         
         logging.info(f'Batch {i} done')
 
-    logging.info('System evaluation End')
+    logging.info('##### System evaluation End #####')
 
 
 def metadata(benchmark_name: str, tested_system: str, endpoint: str, used_llm: str) -> dict:
@@ -214,7 +214,6 @@ def getModelName(model_api):
         response.raise_for_status()  # Raise an error for bad responses (4xx and 5xx)
         data = response.json()  # Convert response to JSON
         model_name = data["data"][0]["id"]
-        logging.info(f"Used LLM model: {model_name}")
         return model_name
     except requests.exceptions.RequestException as e:
         logging.error("Failed to retrieve the LLM model name. The model may be unavailable, or the API endpoint could be incorrect.")
@@ -241,16 +240,22 @@ def is_file_available(file_url: str) -> bool:
 
 if __name__ == "__main__":
     # Test that the files are available (local or remote)
+    logging.info("Benchmark file: " + config.BENCHMARK_FILE)
     if not is_file_available(config.BENCHMARK_FILE):
         logging.error(f"Benchmark file '{config.BENCHMARK_FILE}' is not available.")
         exit(1)
+    logging.info("Sparklis file: " + config.SPARKLIS_FILE)
     if not is_file_available(config.SPARKLIS_FILE):
         logging.error(f"Sparklis file '{config.SPARKLIS_FILE}' is not available.")
         exit(1)
 
+    logging.info("SPARQL endpoint: " + config.SPARQL_ENDPOINT)
+    #todo tester sparql_endpoint
+
     # Get the name of the used LLM model
     used_llm = getModelName(config.LLM_API_MODEL)
+    logging.info(f"Used LLM model: {used_llm}")
 
     # Start the evaluation
     main(config.BENCHMARK_FILE, config.BENCHMARK_NAME, config.TESTED_SYSTEM, 
-         config.SPARQL_ENDPOINT, used_llm) #todo tester sparql_endpoint
+         config.SPARQL_ENDPOINT, used_llm)
