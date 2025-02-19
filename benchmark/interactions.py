@@ -9,13 +9,20 @@ import config
 options = Options()
 #options.headless = True #to not open the browser #do not seems to work
 
-def simulated_user(url: str, interactions, driver = webdriver.Firefox(options=options)):
+def simulated_user(url: str, interactions, driver: webdriver.Firefox = None) -> tuple[str, str, webdriver.Firefox]:
     """
-    Simulate a given user interaction with a web page
+    Simulate a given user interaction with a web page.
+    If driver is None, a new driver is created.
+    If the driver is specified, it is used to interact with the page.
+    This allow to open a new page or use an existing one (first one for API requests and second one for benchmarks).
+    The driver is returned and should be handled by the caller (for example, closed or reused).
     """
+    # Create a new driver if none is provided
+    if driver is None:
+        driver = webdriver.Firefox(options=options)
     driver.get(url)
     result, error = interactions(driver)
-    return result, error
+    return result, error, driver
 
 def wait_and_handle_alert(driver, timeout: int, end_condition) -> str:
     """

@@ -1,6 +1,5 @@
 from abc import abstractmethod
 import json
-import logging
 
 MINTAKA1K = 'Mintaka1k_final'
 QALD10 = 'QALD-10'

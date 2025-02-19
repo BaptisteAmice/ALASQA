@@ -6,13 +6,14 @@ from SPARQLWrapper import SPARQLWrapper, JSON
 import requests
 import benchmark_extraction
 import test_system
+from test_system import TestSystem, testSystemFactory
 import config
 
 #todo changer les lists des types par des tuples
 
 ERROR_PREFIX = "Error: "
 
-def main(benchmark_file: str, benchmark_name: str, tested_system: str, endpoint: str, used_llm: str):
+def main(benchmark_file: str, benchmark_name: str, tested_system_name: str, endpoint: str, used_llm: str):
     """
     Evaluation of a system on a benchmark, based on the configuration in config.py
     """
@@ -20,9 +21,12 @@ def main(benchmark_file: str, benchmark_name: str, tested_system: str, endpoint:
 
     #This part is only done one time
     now = datetime.datetime.now()
-    filename = benchmark_name+'_'+tested_system+'_'+now.strftime('%Y%m%d_%H%M%S')+'.json'
-    meta: dict = metadata(benchmark_name, tested_system, endpoint, used_llm)
+    filename = benchmark_name+'_'+tested_system_name+'_'+now.strftime('%Y%m%d_%H%M%S')+'.json'
+    meta: dict = metadata(benchmark_name, tested_system_name, endpoint, used_llm)
     questions_ids, questions, benchmark_queries = extract_benchmark(benchmark_file, benchmark_name)
+
+    # Create the system object
+    system: TestSystem = testSystemFactory(tested_system_name)
 
 
     # Initialize empty lists to accumulate results
@@ -37,7 +41,7 @@ def main(benchmark_file: str, benchmark_name: str, tested_system: str, endpoint:
         batch_question_ids = questions_ids[i:i + batch_size]
         batch_benchmark_queries = benchmark_queries[i:i + batch_size]
 
-        batch_system_queries, batch_errors = system_queries_generation(batch_questions, tested_system, endpoint)
+        batch_system_queries, batch_errors = system_queries_generation(batch_questions, system, endpoint)
         batch_benchmark_results, batch_system_results, batch_errors = queries_evaluation(
             batch_benchmark_queries, batch_system_queries, batch_errors, endpoint
         )
@@ -64,17 +68,20 @@ def main(benchmark_file: str, benchmark_name: str, tested_system: str, endpoint:
         
         logging.info(f'Batch {i} done')
 
+        #close the system
+        system.end_system()
+
     logging.info('##### System evaluation End #####')
 
 
-def metadata(benchmark_name: str, tested_system: str, endpoint: str, used_llm: str) -> dict:
+def metadata(benchmark_name: str, tested_system_name: str, endpoint: str, used_llm: str) -> dict:
     """
     Create a metadata dictionary
     """
     logging.info('Creation and metadata Start')
     return {
         'BenchmarkName' : benchmark_name,
-        'TestedSystem' : tested_system,
+        'TestedSystem' : tested_system_name,
         'Date' : datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         'Endpoint' : endpoint,
         'UsedLLM' : used_llm
@@ -88,9 +95,8 @@ def extract_benchmark(benchmark_file: str, benchmark_name: str) -> list:
     extractor = benchmark_extraction.extractorFactory(benchmark_name)
     return extractor.extractData(benchmark_file)
 
-def system_queries_generation(questions: list, system_name: str, endpoint_sparql: str) -> tuple[list, list]:
+def system_queries_generation(questions: list, system: TestSystem, endpoint_sparql: str) -> tuple[list, list]:
     logging.info('System queries generation Start')
-    system = test_system.TestSystemFactory(system_name)
     queries = []
     errors = []
     for question in questions:

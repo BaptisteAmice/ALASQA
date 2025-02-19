@@ -6,18 +6,24 @@ todo
 
 
 ## Installation
-local llm
-    mistral-nemo-instruct-2407
+launch a local llm
+    (in our case) mistral-nemo-instruct-2407
+set llm api in llm_utils.js and in benchmark/config.py
 
+if just want to interact with interface : open html file in browser or launch a server
+
+for api and benchmarking: 
+venv requirements.txt
+check the config.py file
+### api
+if want to use api:
+launch the server
 
 ### benchmark
-API
-venv requirements.txt
-fastapi dev api.py
+launch the server: fastapi dev api.py
 
 selenium
-venv requirements.txt
-Drivers in the path (for browser)(https://selenium-python.readthedocs.io/installation.html#drivers)
+might need Drivers in the path (for browser)(https://selenium-python.readthedocs.io/installation.html#drivers)
 
 ## Usage
 launch a local llm accessible through an api

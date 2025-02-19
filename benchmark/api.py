@@ -31,9 +31,10 @@ async def get_answer(question: str, dataset: str):
     }
 
 @app.get("/fetch")
-def fetch_local_page(question: str, endpoint_sparql: str):
-    response = interactions.simulated_user(
+def fetch_local_page(question: str, endpoint_sparql: str = config.SPARQL_ENDPOINT):
+    response, error, driver = interactions.simulated_user(
         config.SPARKLIS_FILE,
         lambda driver: interactions.sparklisllm_question(driver, question, endpoint_sparql)
     )
+    driver.close() # should close the page after the api request
     return response
