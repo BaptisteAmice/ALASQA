@@ -1,3 +1,5 @@
+#todo disable si llm pas dispo/erreur correspondante
+
 #faire ticket
 #jeudi aprem vers 15h30 réunion 
 #pour le moment faire tourner qld de manière robuste > 40% format valide

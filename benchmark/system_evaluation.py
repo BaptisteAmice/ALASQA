@@ -17,18 +17,50 @@ def main(benchmark_file: str, benchmark_name: str, tested_system: str, endpoint:
     """
     logging.info('System evaluation Start')
 
-    meta: dict = metadata(benchmark_name, tested_system, endpoint, used_llm)
-    questions_ids, questions, benchmark_queries = extract_benchmark(benchmark_file, benchmark_name)
-    system_queries, errors = system_queries_generation(questions, tested_system, endpoint)
-    benchmark_results, system_results, errors = queries_evaluation(benchmark_queries, system_queries, errors, endpoint)
-    precisions, recalls, f1_scores = stats_calculation(benchmark_results, system_results)
-
-    data: dict = make_dict(meta, questions_ids, questions, benchmark_queries, system_queries, benchmark_results, system_results, errors, precisions, recalls, f1_scores)
-
+    #This part is only done one time
     now = datetime.datetime.now()
     filename = benchmark_name+'_'+tested_system+'_'+now.strftime('%Y%m%d_%H%M%S')+'.json'
-    with open(config.OUTPUT_FOLDER + filename, 'w') as file:
-        json.dump(data, file, indent=4)
+    meta: dict = metadata(benchmark_name, tested_system, endpoint, used_llm)
+    questions_ids, questions, benchmark_queries = extract_benchmark(benchmark_file, benchmark_name)
+
+
+    # Initialize empty lists to accumulate results
+    all_system_queries, all_errors = [], []
+    all_benchmark_results, all_system_results = [], []
+    all_precisions, all_recalls, all_f1_scores = [], [], []
+
+    # Process in batches (to save incrementally the results in case of crash)
+    batch_size = config.BATCH_SIZE
+    for i in range(0, len(questions), batch_size):
+        batch_questions = questions[i:i + batch_size]
+        batch_question_ids = questions_ids[i:i + batch_size]
+        batch_benchmark_queries = benchmark_queries[i:i + batch_size]
+
+        batch_system_queries, batch_errors = system_queries_generation(batch_questions, tested_system, endpoint)
+        batch_benchmark_results, batch_system_results, batch_errors = queries_evaluation(
+            batch_benchmark_queries, batch_system_queries, batch_errors, endpoint
+        )
+        batch_precisions, batch_recalls, batch_f1_scores = stats_calculation(batch_benchmark_results, batch_system_results)
+        
+        # Append batch results to global lists
+        all_system_queries.extend(batch_system_queries)
+        all_errors.extend(batch_errors)
+        all_benchmark_results.extend(batch_benchmark_results)
+        all_system_results.extend(batch_system_results)
+        all_precisions.extend(batch_precisions)
+        all_recalls.extend(batch_recalls)
+        all_f1_scores.extend(batch_f1_scores)
+
+        # Rewrite the file after each batch
+        data = make_dict(meta, questions_ids[: len(all_system_queries)], questions[: len(all_system_queries)], 
+                         benchmark_queries[: len(all_system_queries)], all_system_queries, 
+                         all_benchmark_results, all_system_results, all_errors, 
+                         all_precisions, all_recalls, all_f1_scores)
+        
+        with open(config.OUTPUT_FOLDER + filename, 'w') as file:
+            json.dump(data, file, indent=4)
+        
+        logging.info(f'Batch {i} done')
 
     logging.info('System evaluation End')
 

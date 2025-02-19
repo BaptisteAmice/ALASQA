@@ -11,6 +11,9 @@ logging.basicConfig(level=logging.INFO) # NOTSET | DEBUG | INFO | WARNING | ERRO
 # time constraints
 SYSTEM_TIMEOUT = 500
 
+# Number of queries executed between each save for a benchmark evaluation
+BATCH_SIZE = 10
+
 # Location of the Sparklis file (local or remote)
 SPARKLIS_FILE = "http://localhost:8000/static/osparklis.html"
 
@@ -35,3 +38,4 @@ TESTED_SYSTEM = 'sparklisllm' # dummy | sparklisllm
 #SPARQL_ENDPOINT = 'https://dbpedia.org/sparql' #todo
 SPARQL_ENDPOINT = 'https://query.wikidata.org/sparql'
 #SPARQL_ENDPOINT = 'https://skynet.coypu.org/wikidata/'
+#SPARQL_ENDPOINT = 'invalid/endpoint' #todo erreur specifique?
