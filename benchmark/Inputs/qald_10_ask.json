@@ -1,0 +1,38 @@
+{
+    "dataset": {
+        "id": "qald-X"
+    },
+    "questions": [
+        {
+            "id": 7,
+            "aggregation": false,
+            "question": [
+                {
+                    "language": "en",
+                    "string": "are brooke raboutou and colin duffy from same state of the usa?"
+                },
+                {
+                    "language": "zh",
+                    "string": "布鲁克·拉布图和柯林·达菲来自美国的同一个州吗？"
+                },
+                {
+                    "language": "de",
+                    "string": "Kommen Brooke Raboutou und Colin Duffy aus dem selben Bundesstaat der USA?"
+                },
+                {
+                    "language": "ru",
+                    "string": "Брук Рабутоу и Колин Даффи из одного штата США?"
+                }
+            ],
+            "answers": [
+                {
+                    "head": {},
+                    "boolean": true
+                }
+            ],
+            "query": {
+                "sparql": "PREFIX bd: <http://www.bigdata.com/rdf#> PREFIX dct: <http://purl.org/dc/terms/> PREFIX geo: <http://www.opengis.net/ont/geosparql#> PREFIX p: <http://www.wikidata.org/prop/> PREFIX pq: <http://www.wikidata.org/prop/qualifier/> PREFIX ps: <http://www.wikidata.org/prop/statement/> PREFIX psn: <http://www.wikidata.org/prop/statement/value-normalized/> PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> PREFIX wd: <http://www.wikidata.org/entity/> PREFIX wds: <http://www.wikidata.org/entity/statement/> PREFIX wdt: <http://www.wikidata.org/prop/direct/> PREFIX wdv: <http://www.wikidata.org/value/> PREFIX wikibase: <http://wikiba.se/ontology#> PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> ASK {wd:Q2926117 wdt:P19 ?b1. wd:Q87192979 wdt:P19 ?b2. ?b1 wdt:P131* ?state. ?b2 wdt:P131* ?state. ?state wdt:P31 wd:Q35657 .}"
+            }
+        }
+    ]
+}

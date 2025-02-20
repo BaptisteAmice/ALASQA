@@ -127,14 +127,23 @@ def queries_evaluation(benchmark_queries: list, system_queries: list, errors: li
         logging.info(f'Query {i} evaluated')
     return benchmark_results, system_results, errors
 
-def execute_query(sparql, query, query_index, query_type) -> tuple[list, str]:
-    """Executes a SPARQL query with retry logic on 429 errors."""
+def execute_query(sparql, query: str, query_index: int, query_type: str) -> tuple:
+    """Executes a SPARQL query with retry logic on 429 errors and handles both SELECT and ASK queries."""
     while True:
         try:
             sparql.setQuery(query)
-            return sparql.query().convert()["results"]["bindings"], ""
+            result = sparql.query().convert()
+            
+            if "boolean" in result:  # ASK Query
+                return result["boolean"], ""
+            elif "results" in result and "bindings" in result["results"]:  # SELECT Query
+                return result["results"]["bindings"], ""
+            else:
+                logging.error(f"Unexpected response format for query {query_index} ({query_type}): {result}")
+                return None, ERROR_PREFIX + "Unexpected response format."
+
         except Exception as e:
-            if "429" in str(e):  # Detect 429 error
+            if "429" in str(e):  # Detect 429 Too Many Requests
                 retry_after = int(e.headers.get("Retry-After", 5))  # Default to 5 seconds
                 logging.warning(f"Query {query_index} ({query_type}) hit 429 Too Many Requests. Retrying after {retry_after} seconds.")
                 datetime.time.sleep(retry_after)
@@ -153,12 +162,18 @@ def stats_calculation(benchmark_results: list, system_results: list) -> list:
     for i in range(len(benchmark_results)): #todo cas pas de prédiction (system ou benchmark) -> les compter et pas les prendre en compte?
         benchmark_list = []
         system_list = []
-        print(benchmark_results[i])
-        #test if not of type none and if len >0
-        if (not benchmark_results[i] is None) and len(benchmark_results[i]) > 0: 
-            benchmark_list = [result['result']['value'] if 'result' in result else result for result in benchmark_results[i]]
-        if (not system_results[i] is None) and len(system_results[i]) > 0:
-            system_list = [result['result']['value'] if 'result' in result else result for result in system_results[i]]
+        if benchmark_results[i] is not None:
+            if isinstance(benchmark_results[i], bool):  # Handle ASK query
+                benchmark_list = [benchmark_results[i]]
+            elif isinstance(benchmark_results[i], list) and len(benchmark_results[i]) > 0:  # Handle SELECT query
+                benchmark_list = [result['result']['value'] if isinstance(result, dict) and 'result' in result else result for result in benchmark_results[i]]
+
+        if system_results[i] is not None:
+            if isinstance(system_results[i], bool):  # Handle ASK query
+                system_list = [system_results[i]]
+            elif isinstance(system_results[i], list) and len(system_results[i]) > 0:  # Handle SELECT query
+                system_list = [result['result']['value'] if isinstance(result, dict) and 'result' in result else result for result in system_results[i]]
+
         if len(benchmark_list) > 0 and len(system_list) > 0: #todo separate and put to 0 for system
             #todo recheck tt ca
             #intersection = len(set(benchmark_list) & set(system_list))
