@@ -53,11 +53,11 @@ async function qa_control() {
         return;
     }
 
-    //wait for the endpoint to be ready //todo plus élégamment
+    //wait for the endpoint to be ready //todo plus élégamment, voir avec sebastien
     await new Promise(r => setTimeout(r, 2000));
 
     //Execute commands
-    process_question(qa); // from qa_extension.js
+    process_question(qa); // from qa_extension.js //todo peut etre que je peut await
 
     //wait for the endpoint to be ready //todo plus élégamment (compliqué tant que je me base sur l'input field et pas l'api)
     await new Promise(r => setTimeout(r, 1000));

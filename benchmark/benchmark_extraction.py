@@ -1,12 +1,13 @@
 from abc import abstractmethod
 import json
 
+# Names of the benchmarks
 MINTAKA1K = 'Mintaka1k_final'
 QALD10 = 'QALD-10'
 
 class Extractor:
     """
-    Abstract class for extracting data from a benchmark file
+    Abstract class for extracting data from a benchmark file.
     """
     @abstractmethod
     def extractData(self) -> list[list]:
@@ -15,7 +16,7 @@ class Extractor:
 
 def trim_request(request: str) -> str: #todo doesn't work for mintaka
     """
-    Removes the backslashes from the request
+    Removes the backslashes from the request.
     """
     return request.replace("\\", "")
 

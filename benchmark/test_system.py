@@ -2,7 +2,15 @@ from abc import abstractmethod
 import interactions
 import config
 class TestSystem:
+    """
+    Abstract class for a tested system.
+    A system is used to create queries from questions and endpoints.
+    """
     def create_query(self, question: str, endpoint: str) -> tuple[str, str]:
+        """
+        Create a query from a question and an endpoint.
+        If an error occurs, it is returned as a string in the second element of the tuple.
+        """
         try:
             response, error = self.create_query_body(question, endpoint)
         except Exception as e:
@@ -12,10 +20,17 @@ class TestSystem:
 
     @abstractmethod
     def create_query_body(self, question: str, endpoint: str) -> tuple[str, str]:
+        """
+        Logic to create a query from a question and an endpoint.
+        """
         pass
 
     @abstractmethod
     def end_system(self):
+        """
+        Close the system if necessary.
+        For example, close the browser if it was opened.
+        """
         pass
 
 #####################################
@@ -51,6 +66,9 @@ class Sparklisllm(TestSystem):
 #####################################
 
 def testSystemFactory(benchmark_name: str) -> TestSystem:
+    """
+    Factory method to create a test system.
+    """
     if benchmark_name == "dummy":
         return Dummy()
     elif benchmark_name == "sparklisllm":

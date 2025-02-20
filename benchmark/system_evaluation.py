@@ -5,7 +5,6 @@ import os
 from SPARQLWrapper import SPARQLWrapper, JSON
 import requests
 import benchmark_extraction
-import test_system
 from test_system import TestSystem, testSystemFactory
 import config
 
@@ -15,7 +14,7 @@ ERROR_PREFIX = "Error: "
 
 def main(benchmark_file: str, benchmark_name: str, tested_system_name: str, endpoint: str, used_llm: str):
     """
-    Evaluation of a system on a benchmark, based on the configuration in config.py
+    Evaluation of a system on a benchmark, based on the configuration in config.py.
     """
     logging.info('########## System evaluation Start ##########')
 
@@ -76,7 +75,7 @@ def main(benchmark_file: str, benchmark_name: str, tested_system_name: str, endp
 
 def metadata(benchmark_name: str, tested_system_name: str, endpoint: str, used_llm: str) -> dict:
     """
-    Create a metadata dictionary
+    Create a metadata dictionary.
     """
     logging.info('Creation and metadata Start')
     return {
@@ -89,13 +88,16 @@ def metadata(benchmark_name: str, tested_system_name: str, endpoint: str, used_l
 
 def extract_benchmark(benchmark_file: str, benchmark_name: str) -> list:
     """
-    Extract benchmark data
+    Extract benchmark data.
     """
     logging.info('Benchmark extraction Start')
     extractor = benchmark_extraction.extractorFactory(benchmark_name)
     return extractor.extractData(benchmark_file)
 
 def system_queries_generation(questions: list, system: TestSystem, endpoint_sparql: str) -> tuple[list, list]:
+    """
+    Use the tested system and SPARQL endpoint to generate queries for the given questions.
+    """
     logging.info('System queries generation Start')
     queries = []
     errors = []
@@ -106,6 +108,9 @@ def system_queries_generation(questions: list, system: TestSystem, endpoint_spar
     return queries, errors
 
 def queries_evaluation(benchmark_queries: list, system_queries: list, errors: list, endpoint: str) -> tuple[list, list, list]:
+    """
+    Execute the benchmark and system queries on the SPARQL endpoint and return the results.
+    """
     logging.info('Queries evaluation Start')
     user_agent = config.USER_AGENT # Without it we get 403 error from Wikidata after a few queries
     sparql = SPARQLWrapper(endpoint, agent=user_agent)
@@ -128,7 +133,9 @@ def queries_evaluation(benchmark_queries: list, system_queries: list, errors: li
     return benchmark_results, system_results, errors
 
 def execute_query(sparql, query: str, query_index: int, query_type: str) -> tuple:
-    """Executes a SPARQL query with retry logic on 429 errors and handles both SELECT and ASK queries."""
+    """
+    Executes a SPARQL query with retry logic on 429 errors and handles both SELECT and ASK queries.
+    """
     while True:
         try:
             sparql.setQuery(query)
@@ -193,7 +200,8 @@ def stats_calculation(benchmark_results: list, system_results: list) -> list:
 
 def make_dict(meta: dict, questions_ids: list, questions: list, benchmark_queries: list, system_queries: list, benchmark_results: list, system_results: list, errors: list, precisions: list, recalls: list, f1_scores: list) -> dict:
     """
-    Create a dictionary with all the data
+    Create a dictionary with all the data.
+    Also calculate the stats.
     """
     logging.info('Make dict Start')
     stats = {}
@@ -228,7 +236,7 @@ def make_dict(meta: dict, questions_ids: list, questions: list, benchmark_querie
 
 def getModelName(model_api):
     """
-    Get the name of the used LLM model from the model API
+    Get the name of the used LLM model from the model API.
     """
     try:
         response = requests.get(model_api)

@@ -20,6 +20,20 @@ Limites:
     - ne peut pas savoir le nombre de résultat d'une commande (ex: "person" dans wikidata n'a qu'un seul résultat -> plutot "human")
 
 
+## Besoins
+
+- Transformer commande
+    - compter le nombre de résultats -> juste wrapping
+    - trouver le résultat spécifique attendu dans une liste de résultats -> ???
+    - traduire une réponse en bool -> wrapping ask
+        - verifier un nombre -> ajout filtre
+        - verifier une info -> ??? //just ask sans filtre???
+
+filtrer: limit/offset
+
+### Exemple concrets
+Did Tom Brady win a Super Bowl before 2005?
+Tom Brady ; 
 
 ## Fonctonnalités envisagées
 - Permettre au LLM d'accèder et de filtrer les suggestions
@@ -33,3 +47,13 @@ Limites:
     - necessite traducteur entité -> string pour wikidata
 
 - Raisonner sur si la réponse attendue semble être correcte
+
+- donner des commandes
+    - extraction
+        - get suggestions / filter suggestions
+        - command
+
+    - reasoning
+        - count -> compte le nombre de résultat dans un dict
+        - search -> cherche une valeur dans un dict
+        - traduction entité -> string

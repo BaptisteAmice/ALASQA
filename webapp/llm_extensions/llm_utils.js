@@ -55,3 +55,46 @@ async function sendPrompt(input, streamOption = true, updateCallback = null) {
         return "Error: " + error.message;
     }
 }
+
+////////// COMMANDS //////////
+//todo à voir si on fait vraiment ca
+
+const QueryTypes = {
+    count: "count", // Count the number of results
+    verify: "verify", //
+    search: "search", //search for a specific result
+};
+
+function queryWrapping(query, type, options = {}) {
+    //todo deplacer prefixes, mettre query dans wrapper filtrer grace aux options
+    switch (type) {
+        case QueryTypes.count:
+            //todo
+        case QueryTypes.verify:
+            //todo
+        default:
+            return query;
+    }
+}
+
+// ## Requete SPARQL conversion type
+// ne pas oublier de déplacer les prefixes
+
+// Boolean //celui là n'est pas assez générique
+// ASK WHERE {
+//   {
+//     SELECT (COUNT(?ville) AS ?count) WHERE {
+//       ?ville a ex:Ville .
+//     }
+//   }
+//   FILTER(?count = 13)
+// }
+
+// Count
+// SELECT (COUNT(*) AS ?count) WHERE {
+//   {
+//     SELECT ?ville WHERE {
+//       ?ville a ex:Ville .
+//     }
+//   }
+// }

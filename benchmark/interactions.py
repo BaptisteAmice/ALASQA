@@ -6,6 +6,7 @@ from selenium.common.exceptions import UnexpectedAlertPresentException, TimeoutE
 import logging
 import config
 
+# Options for the browser
 options = Options()
 #options.headless = True #to not open the browser #do not seems to work
 
@@ -32,14 +33,17 @@ def wait_and_handle_alert(driver, timeout: int, end_condition) -> str:
         WebDriverWait(driver, timeout).until(lambda d: 
             end_condition(d)
         )
-    except UnexpectedAlertPresentException:
+    except UnexpectedAlertPresentException: 
+        # Dismiss the alert and log it to continue waiting
         try:
             alert = driver.switch_to.alert
             alert_text = alert.text
             alert.dismiss()
             logging.warning(f"Unhandled alert detected and dismissed: {alert_text}")
         except:
+            # For exemple useful with wikidata endpoint alerts, that disapear before the alert is read 
             logging.warning("An alert was dismissed before it could be read.") #todo veut peut etre dire qu'on s'y prend mal
+        # Retry waiting after dismissing the alert (generally the condition is met after the alert)
         return wait_and_handle_alert(driver, timeout, end_condition)  # Retry waiting after dismissing the alert
 
     except TimeoutException:
@@ -108,7 +112,7 @@ def sparklisllm_question(driver, question, endpoint_sparql): #todo catch error i
     chatbot_answer = last_chatbot_qa.find_element(By.CLASS_NAME, "chatbot-answer")
     #if begin by "Error:" then it is an error
     if chatbot_answer.text.startswith("Error:"):
-        error = chatbot_answer.text + "(from the system)"
+        error = chatbot_answer.text + "(from the system)" #todo probleme ici
     elif chatbot_answer.text == "":
         error = "Warning: empty answer (from the system)"
 

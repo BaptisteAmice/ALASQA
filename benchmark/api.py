@@ -22,6 +22,9 @@ KNOWN_DATASETS = [
 
 @app.get("/")
 async def get_answer(question: str, dataset: str):
+    """
+     Translate a natural language question into a SPARQL query for a given dataset.
+    """
     if dataset not in KNOWN_DATASETS:
         raise fastapi.HTTPException(404, "Unknown dataset ...")
     return {
@@ -32,6 +35,9 @@ async def get_answer(question: str, dataset: str):
 
 @app.get("/fetch")
 def fetch_local_page(question: str, endpoint_sparql: str = config.SPARQL_ENDPOINT):
+    """
+    Draft of the "/" endpoint. #todo
+    """
     response, error, driver = interactions.simulated_user(
         config.SPARKLIS_FILE,
         lambda driver: interactions.sparklisllm_question(driver, question, endpoint_sparql)

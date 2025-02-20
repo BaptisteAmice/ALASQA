@@ -1,31 +1,45 @@
+#todo etape actuelle
+question -> réponse
+réussir à la construire avec sparklis (à la main) / voir les surcouches necessaires
+-> adapter systeme
+
+#todo regler probleme empty answer
+
+#todo quand sebastien sera revenu: regler probleme asynchrone
+
+#todo quand j'aurai fini -> calculs scores
+->0 plutot que None quand le probleme vient du systeme
+
+#todo slide 
+- requetes bon resultat
+- requetes bien formées mais pas bon résultat
+- requete ressemble mais pas bien formée
+- requete problème de typage (ask/select)
+- combien
+-limites 
+
+#todo commenter mieux les raisons dans le code
+
+#############################
 #todo qd client die -> fenetre reste ouverte
 #todo disable si llm pas dispo/erreur correspondante
 
-#faire ticket
 #jeudi aprem vers 15h30 réunion 
-#pour le moment faire tourner qld de manière robuste > 40% format valide
 #ajouter raisonnement sur bien ou pas à la fin (à faire plus tard)
 
 #todo? add tps par requete et tps global? -> peut etre fait dans test_system abstrait
 
 #todo enlever \ dans questions extraites
 
-#todo semaine
-fixer v0 (faire marcher avec wikidata)
-faire passer toutes les requetes qald10 / 2 runs
-classer les requetes qald10
 
 #brainstorming des méthodes: pas à pas à la react, raisonneur à la fin
 #v1 2 llm en concurrence
 
 #todo etre plus fin sur els echecs : systeme, pas aboutis
-#todo passer f1, rcall, ... à 0 si pas de réponses
 
 #todo url pour traduire entitées wikidata
 
 #todo prompt premiere question -> lire retour -> suite
-#todo slide pour fin semaine/debut 24/02
-
 
 se concentrer sur l'extraction
 //todo réessayer en listant les commandes
