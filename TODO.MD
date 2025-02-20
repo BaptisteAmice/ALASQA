@@ -1,3 +1,4 @@
+#todo qd client die -> fenetre reste ouverte
 #todo disable si llm pas dispo/erreur correspondante
 
 #faire ticket
