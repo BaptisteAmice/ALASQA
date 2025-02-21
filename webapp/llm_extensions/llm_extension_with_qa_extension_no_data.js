@@ -49,14 +49,16 @@ async function qa_control() {
         qa.value = commands;  // Safe access since we checked if commands is not null
     } else {
         console.log(ERROR_PREFIX + "No match found for <commands>...</commands>");
-        qa.value = ERROR_PREFIX + "No match found for <commands>...</commands>";
+        qa.value = ERROR_PREFIX + "No match found for <commands>...</commands>"; //todo plutot passer ca dans erreur et return
         return;
     }
 
     //wait for the endpoint to be ready //todo plus élégamment, voir avec sebastien
-    await new Promise(r => setTimeout(r, 2000));
+    //await new Promise(r => setTimeout(r, 2000));
 
     //Execute commands
+    //todo pas trop l'air de marcher
+    //await process_question(qa); // from qa_extension.js //todo peut etre que je peut await
     process_question(qa); // from qa_extension.js //todo peut etre que je peut await
 
     //wait for the endpoint to be ready //todo plus élégamment (compliqué tant que je me base sur l'input field et pas l'api)
@@ -94,7 +96,8 @@ async function qa_control() {
         let resultText = JSON.stringify(rows);
         console.log("result",resultText);
 
-        updateAnswer(questionId, resultText, "???", sparql); //todo sparklis_request
+        updateAnswer(questionId, resultText, "???", sparql); //todo sparklis_request 
+        //todo separer answer et erreurs
 
         //re-enable interactions
         enableInputs();
