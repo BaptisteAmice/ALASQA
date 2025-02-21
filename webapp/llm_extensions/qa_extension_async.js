@@ -23,29 +23,26 @@ async function process_question(qa) {
     let steps = question.split(/\s*;\s*/).filter(s => s !== '');
     console.log("Steps: " + steps);
     let place = sparklis.currentPlace();
-	try { //todo peut etre mauvaise idée de catch ici
-		await process_steps(qa, place, steps);
-		console.log("Processing done"); //todo ameliorer et peut etre retourner
-	} catch (error) {
-		console.log("Processing failed: " + error);
-	}
+    return await process_steps(qa, place, steps);
 }
 
 // starting from place, apply sequence of steps as far as possible
 async function process_steps(qa, place, steps) {
     if (steps.length === 0) {
-	console.log("QA search completed");
+		console.log("QA search completed");
+		return Promise.resolve();
     } else {
 	let first_step = steps[0];
-	process_step(place, first_step)
+	return process_step(place, first_step)
 	    .then(next_place => {
-		let next_steps = steps.slice(1);
-		qa.value = next_steps.join(" ; "); // update qa field
-		sparklis.setCurrentPlace(next_place); // update Sparklis view
-		process_steps(qa, next_place, next_steps); // continue with next steps from there
-	    })
+			let next_steps = steps.slice(1);
+			qa.value = next_steps.join(" ; "); // update qa field
+			sparklis.setCurrentPlace(next_place); // update Sparklis view
+			return process_steps(qa, next_place, next_steps); // continue with next steps from there
+		})
 	    .catch(msg => {
-		console.log("QA search halted because " + msg);
+			console.log("QA search halted because " + msg);
+			return Promise.reject(msg); // Propagate error
 	    })
     }
 }

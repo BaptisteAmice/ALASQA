@@ -46,7 +46,7 @@ async function qa_control() {
         (text) => updateReasoning(questionId, text) // Capture `questionId` and send `text`
     );    
 
-    //let output = 'blablabla<commands>a animal </commands>dsfsd';
+    //let output = 'blablabla<commands>a animal ; has family ; camelini;</commands>dsfsd';
     //get commands from regular expression <commands>...</commands>
     let match = output.match(/<commands>(.*?)<\/commands>/s);
     
@@ -61,27 +61,16 @@ async function qa_control() {
         errors += message;
     }
 
-    //wait for the endpoint to be ready //todo plus élégamment, voir avec sebastien
-    await new Promise(r => setTimeout(r, 2000));
+    //Execute commands and wait for them to finish or to halt
+    await process_question(qa)
+        .then(() => console.log("All steps completed"))
+        .catch(error => {
+            let message = ERROR_PREFIX + "Commands failed to finish due to: " + error;
+            console.log(message);
+            errors += message;
+        });
 
-    //Execute commands
-    //todo pas trop l'air de marcher
-    //await process_question(qa); // from qa_extension.js //todo peut etre que je peut await
-    process_question(qa); // from qa_extension.js //todo peut etre que je peut await
 
-    //wait for the endpoint to be ready //todo plus élégamment (compliqué tant que je me base sur l'input field et pas l'api)
-    await new Promise(r => setTimeout(r, 1000));
-    let i = 0;
-    while (qa.value != "" && i < 10) {
-        console.log("Waiting for commands to finish");
-        await new Promise(r => setTimeout(r, 1000));
-        i++;
-    }
-    if (qa.value != "") {
-        let message = ERROR_PREFIX + "Commands failed to finish;"
-        console.log(message);
-        errors += message;
-    }
     //get sparklis results from the commands
     let place = sparklis.currentPlace();
 
@@ -139,13 +128,13 @@ Your goal is to generate commands that query a knowledge graph to find answers t
 - up, down → Navigation.  
 
 ## Examples:  
-Q: Who are Einstein’s parents?  
-A: <think>Einstein is a person. His parents are people who have him as a child.</think>  
-<commands>a person; has child; Albert Einstein;</commands>  
+Q: At which school went Yayoi Kusama?
+A: <think>I need to find the entity corresponding to Yayoi Kusam, then see where she was educated.</think>
+<commands>yayoi kusama ; has education ;</commands> 
 
-Q: Which animals belong to Camelini?  
-A: <think>Find ANIMALS in the Camelini FAMILY.</think>  
-<commands>a animal; has family; camelini;</commands>  
+Q: What is the boiling point of water?
+A: <think>The core of the request is WATER. From this entity I will propably be able to get a property such as its BOILING POINT.</think>  
+<commands>water; has boiling;</commands>  
 
 Q: Movies by Spielberg or Tim Burton after 1980?
 A: <think>Find FILMS by Spielberg or Burton released after 1980.</think>  

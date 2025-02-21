@@ -1,8 +1,4 @@
-popup pas compris :LE PROBLEME VIENT DE L ENCHAINEMENT DES COMMANDES QUI EST TROP RAPIDE -> peut etre pas finalement???
-->vient aussi de si la premiere commande arrive trop vite
-->il faudrait etre capable de savoir quand wikidata a fourni les suggestions
-
-SI CLIQUE AUTOMATISE LES PREFIXES SONT DUPLIQUES
+PK POPUP: SI CLIQUE AUTOMATISE -> LES PREFIXES SONT DUPLIQUES DANS LA REQUETE POST
 
 ->réponse vide car mauvaise condition de fin
 
