@@ -40,13 +40,13 @@ async function qa_control() {
 
     questionId = addLLMQuestion(input_question);
    
-    // let output = await sendPrompt(
-    //     usualPrompt(systemMessage, input_question), 
-    //     true, 
-    //     (text) => updateReasoning(questionId, text) // Capture `questionId` and send `text`
-    // );    
+    let output = await sendPrompt(
+        usualPrompt(systemMessage, input_question), 
+        true, 
+        (text) => updateReasoning(questionId, text) // Capture `questionId` and send `text`
+    );    
 
-    let output = 'blablabla<commands>a animal </commands>dsfsd';
+    //let output = 'blablabla<commands>a animal </commands>dsfsd';
     //get commands from regular expression <commands>...</commands>
     let match = output.match(/<commands>(.*?)<\/commands>/s);
     
@@ -84,7 +84,6 @@ async function qa_control() {
     }
     //get sparklis results from the commands
     let place = sparklis.currentPlace();
-    console.log("place",place);
 
     //define callback
     place.onEvaluated(async () => {
@@ -115,7 +114,6 @@ async function qa_control() {
         }
 
         updateAnswer(questionId, resultText, "???", sparql, errors); //todo sparklis_request 
-        //todo separer answer et erreurs
 
         //re-enable interactions
         enableInputs();
