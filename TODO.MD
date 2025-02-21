@@ -1,4 +1,11 @@
 popup pas compris :LE PROBLEME VIENT DE L ENCHAINEMENT DES COMMANDES QUI EST TROP RAPIDE -> peut etre pas finalement???
+->vient aussi de si la premiere commande arrive trop vite
+->il faudrait etre capable de savoir quand wikidata a fourni les suggestions
+
+SI CLIQUE AUTOMATISE LES PREFIXES SONT DUPLIQUES
+
+->réponse vide car mauvaise condition de fin
+
 JUSTE AFK PARFOIS CA ARRIVE AUSSI
 
 montrer questions et blocages

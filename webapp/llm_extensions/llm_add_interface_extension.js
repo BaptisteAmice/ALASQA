@@ -222,6 +222,12 @@ function addLLMQuestion(question) {
     answerDiv.textContent = "...";
     let answerHeader = document.createElement("h4");
     answerHeader.textContent = "Answer";
+
+    let errorsDiv = document.createElement("div");
+    errorsDiv.classList.add("chatbot-errors");
+    errorsDiv.textContent = "...";
+    let errorsHeader = document.createElement("h4");
+    errorsHeader.textContent = "Errors";
     
     qaDiv.appendChild(questionHeader);
     qaDiv.appendChild(questionDiv);
@@ -233,13 +239,15 @@ function addLLMQuestion(question) {
     qaDiv.appendChild(sparqlRequestDiv);
     qaDiv.appendChild(answerHeader);
     qaDiv.appendChild(answerDiv);
+    qaDiv.appendChild(errorsHeader);
+    qaDiv.appendChild(errorsDiv);
     
     let responseContainer = document.getElementById("chatbot-responses-container");
     responseContainer.appendChild(qaDiv);
     responseContainer.scrollTop = responseContainer.scrollHeight;
     
     questionsData.push({ id: questionId, question, reasoning: "", sparklis_request: "",
-        sparql_request: "", answer: "" });
+        sparql_request: "", answer: "", errors: "" });
     saveQuestionsData();
     
     questionCounter++;
@@ -283,6 +291,12 @@ function loadQuestionsFromSession() {
         answerDiv.textContent = data.answer;
         let answerHeader = document.createElement("h4");
         answerHeader.textContent = "Answer";
+
+        let errorsDiv = document.createElement("div");
+        errorsDiv.classList.add("chatbot-errors");
+        errorsDiv.textContent = data.errors;
+        let errorsHeader = document.createElement("h4");
+        errorsHeader.textContent = "Errors";
         
         qaDiv.appendChild(questionHeader);
         qaDiv.appendChild(questionDiv);
@@ -294,6 +308,8 @@ function loadQuestionsFromSession() {
         qaDiv.appendChild(sparqlRequestDiv);
         qaDiv.appendChild(answerHeader);
         qaDiv.appendChild(answerDiv);
+        qaDiv.appendChild(errorsHeader); 
+        qaDiv.appendChild(errorsDiv); //todo factoriser
         
         document.getElementById("chatbot-responses-container").appendChild(qaDiv);
     });
@@ -313,17 +329,19 @@ function updateReasoning(questionId, reasoning) {
     }
 }
 
-function updateAnswer(questionId, answer, sparklis_request = "", sparql_request = "") {
+function updateAnswer(questionId, answer = "", sparklis_request = "", sparql_request = "", errors = "") {
     let qa = document.querySelector(`.chatbot-qa[data-id='${questionId}']`);
     if (qa) {
         qa.querySelector(".sparklis-request").textContent = sparklis_request;
         qa.querySelector(".sparql-request").textContent = sparql_request;
         qa.querySelector(".chatbot-answer").textContent = answer;
+        qa.querySelector(".chatbot-errors").textContent = errors
         let questionData = questionsData.find(q => q.id === questionId);
         if (questionData) {
             questionData.sparklis_request = sparklis_request;
             questionData.sparql_request = sparql_request;
             questionData.answer = answer;
+            questionData.errors = errors;
             saveQuestionsData();
         }
     }

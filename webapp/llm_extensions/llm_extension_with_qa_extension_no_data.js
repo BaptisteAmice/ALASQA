@@ -15,9 +15,17 @@ window.addEventListener(
 	})
 });
 
+function removePrefixes(sparqlQuery) {
+    return sparqlQuery.split('\n')
+        .filter(line => !line.startsWith('PREFIX'))
+        .join('\n');
+}
+
 async function qa_control() {
     //reset sparklis
     sparklis.home();
+
+    let errors = "";
 
     //disable some interactions
     disableInputs();
@@ -32,13 +40,13 @@ async function qa_control() {
 
     questionId = addLLMQuestion(input_question);
    
-    let output = await sendPrompt(
-        usualPrompt(systemMessage, input_question), 
-        true, 
-        (text) => updateReasoning(questionId, text) // Capture `questionId` and send `text`
-    );    
+    // let output = await sendPrompt(
+    //     usualPrompt(systemMessage, input_question), 
+    //     true, 
+    //     (text) => updateReasoning(questionId, text) // Capture `questionId` and send `text`
+    // );    
 
-    //let output = 'blablabla<commands>a animal ; has family ; camelini</commands>dsfsd';
+    let output = 'blablabla<commands>a animal </commands>dsfsd';
     //get commands from regular expression <commands>...</commands>
     let match = output.match(/<commands>(.*?)<\/commands>/s);
     
@@ -48,13 +56,13 @@ async function qa_control() {
     if (commands) {
         qa.value = commands;  // Safe access since we checked if commands is not null
     } else {
-        console.log(ERROR_PREFIX + "No match found for <commands>...</commands>");
-        qa.value = ERROR_PREFIX + "No match found for <commands>...</commands>"; //todo plutot passer ca dans erreur et return
-        return;
+        let message = ERROR_PREFIX + "No match found for <commands>...</commands>;"
+        console.log(message);
+        errors += message;
     }
 
     //wait for the endpoint to be ready //todo plus élégamment, voir avec sebastien
-    //await new Promise(r => setTimeout(r, 2000));
+    await new Promise(r => setTimeout(r, 2000));
 
     //Execute commands
     //todo pas trop l'air de marcher
@@ -70,38 +78,47 @@ async function qa_control() {
         i++;
     }
     if (qa.value != "") {
-        console.log(ERROR_PREFIX + "Commands failed to finish");
-        let resultText = ERROR_PREFIX + "Commands failed to finish";
-        updateAnswer(questionId, resultText);
+        let message = ERROR_PREFIX + "Commands failed to finish;"
+        console.log(message);
+        errors += message;
     }
-    
     //get sparklis results from the commands
     let place = sparklis.currentPlace();
+    console.log("place",place);
 
+    //define callback
     place.onEvaluated(async () => {
-        console.log("evaluated");
+        console.log("Place evaluated");
         let sparql = place.sparql();
+        console.log("sparql",sparql);
         let results;
         try { 
+            sparql = removePrefixes(sparql); //todo temp patch because of wikidata endpoint for which the prefixes are duplicated when requested by the LLM (only difference is that the event is automatically activated)
             results = await sparklis.evalSparql(sparql);
         } catch (e) {
             //todo understand why this error is thrown
             //catch error thrown by wikidata endpoint
-            console.log(ERROR_PREFIX + "error while evaluating SPARQL query", e);
-            results = ERROR_PREFIX + "error while evaluating SPARQL query";
+            let message = ERROR_PREFIX + "error while evaluating SPARQL query";
+            console.log(message, e);
+            errors += message;
         }
-        console.log(results);
-        console.log('rows',results.rows);
-        let rows = results.rows;
-        let resultText = JSON.stringify(rows);
-        console.log("result",resultText);
 
-        updateAnswer(questionId, resultText, "???", sparql); //todo sparklis_request 
+        let resultText;
+        try {
+            let rows = results.rows;
+            resultText = JSON.stringify(rows);
+            console.log("result",resultText);
+        } catch (e) {
+            let message = ERROR_PREFIX + "error while parsing SPARQL results";
+            console.log(message, e);
+            errors += message;
+        }
+
+        updateAnswer(questionId, resultText, "???", sparql, errors); //todo sparklis_request 
         //todo separer answer et erreurs
 
         //re-enable interactions
         enableInputs();
-        
     });    
     
 }

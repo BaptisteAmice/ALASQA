@@ -111,13 +111,16 @@ def sparklisllm_question(driver, question, endpoint_sparql): #todo catch error i
     # Get the last chatbot-qa div
     last_chatbot_qa = chatbot_qa_elements[-1]
 
+    # Find the chatbot-errors inside the last chatbot-qa div
+    chatbot_errors = last_chatbot_qa.find_element(By.CLASS_NAME, "chatbot-errors")
+    # Retrieve the error messages from the system
+    error += "Errors from the system [" + chatbot_errors.text + "]"
+
     # Find the chatbot-answer inside the last chatbot-qa div
     chatbot_answer = last_chatbot_qa.find_element(By.CLASS_NAME, "chatbot-answer")
-    #if begin by "Error:" then it is an error
-    if chatbot_answer.text.startswith("Error:"):
-        error += chatbot_answer.text + "(from the system)" #todo probleme ici
-    elif chatbot_answer.text == "":
-        error += "Warning: empty answer (from the system)"
+    # If the answer is empty, add a warning
+    if chatbot_answer.text == "":
+        error += "Warning: Empty answer from the system."
 
     sparql_request = last_chatbot_qa.find_element(By.CLASS_NAME, "sparql-request")
     return sparql_request.text, error
