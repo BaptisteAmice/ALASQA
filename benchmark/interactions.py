@@ -61,6 +61,9 @@ def sparklisllm_question(driver, question, endpoint_sparql): #todo catch error i
     """ # todo UnhandledAlertException handling
     driver.implicitly_wait(0.5)
 
+    # The errors will be concatenated in this variable
+    error = ""
+
     #todo temp solution
     if "wikidata" in endpoint_sparql:
         #Open config modal
@@ -98,7 +101,7 @@ def sparklisllm_question(driver, question, endpoint_sparql): #todo catch error i
 
     #while the inputs are disabled, we can consider the system is still processing the question
     logging.info("Waiting for system response...")
-    error = wait_and_handle_alert(driver, config.SYSTEM_TIMEOUT, 
+    error += wait_and_handle_alert(driver, config.SYSTEM_TIMEOUT, 
                                   lambda d: not text_box.get_attribute("disabled"))
     logging.info("System response received.")
     
@@ -112,9 +115,9 @@ def sparklisllm_question(driver, question, endpoint_sparql): #todo catch error i
     chatbot_answer = last_chatbot_qa.find_element(By.CLASS_NAME, "chatbot-answer")
     #if begin by "Error:" then it is an error
     if chatbot_answer.text.startswith("Error:"):
-        error = chatbot_answer.text + "(from the system)" #todo probleme ici
+        error += chatbot_answer.text + "(from the system)" #todo probleme ici
     elif chatbot_answer.text == "":
-        error = "Warning: empty answer (from the system)"
+        error += "Warning: empty answer (from the system)"
 
     sparql_request = last_chatbot_qa.find_element(By.CLASS_NAME, "sparql-request")
     return sparql_request.text, error

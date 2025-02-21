@@ -60,9 +60,26 @@ async function sendPrompt(input, streamOption = true, updateCallback = null) {
 //todo à voir si on fait vraiment ca
 
 const QueryTypes = {
-    count: "count", // Count the number of results
-    verify: "verify", //
-    search: "search", //search for a specific result
+    // Commands to get knowledge from the endpoint
+    filter: "filter", // TypesAndRelations | IdentitiesOrValues | AggregationsAndOperators
+    getSuggestions: "getSuggestions", // TypesAndRelations | IdentitiesOrValues | AggregationsAndOperators
+    getResults: "getResults", // Execute outside of Sparklis to not be too dependent
+
+    //if we are using the QA extension
+    construct: "construct", // use the QA extension to construct a query
+
+    // Commands if we are not using the QA extension
+    pick: "pick", // Pick a specific suggestion
+    stringMatch: "stringMatch", // Match a specific string
+    moveFocus: "moveFocus", // UP | DOWN
+
+    // Commands to adapt the query to the desired result (can't see the result in Sparklis)
+    count: "count", // Wrap query to count results
+    selectColumns: "selectColumns", // Only keep the listed columns in the select of the query
+    llmHelp: "llmHelp", // Let the LLM directly alter the query
+
+    verify: "verify", // ???
+    search: "search", //search for a specific result // ???
 };
 
 function queryWrapping(query, type, options = {}) {

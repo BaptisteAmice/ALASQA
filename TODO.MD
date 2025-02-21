@@ -1,3 +1,12 @@
+popup pas compris :LE PROBLEME VIENT DE L ENCHAINEMENT DES COMMANDES QUI EST TROP RAPIDE -> peut etre pas finalement???
+JUSTE AFK PARFOIS CA ARRIVE AUSSI
+
+montrer questions et blocages
+->montrer commandes envisagées
+
+????toask is year of???
+???toask comment chercher string matching???
+------------------------
 #todo etape actuelle
 question -> réponse
 réussir à la construire avec sparklis (à la main) / voir les surcouches necessaires
