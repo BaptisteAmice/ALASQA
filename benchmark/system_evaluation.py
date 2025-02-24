@@ -164,6 +164,21 @@ def execute_query(sparql, query: str, query_index: int, query_type: str) -> tupl
             else:
                 logging.error(f"Error executing query {query_index} ({query_type}): {e}")
                 return None, ERROR_PREFIX + query_type + " query execution failed."
+            
+def recursive_dict_extract(obj: dict, key_name: str) -> list:
+    """
+    Recursively extract values from a dictionary based on a key name.
+    """
+    values = []
+    if isinstance(obj, dict):
+        for key, val in obj.items():
+            if key == key_name:
+                values.append(val)
+            values.extend(recursive_dict_extract(val, key_name))  # Extend with results from recursion
+    elif isinstance(obj, list):
+        for item in obj:
+            values.extend(recursive_dict_extract(item, key_name))  # Handle lists as well
+    return values
 
 def stats_calculation(benchmark_results: list, system_results: list) -> tuple[list, list, list]:
     """
@@ -180,13 +195,13 @@ def stats_calculation(benchmark_results: list, system_results: list) -> tuple[li
             if isinstance(benchmark_results[i], bool):  # Handle ASK query
                 benchmark_list = [benchmark_results[i]]
             elif isinstance(benchmark_results[i], list) and len(benchmark_results[i]) > 0:  # Handle SELECT query
-                benchmark_list = [result['result']['value'] if isinstance(result, dict) and 'result' in result else result for result in benchmark_results[i]]
+                benchmark_list = recursive_dict_extract(benchmark_results[i], 'value')
 
         if system_results[i] is not None:
             if isinstance(system_results[i], bool):  # Handle ASK query
                 system_list = [system_results[i]]
             elif isinstance(system_results[i], list) and len(system_results[i]) > 0:  # Handle SELECT query
-                system_list = [result['result']['value'] if isinstance(result, dict) and 'result' in result else result for result in system_results[i]]
+                system_list = recursive_dict_extract(system_results[i], 'value')
 
         if len(benchmark_list) > 0 and len(system_list) > 0:
             #todo recheck tt ca
