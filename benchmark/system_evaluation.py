@@ -165,7 +165,7 @@ def execute_query(sparql, query: str, query_index: int, query_type: str) -> tupl
                 logging.error(f"Error executing query {query_index} ({query_type}): {e}")
                 return None, ERROR_PREFIX + query_type + " query execution failed."
 
-def stats_calculation(benchmark_results: list, system_results: list) -> list:
+def stats_calculation(benchmark_results: list, system_results: list) -> tuple[list, list, list]:
     """
     Calculate precision, recall and F1 score for each question
     """
@@ -188,21 +188,24 @@ def stats_calculation(benchmark_results: list, system_results: list) -> list:
             elif isinstance(system_results[i], list) and len(system_results[i]) > 0:  # Handle SELECT query
                 system_list = [result['result']['value'] if isinstance(result, dict) and 'result' in result else result for result in system_results[i]]
 
-        if len(benchmark_list) > 0 and len(system_list) > 0: #todo separate and put to 0 for system
+        if len(benchmark_list) > 0 and len(system_list) > 0:
             #todo recheck tt ca
-            #intersection = len(set(benchmark_list) & set(system_list))
             intersection = []
             try:
                 intersection = [d for d in benchmark_list if d in system_list]
             except:
-                print("Error in intersection") #todo revoir intersection
+                logging.error("Error in intersection.") # if this error is raised, this function should be reviewed
             precisions.append(len(intersection) / len(system_list))
             recalls.append(len(intersection) / len(benchmark_list))
             f1_scores.append(2 * len(intersection) / (len(benchmark_list) + len(system_list)))
-        else:
+        elif len(benchmark_list) == 0: # If the benchmark has no results, we don't consider the question
             precisions.append(None)
             recalls.append(None)
             f1_scores.append(None)
+        elif len(system_list) == 0: # If the system has no results, the precision and recall are 0
+            precisions.append(0)
+            recalls.append(0)
+            f1_scores.append(0)
     return precisions, recalls, f1_scores
 
 def make_dict(meta: dict, questions_ids: list, questions: list, benchmark_queries: list, system_queries: list, benchmark_results: list, system_results: list, errors: list, reasoning: list, precisions: list, recalls: list, f1_scores: list) -> dict:

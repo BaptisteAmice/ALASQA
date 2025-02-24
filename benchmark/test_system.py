@@ -16,6 +16,7 @@ class TestSystem:
         except Exception as e:
             response = ""
             error = "Error: please try to intercept the error before." + str(e)
+            reasoning = ""
         return response, error, reasoning
 
     @abstractmethod

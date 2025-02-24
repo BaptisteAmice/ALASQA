@@ -131,7 +131,7 @@ Your goal is to generate commands that query a knowledge graph to find answers t
 
 ## Examples:  
 Q: At which school went Yayoi Kusama?
-A: <think>I need to find the entity corresponding to Yayoi Kusam, then see where she was educated.</think>
+A: <think>I need to find the entity corresponding to Yayoi Kusama, then see where she was educated.</think>
 <commands>yayoi kusama ; has education ;</commands> 
 
 Q: What is the boiling point of water?
