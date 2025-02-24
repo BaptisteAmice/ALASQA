@@ -64,6 +64,8 @@ const QueryTypes = {
     filter: "filter", // TypesAndRelations | IdentitiesOrValues | AggregationsAndOperators
     getSuggestions: "getSuggestions", // TypesAndRelations | IdentitiesOrValues | AggregationsAndOperators
     getResults: "getResults", // Execute outside of Sparklis to not be too dependent
+    undo: "undo", //mainly needed because a wrong command can remove the whole constructed query
+    redo: "redo",
 
     //if we are using the QA extension
     construct: "construct", // use the QA extension to construct a query

@@ -125,7 +125,11 @@ def queries_evaluation(benchmark_queries: list, system_queries: list, errors: li
         errors[i] += benchmark_error
         
         # Execute system query
-        system_result, system_error = execute_query(sparql, s_query, i, 'System')
+        if s_query is None or s_query == '':  # Skip system query if it's empty
+            system_result, system_error = None, 'No query to execute'
+        else:
+            system_result, system_error = execute_query(sparql, s_query, i, 'System')
+
         system_results.append(system_result)
         errors[i] += system_error
                 

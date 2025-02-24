@@ -92,14 +92,16 @@ async function qa_control() {
         }
 
         let resultText;
-        try {
-            let rows = results.rows;
-            resultText = JSON.stringify(rows);
-            console.log("result",resultText);
-        } catch (e) {
-            let message = ERROR_PREFIX + "error while parsing SPARQL results";
-            console.log(message, e);
-            errors += message;
+        if (results && results.rows) {
+            try {
+                let rows = results.rows;
+                resultText = JSON.stringify(rows);
+                console.log("result",resultText);
+            } catch (e) {
+                let message = ERROR_PREFIX + "error while parsing SPARQL results";
+                console.log(message, e);
+                errors += message;
+            }
         }
 
         updateAnswer(questionId, resultText, "???", sparql, errors); //todo sparklis_request 

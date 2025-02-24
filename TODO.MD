@@ -1,5 +1,7 @@
 PK POPUP: SI CLIQUE AUTOMATISE -> LES PREFIXES SONT DUPLIQUES DANS LA REQUETE POST
 
+si requete vide -> undo (parce que une mauvaise commande peut supprimer ce qui a été construit av)
+
 ->réponse vide car mauvaise condition de fin
 
 JUSTE AFK PARFOIS CA ARRIVE AUSSI
