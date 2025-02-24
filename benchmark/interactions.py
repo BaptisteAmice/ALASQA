@@ -10,7 +10,7 @@ import config
 options = Options()
 #options.headless = True #to not open the browser #do not seems to work
 
-def simulated_user(url: str, interactions, driver: webdriver.Firefox = None) -> tuple[str, str, webdriver.Firefox]:
+def simulated_user(url: str, interactions, driver: webdriver.Firefox = None) -> tuple[str, str, str, webdriver.Firefox]:
     """
     Simulate a given user interaction with a web page.
     If driver is None, a new driver is created.
@@ -22,8 +22,8 @@ def simulated_user(url: str, interactions, driver: webdriver.Firefox = None) -> 
     if driver is None:
         driver = webdriver.Firefox(options=options)
     driver.get(url)
-    result, error = interactions(driver)
-    return result, error, driver
+    result, error, reasoning = interactions(driver)
+    return result, error, reasoning, driver
 
 def wait_and_handle_alert(driver, timeout: int, end_condition) -> str:
     """
@@ -55,7 +55,7 @@ def wait_and_handle_alert(driver, timeout: int, end_condition) -> str:
 
     return ""
 
-def sparklisllm_question(driver, question, endpoint_sparql): #todo catch error ici (bien spécifier que c pas idéal, mais empeche crash)
+def sparklisllm_question(driver, question, endpoint_sparql) -> tuple[str, str, str]:
     """
     Interaction with the SparklisLLM system to ask a question
     """ # todo UnhandledAlertException handling
@@ -111,16 +111,28 @@ def sparklisllm_question(driver, question, endpoint_sparql): #todo catch error i
     # Get the last chatbot-qa div
     last_chatbot_qa = chatbot_qa_elements[-1]
 
-    # Find the chatbot-errors inside the last chatbot-qa div
-    chatbot_errors = last_chatbot_qa.find_element(By.CLASS_NAME, "chatbot-errors")
-    # Retrieve the error messages from the system
-    error += "Errors from the system [" + chatbot_errors.text + "]"
+    # Find the chatbot-reasoning inside the last chatbot-qa div
+    chatbot_reasoning = last_chatbot_qa.find_element(By.CLASS_NAME, "chatbot-reasoning")
+    # If the reasoning is empty, add a warning
+    if chatbot_reasoning.text == "":
+        error += "Warning: Empty reasoning from the system;"
 
     # Find the chatbot-answer inside the last chatbot-qa div
     chatbot_answer = last_chatbot_qa.find_element(By.CLASS_NAME, "chatbot-answer")
     # If the answer is empty, add a warning
     if chatbot_answer.text == "":
-        error += "Warning: Empty answer from the system."
+        error += "Warning: Empty answer from the system;"
 
+    # Find the sparql-request inside the last chatbot-qa div
     sparql_request = last_chatbot_qa.find_element(By.CLASS_NAME, "sparql-request")
-    return sparql_request.text, error
+    # If the sparql-request is empty, add a warning
+    if sparql_request.text == "":
+        error += "Warning: Empty SPARQL request from the system;"
+
+    # Find the chatbot-errors inside the last chatbot-qa div
+    chatbot_errors = last_chatbot_qa.find_element(By.CLASS_NAME, "chatbot-errors")
+    # Retrieve the error messages from the system
+    if chatbot_errors.text != "":
+        error += "Errors from the system [" + chatbot_errors.text + "]"
+
+    return sparql_request.text, error, chatbot_reasoning.text

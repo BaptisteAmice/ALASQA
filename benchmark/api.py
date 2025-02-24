@@ -38,7 +38,7 @@ def fetch_local_page(question: str, endpoint_sparql: str = config.SPARQL_ENDPOIN
     """
     Draft of the "/" endpoint. #todo
     """
-    response, error, driver = interactions.simulated_user(
+    response, error, reasoning, driver = interactions.simulated_user(
         config.SPARKLIS_FILE,
         lambda driver: interactions.sparklisllm_question(driver, question, endpoint_sparql)
     )
