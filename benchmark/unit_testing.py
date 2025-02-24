@@ -32,13 +32,6 @@ class TestStatsCalculation(unittest.TestCase):
         self.assertEqual(recalls, [0, 0, 0])
         self.assertEqual(f1s, [0, 0, 0])
 
-    #todo
-    # def test__bool_mixed(self):
-    #     precisions, recalls, f1s = stats_calculation([True, False, True], [True, True, False])
-    #     self.assertEqual(precisions, [0.5, 0.5, 0])
-    #     self.assertEqual(recalls, [1, 0.5, 0])
-    #     self.assertEqual(f1s, [2/3, 1/2, 0])
-
     ###### NONE
 
     def test_none_system(self):
@@ -77,7 +70,6 @@ class TestStatsCalculation(unittest.TestCase):
         self.assertEqual(recalls, [0])
         self.assertEqual(f1s, [0])
 
-    #todo on veut que ca soit bon ou pas? soit je renomme dans le sys, soit je change la fonction
     def test_dict_diffenrent_key(self):
         dictList = [{"result": {"type": "uri", "value": "http://www.wikidata.org/entity/Q42"}}]
         dictList2 = [{"Q215627_1": {"type": "uri", "value": "http://www.wikidata.org/entity/Q42"}}]

@@ -19,10 +19,7 @@ réussir à la construire avec sparklis (à la main) / voir les surcouches neces
 
 #todo regler probleme empty answer
 
-#todo quand sebastien sera revenu: regler probleme asynchrone
-
 #todo quand j'aurai fini -> calculs scores
-->0 plutot que None quand le probleme vient du systeme
 
 #todo slide 
 - requetes bon resultat
@@ -44,7 +41,6 @@ réussir à la construire avec sparklis (à la main) / voir les surcouches neces
 #todo? add tps par requete et tps global? -> peut etre fait dans test_system abstrait
 
 #todo enlever \ dans questions extraites
-
 
 #brainstorming des méthodes: pas à pas à la react, raisonneur à la fin
 #v1 2 llm en concurrence

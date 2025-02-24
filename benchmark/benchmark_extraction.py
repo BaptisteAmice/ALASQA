@@ -14,11 +14,13 @@ class Extractor:
         pass
 
 
-def trim_request(request: str) -> str: #todo doesn't work for mintaka
+def trim_request(request: str) -> str: #todo doesn't work for mintaka #neigher for wikidata
     """
-    Removes the backslashes from the request.
+    Removes unnecessary characters from a SPARQL request.
     """
-    return request.replace("\\", "")
+    #todo seems to do nothing, ensure it is needed and how to do it
+    request = request.replace('\\"', '"') # Replace \" with ", useful for QALD-10 and Mintaka1k
+    return request
 
 
 #####################################

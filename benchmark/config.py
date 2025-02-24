@@ -37,12 +37,12 @@ OUTPUT_FOLDER = script_dir + '/Outputs/'
 ####### 
 
 # Input json file containing the benchmark
-#BENCHMARK_FILE = script_dir + '/Inputs/' + 'Mintaka2.json' #todo
-BENCHMARK_FILE = script_dir + '/Inputs/' + 'qald3_10.json'
+BENCHMARK_FILE = script_dir + '/Inputs/' + 'qald_problems.json'
 
 # Benchmark name and tested system
 BENCHMARK_NAME = benchmark_extraction.QALD10 #todo
-#TESTED_SYSTEM = 'dummy' #todo
+
+# Name of the tested system
 TESTED_SYSTEM = 'sparklisllm' # dummy | sparklisllm
 
 # SPARQL endpoint, only used in scripts and not by the API

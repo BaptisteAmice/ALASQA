@@ -84,7 +84,6 @@ async function qa_control() {
             sparql = removePrefixes(sparql); //todo temp patch because of wikidata endpoint for which the prefixes are duplicated when requested by the LLM (only difference is that the event is automatically activated)
             results = await sparklis.evalSparql(sparql);
         } catch (e) {
-            //todo understand why this error is thrown
             //catch error thrown by wikidata endpoint
             let message = ERROR_PREFIX + "error while evaluating SPARQL query";
             console.log(message, e);
