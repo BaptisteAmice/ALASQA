@@ -120,11 +120,11 @@ Your goal is to generate commands that query a knowledge graph to find answers t
 2. Translate this reasoning into structured commands, separated by semicolons (;), and wrap them in <commands>...</commands>.  
 
 ## Command Syntax:  
-- a <class> → Retrieve entities of a class (e.g., a person).  
-- has <property> → Filter by property (e.g., has director).  
-- is <property> of → Reverse relation (e.g., is director of).  
-- > <value>, < <value>, between <v1> and <v2> → Value constraints.  
-- after <date>, before <date> → Time constraints.  
+- a [class] → Retrieve entities of a class (e.g., a person).  
+- has [property] → Filter by property (e.g., has director).  
+- is [property] of → Reverse relation (e.g., is director of).  
+- > [value], < [value], between [v1] and [v2] → Value constraints.  
+- after [date], before [date] → Time constraints.  
 - asc, desc → Sorting.  
 - and, or, not → Logical operators.  
 - up, down → Navigation.  

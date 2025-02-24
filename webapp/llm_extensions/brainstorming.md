@@ -103,7 +103,7 @@ Approche 4:
 12. Selection: <
 13. Selection: integer[2005] 
 14. -> sparklis mod table checker si il y a des lignes où la colonne 4 est a true 
-->deja on peu se contenter de la denriere colonne -> retourne vrai et faux ->todo peut etre faire un or ?
+->deja on peu se contenter de la dernière colonne -> retourne vrai et faux ->todo peut etre faire un or ?
 -> pas forcement vrai (on sait juste que tom brady est membre d'une team qui a gagné le superbowl, mais c'est pareil dans mintaka)
 
 COMMANDS: ???toask comment chercher string matching?
@@ -124,7 +124,7 @@ COMMANDS: gus van sant ; is director of ; has actor ; sean penn
 
 - How many oceans border Russia?
 COMMANDS: russia; has ocean ; PROBLEME: resultat inconsistant
-COMMANDS: a country; russie; has ocean ; a ocean -> wrap dans un count
+COMMANDS: a country; russie; has ocean ; a ocean -> à wrap dans un count
 
 //todo find best starting point
 //maybe several in concurrence
