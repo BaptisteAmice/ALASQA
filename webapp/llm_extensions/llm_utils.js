@@ -9,13 +9,13 @@ function usualPrompt(systemPrompt, userPrompt) {
     ];
 }
 
-async function sendPrompt(input, streamOption = true, updateCallback = null) {
+async function sendPrompt(input, streamOption = true, updateCallback = null, usedTemperature = 0.8) {
     //careful the first parameter can be interpreted as several parameters...
     try {
         const response = await fetch(API, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ messages: input, stream : streamOption })
+            body: JSON.stringify({ messages: input, temperature: usedTemperature,  stream : streamOption })
         });
         console.log("Ongoing...")
         let text = "";

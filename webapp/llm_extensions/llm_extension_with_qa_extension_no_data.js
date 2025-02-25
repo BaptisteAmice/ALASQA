@@ -2,6 +2,7 @@
 console.log("LLM with QA extension active");
 
 ERROR_PREFIX = "Error: ";
+WARNING_PREFIX = "Warning: ";
 
 // upon window load... create text field and ENTER handler
 window.addEventListener(
@@ -65,7 +66,7 @@ async function qa_control() {
     await process_question(qa)
         .then(() => console.log("All steps completed"))
         .catch(error => {
-            let message = ERROR_PREFIX + "Commands failed to finish due to: " + error;
+            let message = WARNING_PREFIX + "Commands failed to finish due to: " + error;
             console.log(message);
             errors += message;
         });
