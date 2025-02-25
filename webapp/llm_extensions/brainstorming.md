@@ -124,10 +124,20 @@ COMMANDS: gus van sant ; is director of ; has actor ; sean penn
 
 - How many oceans border Russia?
 COMMANDS: russia; has ocean ; PROBLEME: resultat inconsistant
-COMMANDS: a country; russie; has ocean ; a ocean -> à wrap dans un count
+COMMANDS: a country; russia; has ocean ; a ocean -> à wrap dans un count
 
 //todo find best starting point
 //maybe several in concurrence
+
+
+- The witcher
+the witcher ; ???based on??? ; has character ; has partner -> ???
+
+- Tencent
+is founder of ; Tencent ; has position ; National People's Congress
+
+todo no person
+todo choose focus
 
 opérations sparklis:
 - selection (prend parfois un argument)

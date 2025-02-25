@@ -4,7 +4,6 @@ si requete vide -> undo (parce que une mauvaise commande peut supprimer ce qui a
 
 ->réponse vide car mauvaise condition de fin
 
-JUSTE AFK PARFOIS CA ARRIVE AUSSI
 
 montrer questions et blocages
 ->montrer commandes envisagées
@@ -16,10 +15,6 @@ montrer questions et blocages
 question -> réponse
 réussir à la construire avec sparklis (à la main) / voir les surcouches necessaires
 -> adapter systeme
-
-#todo regler probleme empty answer
-
-#todo quand j'aurai fini -> calculs scores
 
 #todo slide 
 - requetes bon resultat

@@ -180,7 +180,7 @@ These commands will be used by Sparklis to generate SPARQL queries.
 ## Command Syntax:  
 - a [class] → Retrieve entities of a class (e.g., a person).  
 - has [property] → Filter by property (e.g., has director).  
-- is [property] of → Reverse relation (e.g., is director of).  
+- is [property] of → Reverse relation (e.g., is director of). Less adapted for filtering than has. 
 - > [value], < [value], between [v1] and [v2] → Value constraints where value, v1 and v2 are numbers.
 - after [date], before [date] → Time constraints.  
 - asc, desc → Sorting.  
@@ -189,7 +189,7 @@ These commands will be used by Sparklis to generate SPARQL queries.
 
 ## Examples:  
 Q: At which school went Yayoi Kusama?
-A: <think>I need to find the entity corresponding to Yayoi Kusama, then see where she was educated.</think>
+A: <think>Starting from the entity Yayoi Kusama seems the best approach. Then, I just need to find the relationship that represents at which school she was educated.</think>
 <commands>Yayoi Kusama ; has education ;</commands> 
 
 Q: What is the boiling point of water?
@@ -197,6 +197,10 @@ A: <think>The core of the request is WATER. From this entity I will probably be 
 <commands>water; has boiling;</commands>  
 
 Q: Movies by Spielberg or Tim Burton after 1980?
-A: <think>Find FILMS by Spielberg or Burton released after 1980.</think>  
+A: <think>I need to find FILMS by Spielberg or Burton released after 1980. I can start by listing FILMS and then filter by DIRECTOR and RELEASE DATE.</think> 
 <commands>a film; has director; Tim Burton; or; Spielberg; has release date; after 1980;</commands>  
+
+Q: among the founders of tencent company, who has been member of national people' congress?"
+A: <think>I can start by finding FOUNDERS of something called TENCENT. Then, I can filter by people who have been members of the NATIONAL PEOPLE'S CONGRESS.</think>
+<commands>is founder of ; Tencent ; has position ; National People's Congress;</commands>
 `;
