@@ -31,6 +31,7 @@ def main(benchmark_file: str, benchmark_name: str, tested_system_name: str, endp
     # Initialize empty lists to accumulate results
     all_system_queries, all_errors, all_reasonings = [], [], []
     all_benchmark_results, all_system_results = [], []
+    all_responses_types = []
     all_precisions, all_recalls, all_f1_scores = [], [], []
 
     # Process in batches (to save incrementally the results in case of crash)
@@ -41,7 +42,7 @@ def main(benchmark_file: str, benchmark_name: str, tested_system_name: str, endp
         batch_benchmark_queries = benchmark_queries[i:i + batch_size]
 
         batch_system_queries, batch_errors, batch_reasonings = system_queries_generation(batch_questions, system, endpoint)
-        batch_benchmark_results, batch_system_results, batch_errors = queries_evaluation(
+        batch_benchmark_results, batch_expected_reponse_types, batch_system_results, batch_errors = queries_evaluation(
             batch_benchmark_queries, batch_system_queries, batch_errors, endpoint
         )
         batch_precisions, batch_recalls, batch_f1_scores = stats_calculation(batch_benchmark_results, batch_system_results)
@@ -52,6 +53,7 @@ def main(benchmark_file: str, benchmark_name: str, tested_system_name: str, endp
         all_reasonings.extend(batch_reasonings)
         all_benchmark_results.extend(batch_benchmark_results)
         all_system_results.extend(batch_system_results)
+        all_responses_types.extend(batch_expected_reponse_types)
         all_precisions.extend(batch_precisions)
         all_recalls.extend(batch_recalls)
         all_f1_scores.extend(batch_f1_scores)
@@ -59,7 +61,8 @@ def main(benchmark_file: str, benchmark_name: str, tested_system_name: str, endp
         # Rewrite the file after each batch
         data = make_dict(meta, questions_ids[: len(all_system_queries)], questions[: len(all_system_queries)], 
                          benchmark_queries[: len(all_system_queries)], all_system_queries, 
-                         all_benchmark_results, all_system_results, all_errors, all_reasonings,
+                         all_benchmark_results, all_system_results, all_responses_types,
+                         all_errors, all_reasonings,
                          all_precisions, all_recalls, all_f1_scores)
         
         os.makedirs(config.OUTPUT_FOLDER, exist_ok=True)  # Ensure the directory exists
@@ -110,7 +113,20 @@ def system_queries_generation(questions: list, system: TestSystem, endpoint_spar
         reasonings.append(reasoning)
     return queries, errors, reasonings
 
-def queries_evaluation(benchmark_queries: list, system_queries: list, errors: list, endpoint: str) -> tuple[list, list, list]:
+def find_response_type(response: dict) -> str:
+    """
+    Find the response type of a SPARQL query result.
+    """
+    if response is None:
+        return 'None'
+    elif isinstance(response, bool):
+        return 'boolean'
+    elif isinstance(response, list) and len(response) > 0:
+        return recursive_dict_extract(response, 'type')[0]  # Find the first type
+    else:
+        return 'unknown'
+
+def queries_evaluation(benchmark_queries: list, system_queries: list, errors: list, endpoint: str) -> tuple[list, list, list, list]:
     """
     Execute the benchmark and system queries on the SPARQL endpoint and return the results.
     """
@@ -121,9 +137,11 @@ def queries_evaluation(benchmark_queries: list, system_queries: list, errors: li
     logging.info('Wrapper set')
     benchmark_results = []
     system_results = []
+    expected_response_types = []
     for i, (b_query, s_query) in enumerate(zip(benchmark_queries, system_queries)):
         # Execute benchmark query
         benchmark_result, benchmark_error = execute_query(sparql, b_query, i, 'Benchmark')
+        expected_response_types.append(find_response_type(benchmark_result)) # Find the response type of the benchmark query
         benchmark_results.append(benchmark_result)
         errors[i] += benchmark_error
         
@@ -137,7 +155,7 @@ def queries_evaluation(benchmark_queries: list, system_queries: list, errors: li
         errors[i] += system_error
                 
         logging.info(f'Query {i} evaluated')
-    return benchmark_results, system_results, errors
+    return benchmark_results, expected_response_types, system_results, errors
 
 def execute_query(sparql, query: str, query_index: int, query_type: str) -> tuple:
     """
@@ -223,16 +241,22 @@ def stats_calculation(benchmark_results: list, system_results: list) -> tuple[li
             f1_scores.append(0)
     return precisions, recalls, f1_scores
 
-def make_dict(meta: dict, questions_ids: list, questions: list, benchmark_queries: list, system_queries: list, benchmark_results: list, system_results: list, errors: list, reasoning: list, precisions: list, recalls: list, f1_scores: list) -> dict:
+def make_dict(meta: dict, questions_ids: list, questions: list, 
+              benchmark_queries: list, system_queries: list, benchmark_results: list, 
+              system_results: list, all_responses_types: list, errors: list, reasoning: list, 
+              precisions: list, recalls: list, f1_scores: list) -> dict:
     """
     Create a dictionary with all the data.
     Also calculate the stats.
     """
     logging.info('Make dict Start')
+
+    # Global stats
     stats = {}
     valid_precisions = [p for p in precisions if p is not None]
     valid_recalls = [r for r in recalls if r is not None]
     valid_f1_scores = [f for f in f1_scores if f is not None]
+
     stats['NbQuestions'] = len(questions_ids)
     stats['NbValidQuestions'] = min(len(valid_precisions), len(valid_recalls), len(valid_f1_scores)) #todo better name
     #todo classifier questions booléennes (résultat booléen pour le benchmark)
@@ -245,6 +269,28 @@ def make_dict(meta: dict, questions_ids: list, questions: list, benchmark_querie
         stats['MeanRecall'] = None
         stats['MeanF1Score'] = None
 
+    # Global stats per type of expected response
+    bool_ids = [i for i, t in enumerate(all_responses_types) if t == 'boolean']
+    uri_ids = [i for i, t in enumerate(all_responses_types) if t == 'uri']
+    literal_ids = [i for i, t in enumerate(all_responses_types) if t == 'literal']
+
+    stats['NbBooleanQuestions'] = len(bool_ids)
+    if len(bool_ids) > 0:
+        stats['MeanPrecisionBoolean'] = sum([precisions[i] for i in bool_ids]) / len(bool_ids)
+        stats['MeanRecallBoolean'] = sum([recalls[i] for i in bool_ids]) / len(bool_ids)
+        stats['MeanF1ScoreBoolean'] = sum([f1_scores[i] for i in bool_ids]) / len(bool_ids)
+    stats['NbUriQuestions'] = len(uri_ids)
+    if len(uri_ids) > 0:
+        stats['MeanPrecisionUri'] = sum([precisions[i] for i in uri_ids]) / len(uri_ids)
+        stats['MeanRecallUri'] = sum([recalls[i] for i in uri_ids]) / len(uri_ids)
+        stats['MeanF1ScoreUri'] = sum([f1_scores[i] for i in uri_ids]) / len(uri_ids)
+    stats['NbLiteralQuestions'] = len(literal_ids)
+    if len(literal_ids) > 0:
+        stats['MeanPrecisionLiteral'] = sum([precisions[i] for i in literal_ids]) / len(literal_ids)
+        stats['MeanRecallLiteral'] = sum([recalls[i] for i in literal_ids]) / len(literal_ids)
+        stats['MeanF1ScoreLiteral'] = sum([f1_scores[i] for i in literal_ids]) / len(literal_ids)
+
+    # Add all the relevant data in the same dictionary
     data = {}
     for i in range(len(questions_ids)):
         data[questions_ids[i]] = {
@@ -255,6 +301,7 @@ def make_dict(meta: dict, questions_ids: list, questions: list, benchmark_querie
             'F1Score' : f1_scores[i],
             'BenchmarkQuery' : benchmark_queries[i],
             'SystemQuery' : system_queries[i],
+            'BenchmarkResultType' : all_responses_types[i],
             'BenchmarkResult' : benchmark_results[i],
             'SystemResult' : system_results[i],
             'Reasoning' : reasoning[i]
