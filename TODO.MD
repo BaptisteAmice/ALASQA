@@ -51,11 +51,6 @@ réussir à la construire avec sparklis (à la main) / voir les surcouches neces
 
 #todo prompt premiere question -> lire retour -> suite
 
-se concentrer sur l'extraction
-//todo réessayer en listant les commandes
-//todo evoquer spaklis, donner structure model et langage des commandes
-    // a qq ; has ...; is ... of ... ; ...    
-
 //wikidata requests -> popup comme quoi pas valides qui bloque le reste (alors que sans popup marcherait)
 
 ____________

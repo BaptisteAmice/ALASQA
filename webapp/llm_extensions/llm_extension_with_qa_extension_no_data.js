@@ -113,6 +113,7 @@ async function qa_control() {
 
 const prompt_template = `
 Your goal is to generate commands that query a knowledge graph to find answers to a given question.  
+These commands will be used by Sparklis to generate SPARQL queries.
 
 ## Format:  
 1. Always start by reasoning about what entities and relationships are needed. Wrap this in <think>...</think>.  
@@ -122,19 +123,19 @@ Your goal is to generate commands that query a knowledge graph to find answers t
 - a [class] → Retrieve entities of a class (e.g., a person).  
 - has [property] → Filter by property (e.g., has director).  
 - is [property] of → Reverse relation (e.g., is director of).  
-- > [value], < [value], between [v1] and [v2] → Value constraints.  
+- > [value], < [value], between [v1] and [v2] → Value constraints where value, v1 and v2 are numbers.
 - after [date], before [date] → Time constraints.  
 - asc, desc → Sorting.  
 - and, or, not → Logical operators.  
-- up, down → Navigation.  
+- up, down → Change the focus of the query.  
 
 ## Examples:  
 Q: At which school went Yayoi Kusama?
 A: <think>I need to find the entity corresponding to Yayoi Kusama, then see where she was educated.</think>
-<commands>yayoi kusama ; has education ;</commands> 
+<commands>Yayoi Kusama ; has education ;</commands> 
 
 Q: What is the boiling point of water?
-A: <think>The core of the request is WATER. From this entity I will propably be able to get a property such as its BOILING POINT.</think>  
+A: <think>The core of the request is WATER. From this entity I will probably be able to get a property such as its BOILING POINT.</think>  
 <commands>water; has boiling;</commands>  
 
 Q: Movies by Spielberg or Tim Burton after 1980?
