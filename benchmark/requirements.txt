@@ -1,13 +1,16 @@
 # Python 3.12.9
 
 # API
-fastapi[standard]
+fastapi[standard]==0.115.8
 
 # SPARQL requests
-sparqlwrapper
+sparqlwrapper==2.0.0
 
 # HTTP requests
-requests
+requests==2.32.3
 
 # User simulation
 selenium==4.28.1
+
+# Plotting
+matplotlib==3.10.0

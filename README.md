@@ -6,6 +6,8 @@ todo
 
 
 ## Installation
+#todo used browser and its version
+
 launch a local llm
     (in our case) mistral-nemo-instruct-2407
 set llm api in llm_utils.js and in benchmark/config.py

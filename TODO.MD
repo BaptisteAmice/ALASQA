@@ -1,3 +1,8 @@
+#https://lmstudio.ai/docs/api/tools
+#todo yaml of python code
+
+#todo graphes par strategie score questions
+
 PK POPUP: SI CLIQUE AUTOMATISE -> LES PREFIXES SONT DUPLIQUES DANS LA REQUETE POST
 
 si requete vide -> undo (parce que une mauvaise commande peut supprimer ce qui a été construit av)
@@ -11,10 +16,6 @@ montrer questions et blocages
 ????toask is year of???
 ???toask comment chercher string matching???
 ------------------------
-#todo etape actuelle
-question -> réponse
-réussir à la construire avec sparklis (à la main) / voir les surcouches necessaires
--> adapter systeme
 
 #todo slide 
 - requetes bon resultat
