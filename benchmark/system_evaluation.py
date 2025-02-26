@@ -72,8 +72,8 @@ def main(benchmark_file: str, benchmark_name: str, tested_system_name: str, endp
         
         logging.info(f'Batch {i} done')
 
-        #close the system
-        system.end_system()
+    #close the system
+    system.end_system()
 
     logging.info('########## System evaluation End ##########')
 

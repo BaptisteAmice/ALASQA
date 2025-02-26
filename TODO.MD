@@ -1,21 +1,29 @@
-Empty SPARQL request from the system : 68
-    - commands failed to finish : 208
-    - property not found : 36
-    - une commande de la liste fait revenir au point de départ
-        - Riemannian geometry ; is named after ; (plutot que has)
-        - une des commandes de la liste lève une alerte: requête possible mais non comprise par le endpoint
-    - Reasoning vide:  20
-        - erreur catch en python (trop tard) -> alerte et erreur marionnette (peut être à cause de commandes invalides)
->= island
- 
-No benchmark result
-    - none : 1
-    - [] : 5
-Boolean
-    - possible que si comparaison ou ???(17 a marché)
-- 0 < Scores < 1 : 5
+react code
+https://github.com/ysymyth/ReAct/blob/master/hotpotqa.ipynb
+prompt file
+https://raw.githubusercontent.com/ysymyth/ReAct/refs/heads/master/prompts/prompts_naive.json
 
-------------------
+instruction = """Generate a SPARQL query to solve a question answering task with interleaving Thought, Action, Observation steps. Thought can reason about the current situation, and Action can be three types: 
+(1) Search[entity], which searches --- la liste des matches ---
+(2) Lookup[keyword], which --- selectionne un match ---
+(3) Finish[answer], which returns the generated query and finishes the task.
+Here are some examples.
+"""
+webthink_prompt = instruction + webthink_examples
+
+filter suggestions
+- c quoi les 3 types?
+- get les 3 fields -> remplir et valider
+- eventuellement remplacer commande match par un filter puis appuis bouton
+get suggestions
+- ???
+get responses
+- ???
+
+
+utilisation tool?
+
+-------------
 #https://lmstudio.ai/docs/api/tools
 #todo yaml of python code
 
