@@ -22,6 +22,10 @@ function removePrefixes(sparqlQuery) {
         .join('\n');
 }
 
+function countCommands(commands) {
+    return commands.split(";").filter(cmd => cmd.trim().length > 0).length;
+}
+
 async function qa_control() {
     //reset sparklis
     sparklis.home();
@@ -41,17 +45,21 @@ async function qa_control() {
 
     questionId = addLLMQuestion(input_question);
    
+    let reasoningText = ""; //to keep reasoning text and be able to update it
     let output = await sendPrompt(
         usualPrompt(systemMessage, input_question), 
         true, 
-        (text) => updateReasoning(questionId, text) // Capture `questionId` and send `text`
+        (text) => { 
+            updateReasoning(questionId, text); // Capture `questionId` and send `text`
+            reasoningText = text;
+        } 
     );    
 
     //let output = 'blablabla<commands>a animal ; has family ; camelini;</commands>dsfsd';
     //get commands from regular expression <commands>...</commands>
-    let match = output.match(/<commands>(.*?)<\/commands>/s);
-    
-    let commands = match ? match[1].trim() : "output malformated"; 
+    let matchCommands = output.match(/<commands>(.*?)<\/commands>/s);
+
+    let commands = matchCommands ? matchCommands[1].trim() : "output malformated"; 
     let qa = document.getElementById("qa");
     
     if (commands) {
@@ -62,6 +70,10 @@ async function qa_control() {
         errors += message;
     }
 
+    //count commands
+    let commandsCount = countCommands(commands);
+    console.log("Number of commands:", commandsCount);
+
     //Execute commands and wait for them to finish or to halt
     await process_question(qa)
         .then(() => console.log("All steps completed"))
@@ -69,7 +81,14 @@ async function qa_control() {
             let message = WARNING_PREFIX + "Commands failed to finish due to: " + error;
             console.log(message);
             errors += message;
-        });
+        }
+    );
+
+    //get remaining commands count
+    let remainingCommands = qa.value;
+    let remainingCommandsCount = countCommands(remainingCommands);
+    console.log("Remaining commands:", remainingCommandsCount);
+    let executedCommmandsCount = commandsCount - remainingCommandsCount;
 
 
     //get sparklis results from the commands
