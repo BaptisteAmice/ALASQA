@@ -32,7 +32,7 @@ def accuracy_recall_f1_plot(accuracy, recall, f1_scores):
 
 # Boxplot of the scores
 def boxplot_scores(accuracy, recall, f1_scores):
-    plt.boxplot([accuracy, recall, f1_scores], labels=["Accuracy", "Recall", "F1-score"])
+    plt.boxplot([accuracy, recall, f1_scores], tick_labels=["Accuracy", "Recall", "F1-score"])
     plt.ylabel("Score")
     plt.title("Boxplot of the scores")
     plt.grid(True)

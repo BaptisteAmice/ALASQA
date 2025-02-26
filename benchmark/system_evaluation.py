@@ -8,8 +8,6 @@ import benchmark_extraction
 from test_system import TestSystem, testSystemFactory
 import config
 
-#todo changer les lists des types par des tuples
-
 ERROR_PREFIX = "Error: "
 
 def main(benchmark_file: str, benchmark_name: str, tested_system_name: str, endpoint: str, used_llm: str):
@@ -315,7 +313,7 @@ def make_dict(meta: dict, questions_ids: list, questions: list,
         }
     return {**meta, 'Stats' : stats, 'Data' : data}
 
-def getModelName(model_api):
+def getModelName(model_api) -> str:
     """
     Get the name of the used LLM model from the model API.
     """

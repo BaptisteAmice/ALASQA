@@ -1,3 +1,21 @@
+Empty SPARQL request from the system : 68
+    - commands failed to finish : 208
+    - property not found : 36
+    - une commande de la liste fait revenir au point de départ
+        - Riemannian geometry ; is named after ; (plutot que has)
+        - une des commandes de la liste lève une alerte: requête possible mais non comprise par le endpoint
+    - Reasoning vide:  20
+        - erreur catch en python (trop tard) -> alerte et erreur marionnette (peut être à cause de commandes invalides)
+>= island
+ 
+No benchmark result
+    - none : 1
+    - [] : 5
+Boolean
+    - possible que si comparaison ou ???(17 a marché)
+- 0 < Scores < 1 : 5
+
+------------------
 #https://lmstudio.ai/docs/api/tools
 #todo yaml of python code
 

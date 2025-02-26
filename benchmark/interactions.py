@@ -42,7 +42,7 @@ def wait_and_handle_alert(driver, timeout: int, end_condition) -> str:
             logging.warning(f"Unhandled alert detected and dismissed: {alert_text}")
         except:
             # For exemple useful with wikidata endpoint alerts, that disapear before the alert is read 
-            logging.warning("An alert was dismissed before it could be read.") #todo veut peut etre dire qu'on s'y prend mal
+            logging.warning("An alert was dismissed before it could be read.")
         # Retry waiting after dismissing the alert (generally the condition is met after the alert)
         return wait_and_handle_alert(driver, timeout, end_condition)  # Retry waiting after dismissing the alert
 
@@ -58,9 +58,7 @@ def wait_and_handle_alert(driver, timeout: int, end_condition) -> str:
 def sparklisllm_question(driver, question, endpoint_sparql) -> tuple[str, str, str]:
     """
     Interaction with the SparklisLLM system to ask a question
-    """ # todo UnhandledAlertException handling
-    driver.implicitly_wait(0.5)
-
+    """
     # The errors will be concatenated in this variable
     error = ""
 
@@ -75,7 +73,6 @@ def sparklisllm_question(driver, question, endpoint_sparql) -> tuple[str, str, s
         driver.get(driver.current_url + url_extension)
 
     # Set the sparql endpoint
-    #todo crash parfois ici
     sparql_endpoint_input = driver.find_element(by=By.ID, value="sparql-endpoint-input")
     sparql_endpoint_input.clear()
     sparql_endpoint_input.send_keys(endpoint_sparql)
