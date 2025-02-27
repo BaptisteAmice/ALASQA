@@ -1,7 +1,7 @@
 from collections import defaultdict
 import json
 import matplotlib.pyplot as plt
-import config
+import os
 
 # Extract precision, recall and f1 list from dictionary (["data"][str(i)][Precision]
 def extract_scores(file_name: str) -> tuple[list, list, list]:
@@ -91,13 +91,15 @@ def count_metric_values(json_file, constraints=None):
     }
 
 if __name__ == "__main__":
-    input_file = config.script_dir + "/Outputs/to_keep/llm_extension_with_qa_extension_no_data/QALD-10_sparklisllm_20250225_145041.json"
-    # precisions, recalls, f1_scores = extract_scores(input_file)
-    # accuracy_recall_f1_plot(precisions, recalls, f1_scores)
-    # boxplot_scores(precisions, recalls, f1_scores)
+    script_dir = os.path.dirname(os.path.realpath(__file__))
+    input_file = script_dir + "/Outputs/to_keep/llm_extension_with_qa_extension_no_data/QALD-10_sparklisllm_20250227_102542_partiel.json"
+    precisions, recalls, f1_scores = extract_scores(input_file)
+    accuracy_recall_f1_plot(precisions, recalls, f1_scores)
+    boxplot_scores(precisions, recalls, f1_scores)
     
     constraints = {
-        "SystemResult": lambda x:  x==None or x==[]
+        "BenchmarkResult": lambda x : not x in [True, False],
+        "SystemResult": lambda x:  x in [True, False]
     }   
 
     print(count_metric_values(input_file,constraints))

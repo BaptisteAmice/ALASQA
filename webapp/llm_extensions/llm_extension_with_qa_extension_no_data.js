@@ -95,14 +95,14 @@ async function qa_control() {
     let place = sparklis.currentPlace();
 
     //define callback
-    place.onEvaluated(async () => {
+    place.onEvaluated(async () => { //todo à mettre dans un promise
         console.log("Place evaluated");
         let sparql = place.sparql();
         console.log("sparql",sparql);
         let results;
         try { 
             sparql = removePrefixes(sparql); //todo temp patch because of wikidata endpoint for which the prefixes are duplicated when requested by the LLM (only difference is that the event is automatically activated)
-            results = await sparklis.evalSparql(sparql);
+            results = await sparklis.evalSparql(sparql); //todo peut etre pas comme ca
         } catch (e) {
             //catch error thrown by wikidata endpoint
             let message = ERROR_PREFIX + "error while evaluating SPARQL query";

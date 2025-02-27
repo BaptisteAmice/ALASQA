@@ -14,3 +14,7 @@ selenium==4.28.1
 
 # Plotting
 matplotlib==3.10.0
+
+
+# Temp for testing
+openai

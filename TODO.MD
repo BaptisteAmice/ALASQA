@@ -1,3 +1,52 @@
+#todo prochaine fois
+- faire passer les requetes, savoir EXACTEMENT QUAND PASSE PAS, identifier tt les scenarios
+
+1) LLM generation: No problem | error
+2) SPARKLIS (QA extension) commands to execute: No problem
+3) popup????
+...???
+
+champs erreur nombre
+
+#todo ajouter logs coté javascript
+- réponse du llm
+- réponse conforme
+1) etape 1: llm, etape 2: sparklis, etc... -> histogramme
+communication js <-> python
+
+todo envoyer requetes à sebastien cas mauvaise requete, cas is remove
+
+
+#todo patcher is something
+->considéré comme entité -> si pas de rep -> seul suggrestion est celle obtenue -> l'annule
+->pourrait mettre seuil sur la distance
+->pourrait d'avantage impliquer llm 
+- Class _
+- Prop _   
+- Prop inv _
+- Prop -> fwd/bwd
+- Plutot que expression régulière utiliser ca -> ajuster syntaxe des commandes
+- y réfléchir
+- s named after objet : this named after / is named after this
+
+- ou sinon juste dire si propriété
+- classe et propriétés 
+- entités
+- ...
+- prop something
+
+todo fuseki v2
+
+-todo
+-limites
+-superlatif
+-boolean
+
+-if wikidata mod -> wikidata search -> extarnal search -> get_constr inspi
+
+
+
+
 react code
 https://github.com/ysymyth/ReAct/blob/master/hotpotqa.ipynb
 prompt file
@@ -42,14 +91,6 @@ montrer questions et blocages
 ????toask is year of???
 ???toask comment chercher string matching???
 ------------------------
-
-#todo slide 
-- requetes bon resultat
-- requetes bien formées mais pas bon résultat
-- requete ressemble mais pas bien formée
-- requete problème de typage (ask/select)
-- combien
--limites 
 
 #todo commenter mieux les raisons dans le code
 
