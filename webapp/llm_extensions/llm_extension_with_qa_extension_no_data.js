@@ -4,6 +4,30 @@ console.log("LLM with QA extension active");
 ERROR_PREFIX = "Error: ";
 WARNING_PREFIX = "Warning: ";
 
+
+STATUS_NOT_STARTED = "Not started";
+STATUS_ONGOING = "ONGOING";
+STATUS_DONE = "DONE";
+STATUS_FAILED = "FAILED";
+var steps_status = {
+    "0" : { "Name" : "Start", "Status" : STATUS_NOT_STARTED },
+    "1" : { "Name" : "LLM generation", "Status" : STATUS_NOT_STARTED },
+    "2" : { "Name" : "Retrieving commands", "Status" : STATUS_NOT_STARTED },
+    "3" : { "Name" : "QA extension commands execution", "Status" : STATUS_NOT_STARTED },
+    "4" : { "Name" : "Evaluate SPARQL in Sparklis", "Status" : STATUS_NOT_STARTED },
+    "5" : { "Name" : "Parsing results for display", "Status" : STATUS_NOT_STARTED },
+};
+
+function resetStepsStatus() {
+    for (let step in steps_status) {
+        steps_status[step]["Status"] = STATUS_NOT_STARTED;
+    }
+}
+
+function updateStepsStatus(step, status) {
+    steps_status[step.toString()]["Status"] = status;
+    localStorage.setItem("steps_status", JSON.stringify(steps_status));
+}
 // upon window load... create text field and ENTER handler
 window.addEventListener(
     'load',
@@ -27,6 +51,10 @@ function countCommands(commands) {
 }
 
 async function qa_control() {
+    resetStepsStatus();
+    currentStep = 0;
+    updateStepsStatus(currentStep, STATUS_DONE);
+
     //reset sparklis
     sparklis.home();
 
@@ -46,6 +74,8 @@ async function qa_control() {
     questionId = addLLMQuestion(input_question);
    
     let reasoningText = ""; //to keep reasoning text and be able to update it
+    currentStep++;
+    updateStepsStatus(currentStep, STATUS_ONGOING);
     let output = await sendPrompt(
         usualPrompt(systemMessage, input_question), 
         true, 
@@ -53,10 +83,18 @@ async function qa_control() {
             updateReasoning(questionId, text); // Capture `questionId` and send `text`
             reasoningText = text;
         } 
-    );    
+    );  
 
+    if (reasoningText != "") {
+        updateStepsStatus(currentStep, STATUS_DONE);
+    } else {
+        updateStepsStatus(currentStep, STATUS_FAILED);
+    }
     //let output = 'blablabla<commands>a animal ; has family ; camelini;</commands>dsfsd';
+
     //get commands from regular expression <commands>...</commands>
+    currentStep++;
+    updateStepsStatus(currentStep, STATUS_ONGOING);
     let matchCommands = output.match(/<commands>(.*?)<\/commands>/s);
 
     let commands = matchCommands ? matchCommands[1].trim() : "output malformated"; 
@@ -64,10 +102,12 @@ async function qa_control() {
     
     if (commands) {
         qa.value = commands;  // Safe access since we checked if commands is not null
+        updateStepsStatus(currentStep, STATUS_DONE);
     } else {
         let message = ERROR_PREFIX + "No match found for <commands>...</commands>;"
         console.log(message);
         errors += message;
+        updateStepsStatus(currentStep, STATUS_FAILED);
     }
 
     //count commands
@@ -75,12 +115,19 @@ async function qa_control() {
     console.log("Number of commands:", commandsCount);
 
     //Execute commands and wait for them to finish or to halt
+    currentStep++;
+    updateStepsStatus(currentStep, STATUS_ONGOING);
     await process_question(qa)
-        .then(() => console.log("All steps completed"))
+        .then(() => { 
+            console.log("All steps completed");
+            updateStepsStatus(currentStep, STATUS_DONE);
+            }
+        )
         .catch(error => {
             let message = WARNING_PREFIX + "Commands failed to finish due to: " + error;
             console.log(message);
             errors += message;
+            updateStepsStatus(currentStep, STATUS_FAILED);
         }
     );
 
@@ -100,26 +147,34 @@ async function qa_control() {
         let sparql = place.sparql();
         console.log("sparql",sparql);
         let results;
+        currentStep++;
+        updateStepsStatus(currentStep, STATUS_ONGOING);
         try { 
             sparql = removePrefixes(sparql); //todo temp patch because of wikidata endpoint for which the prefixes are duplicated when requested by the LLM (only difference is that the event is automatically activated)
             results = await sparklis.evalSparql(sparql); //todo peut etre pas comme ca
+            updateStepsStatus(currentStep, STATUS_DONE);
         } catch (e) {
             //catch error thrown by wikidata endpoint
             let message = ERROR_PREFIX + "error while evaluating SPARQL query";
             console.log(message, e);
             errors += message;
+            updateStepsStatus(currentStep, STATUS_FAILED);
         }
 
+        currentStep++;
+        updateStepsStatus(currentStep, STATUS_ONGOING);
         let resultText;
         if (results && results.rows) {
             try {
                 let rows = results.rows;
                 resultText = JSON.stringify(rows);
                 console.log("result",resultText);
+                updateStepsStatus(currentStep, STATUS_DONE);
             } catch (e) {
                 let message = ERROR_PREFIX + "error while parsing SPARQL results";
                 console.log(message, e);
                 errors += message;
+                updateStepsStatus(currentStep, STATUS_FAILED);
             }
         }
 

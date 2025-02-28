@@ -55,6 +55,17 @@ def wait_and_handle_alert(driver, timeout: int, end_condition) -> str:
 
     return ""
 
+def getStepsStatus(driver):
+    """
+    Get the current status of the steps.
+    Use the local storage to be resiliet to crashes of the JS script.
+    """
+    try:
+        return driver.execute_script("return localStorage.getItem('steps_status');")
+    except Exception as e:
+        logging.error(f"Error while getting the steps status: {e}")
+        return "Failed to get steps status"
+
 def sparklisllm_question(driver, question, endpoint_sparql) -> tuple[str, str, str]:
     """
     Interaction with the SparklisLLM system to ask a question
@@ -131,5 +142,9 @@ def sparklisllm_question(driver, question, endpoint_sparql) -> tuple[str, str, s
     # Retrieve the error messages from the system
     if chatbot_errors.text != "":
         error += "Errors from the system [" + chatbot_errors.text + "]"
+
+    # Get the current status of the steps
+    steps_status = getStepsStatus(driver)
+    print(steps_status)
 
     return sparql_request.text, error, chatbot_reasoning.text
