@@ -10,7 +10,7 @@ import config
 options = Options()
 #options.headless = True #to not open the browser #do not seems to work
 
-def simulated_user(url: str, interactions, driver: webdriver.Firefox = None) -> tuple[str, str, str, webdriver.Firefox]:
+def simulated_user(url: str, interactions, driver: webdriver.Firefox = None) -> tuple[str, str, str, str, webdriver.Firefox]:
     """
     Simulate a given user interaction with a web page.
     If driver is None, a new driver is created.
@@ -22,8 +22,8 @@ def simulated_user(url: str, interactions, driver: webdriver.Firefox = None) -> 
     if driver is None:
         driver = webdriver.Firefox(options=options)
     driver.get(url)
-    result, error, reasoning = interactions(driver)
-    return result, error, reasoning, driver
+    result, error, steps_status, reasoning = interactions(driver)
+    return result, error, steps_status, reasoning, driver
 
 def wait_and_handle_alert(driver, timeout: int, end_condition) -> str:
     """
@@ -66,7 +66,7 @@ def getStepsStatus(driver):
         logging.error(f"Error while getting the steps status: {e}")
         return "Failed to get steps status"
 
-def sparklisllm_question(driver, question, endpoint_sparql) -> tuple[str, str, str]:
+def sparklisllm_question(driver, question, endpoint_sparql) -> tuple[str, str, str, str]:
     """
     Interaction with the SparklisLLM system to ask a question
     """
@@ -145,6 +145,5 @@ def sparklisllm_question(driver, question, endpoint_sparql) -> tuple[str, str, s
 
     # Get the current status of the steps
     steps_status = getStepsStatus(driver)
-    print(steps_status)
 
-    return sparql_request.text, error, chatbot_reasoning.text
+    return sparql_request.text, error, steps_status, chatbot_reasoning.text

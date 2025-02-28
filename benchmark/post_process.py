@@ -42,57 +42,62 @@ def boxplot_scores(accuracy, recall, f1_scores):
 import json
 from collections import defaultdict
 
-def count_metric_values(json_file, constraints=None):
+def load_and_filter_data(json_file, constraints=None):
     """
-    Counts occurrences of metric values in a JSON file, while applying constraints.
-
+    Loads a JSON file and filters its data based on given constraints.
+    
     Args:
         json_file (str): Path to the JSON file.
-        constraints (dict): A dictionary where keys are field names (e.g., "Precision")
-                            and values are functions that return True if the entry is valid.
-
+        constraints (dict): A dictionary where keys are field names and values are functions
+                            that return True if the entry is valid.
+    
     Returns:
-        dict: Dictionary containing counts of metric values for valid entries.
+        list: Filtered list of data entries.
     """
     with open(json_file, "r", encoding="utf-8") as f:
         data = json.load(f)
+    
+    filtered_data = []
+    for entry in data.get("Data", {}).values():
+        if constraints and not all(func(entry.get(key)) for key, func in constraints.items()):
+            continue
+        filtered_data.append(entry)
+    
+    return filtered_data
 
+
+def count_metric_values(filtered_data):
+    """
+    Counts occurrences of metric values in a list of filtered data entries.
+    
+    Args:
+        filtered_data (list): List of filtered data entries.
+    
+    Returns:
+        dict: Dictionary containing counts of metric values.
+    """
     precision_counts = defaultdict(int)
     recall_counts = defaultdict(int)
     f1_counts = defaultdict(int)
-
-    # Iterate through the "Data" section of the JSON
-    for entry in data.get("Data", {}).values():
-        # Apply constraints
-        if constraints:
-            if not all(func(entry.get(key)) for key, func in constraints.items()):
-                continue  # Skip entry if any constraint fails
-
-        precision = entry.get("Precision")
-        recall = entry.get("Recall")
-        f1_score = entry.get("F1Score")
-
-        precision_counts[precision] += 1
-        recall_counts[recall] += 1
-        f1_counts[f1_score] += 1
-
-    # Order keys: first None, then ascending
+    
+    for entry in filtered_data:
+        precision_counts[entry.get("Precision")] += 1
+        recall_counts[entry.get("Recall")] += 1
+        f1_counts[entry.get("F1Score")] += 1
+    
     def sort_key(x):
         return (x[0] is not None, x[0])
-
-    precision_counts = dict(sorted(precision_counts.items(), key=sort_key))
-    recall_counts = dict(sorted(recall_counts.items(), key=sort_key))
-    f1_counts = dict(sorted(f1_counts.items(), key=sort_key))
-
+    
     return {
-        "PrecisionCounts": precision_counts,
-        "RecallCounts": recall_counts,
-        "F1ScoreCounts": f1_counts
+        "PrecisionCounts": dict(sorted(precision_counts.items(), key=sort_key)),
+        "RecallCounts": dict(sorted(recall_counts.items(), key=sort_key)),
+        "F1ScoreCounts": dict(sorted(f1_counts.items(), key=sort_key))
     }
+
 
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.realpath(__file__))
-    input_file = script_dir + "/Outputs/to_keep/llm_extension_with_qa_extension_no_data/QALD-10_sparklisllm_20250227_102542_partiel.json"
+    input_file = script_dir + "/Outputs/to_keep/llm_extension_with_qa_extension_no_data/QALD-10_sparklisllm_20250227_102542.json"
     precisions, recalls, f1_scores = extract_scores(input_file)
     accuracy_recall_f1_plot(precisions, recalls, f1_scores)
     boxplot_scores(precisions, recalls, f1_scores)
@@ -101,5 +106,6 @@ if __name__ == "__main__":
         "BenchmarkResult": lambda x : not x in [True, False],
         "SystemResult": lambda x:  x in [True, False]
     }   
-
-    print(count_metric_values(input_file,constraints))
+    filtered_data = load_and_filter_data(input_file, constraints)
+    counts = count_metric_values(filtered_data)
+    print(counts)

@@ -27,7 +27,7 @@ def main(benchmark_file: str, benchmark_name: str, tested_system_name: str, endp
 
 
     # Initialize empty lists to accumulate results
-    all_system_queries, all_errors, all_reasonings = [], [], []
+    all_system_queries, all_errors, all_steps_status_list, all_reasonings = [], [], [], []
     all_benchmark_results, all_system_results = [], []
     all_systems_times = []
     all_responses_types = []
@@ -40,7 +40,9 @@ def main(benchmark_file: str, benchmark_name: str, tested_system_name: str, endp
         batch_question_ids = questions_ids[i:i + batch_size]
         batch_benchmark_queries = benchmark_queries[i:i + batch_size]
 
-        batch_system_queries, batch_errors, batch_reasonings, batch_times = system_queries_generation(batch_questions, system, endpoint)
+        batch_system_queries, batch_errors, steps_status_list, batch_reasonings, batch_times = system_queries_generation(
+            batch_questions, system, endpoint
+        )
         batch_benchmark_results, batch_expected_reponse_types, batch_system_results, batch_errors = queries_evaluation(
             batch_benchmark_queries, batch_system_queries, batch_errors, endpoint
         )
@@ -49,6 +51,7 @@ def main(benchmark_file: str, benchmark_name: str, tested_system_name: str, endp
         # Append batch results to global lists
         all_system_queries.extend(batch_system_queries)
         all_errors.extend(batch_errors)
+        all_steps_status_list.extend(steps_status_list)
         all_reasonings.extend(batch_reasonings)
         all_benchmark_results.extend(batch_benchmark_results)
         all_system_results.extend(batch_system_results)
@@ -63,7 +66,7 @@ def main(benchmark_file: str, benchmark_name: str, tested_system_name: str, endp
                          benchmark_queries[: len(all_system_queries)], all_system_queries, 
                          all_benchmark_results, all_system_results, 
                          all_systems_times, all_responses_types,
-                         all_errors, all_reasonings,
+                         all_errors, all_steps_status_list, all_reasonings,
                          all_precisions, all_recalls, all_f1_scores)
         
         os.makedirs(config.OUTPUT_FOLDER, exist_ok=True)  # Ensure the directory exists
@@ -99,23 +102,25 @@ def extract_benchmark(benchmark_file: str, benchmark_name: str) -> list:
     extractor = benchmark_extraction.extractorFactory(benchmark_name)
     return extractor.extractData(benchmark_file)
 
-def system_queries_generation(questions: list, system: TestSystem, endpoint_sparql: str) -> tuple[list, list, list, list]:
+def system_queries_generation(questions: list, system: TestSystem, endpoint_sparql: str) -> tuple[list, list, list, list, list]:
     """
     Use the tested system and SPARQL endpoint to generate queries for the given questions.
     """
     logging.info('System queries generation Start')
     queries = []
     errors = []
+    steps_status_list = []
     reasonings = []
     times = []
     for question in questions:
         current_time = datetime.datetime.now()
-        query, error, reasoning = system.create_query(question, endpoint_sparql)
+        query, error, steps_status, reasoning = system.create_query(question, endpoint_sparql)
         queries.append(query)
         errors.append(error)
+        steps_status_list.append(steps_status)
         reasonings.append(reasoning)
         times.append((datetime.datetime.now() - current_time).total_seconds())
-    return queries, errors, reasonings, times
+    return queries, errors, steps_status_list, reasonings, times
 
 def find_response_type(response: dict) -> str:
     """
@@ -247,7 +252,8 @@ def stats_calculation(benchmark_results: list, system_results: list) -> tuple[li
 
 def make_dict(meta: dict, questions_ids: list, questions: list, 
               benchmark_queries: list, system_queries: list, benchmark_results: list, 
-              system_results: list, all_system_times: list, all_responses_types: list, errors: list, reasoning: list, 
+              system_results: list, all_system_times: list, all_responses_types: list,
+              errors: list, steps_status: list, reasoning: list, 
               precisions: list, recalls: list, f1_scores: list) -> dict:
     """
     Create a dictionary with all the data.
@@ -300,6 +306,7 @@ def make_dict(meta: dict, questions_ids: list, questions: list,
         data[questions_ids[i]] = {
             'Question' : questions[i],
             **({'Error': errors[i]} if errors[i] != '' else {}), # only add if it's not an empty string
+            'StepsStatus' : steps_status[i],
             'Precision' : precisions[i],
             'Recall' : recalls[i],
             'F1Score' : f1_scores[i],
