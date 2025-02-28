@@ -94,18 +94,45 @@ def count_metric_values(filtered_data):
         "F1ScoreCounts": dict(sorted(f1_counts.items(), key=sort_key))
     }
 
+def find_first_non_done_step(steps_status):
+    """
+    Finds the first step number in the StepsStatus field whose status is different from 'DONE'.
+    
+    Args:
+        steps_status (str): The JSON string representing the steps and their statuses.
+    
+    Returns:
+        int or None: The first step number with a status not equal to 'DONE', or None if all are DONE.
+    """
+    non_done_steps = []
+    for entry in filtered_data:
+        steps_status = entry.get("StepsStatus")
+
+
+        # Parse the StepsStatus field into a dictionary
+        steps = json.loads(steps_status)
+        
+        non_done_step = None
+        # Iterate over steps and find the first one that is not 'DONE'
+        for step_num, step in steps.items():
+            if step["Status"] != "DONE":
+                non_done_step = int(step_num)
+                break
+        non_done_steps.append(non_done_step)
+    return non_done_steps
+
 
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.realpath(__file__))
-    input_file = script_dir + "/Outputs/to_keep/llm_extension_with_qa_extension_no_data/QALD-10_sparklisllm_20250227_102542.json"
+    input_file = script_dir + "/Outputs/QALD-10_sparklisllm_20250228_134806.json"
     precisions, recalls, f1_scores = extract_scores(input_file)
     accuracy_recall_f1_plot(precisions, recalls, f1_scores)
     boxplot_scores(precisions, recalls, f1_scores)
     
     constraints = {
-        "BenchmarkResult": lambda x : not x in [True, False],
-        "SystemResult": lambda x:  x in [True, False]
+        #"BenchmarkResult": lambda x : not x in [True, False],
+        #"SystemResult": lambda x:  x in [True, False]
     }   
     filtered_data = load_and_filter_data(input_file, constraints)
-    counts = count_metric_values(filtered_data)
-    print(counts)
+    non_done_step = find_first_non_done_step(filtered_data)
+    print(non_done_step)
