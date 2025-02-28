@@ -27,8 +27,14 @@ def simulated_user(url: str, interactions, driver: webdriver.Firefox = None) -> 
 
 def wait_and_handle_alert(driver, timeout: int, end_condition) -> str:
     """
-    Wait until the condition is met, while dismissing unexpected alerts.
+    Wait until the condition is met while dismissing unexpected alerts.
+    This function cannot be fully relied upon to prevent a question from crashing the client 
+    due to potential incorrect implementations, either on the browser driver side or in Selenium.
+
+    It is preferable to handle alerts directly in JavaScript. However, this function remains useful 
+    for preventing the entire testing procedure from crashing.
     """
+    errorText : str = ""
     try:
         WebDriverWait(driver, timeout).until(lambda d: 
             end_condition(d)
@@ -38,22 +44,26 @@ def wait_and_handle_alert(driver, timeout: int, end_condition) -> str:
         try:
             alert = driver.switch_to.alert
             alert_text = alert.text
-            alert.dismiss()
-            logging.warning(f"Unhandled alert detected and dismissed: {alert_text}")
-        except:
-            # For exemple useful with wikidata endpoint alerts, that disapear before the alert is read 
-            logging.warning("An alert was dismissed before it could be read.")
+            alert.accept()
+            new_error_text = f"Unhandled alert detected and dismissed: {alert_text}"
+            logging.warning(new_error_text)
+            errorText += new_error_text
+        except Exception as e:
+            # For exemple useful with wikidata endpoint alerts, that disapear before the alert is read
+            new_error_text = "An alert was dismissed before it could be read + " + str(e)
+            logging.warning(new_error_text)
+            errorText += new_error_text
         # Retry waiting after dismissing the alert (generally the condition is met after the alert)
-        return wait_and_handle_alert(driver, timeout, end_condition)  # Retry waiting after dismissing the alert
-
+        errorText += wait_and_handle_alert(driver, timeout, end_condition)  # Retry waiting after dismissing the alert
     except TimeoutException:
-        logging.error("Timeout while waiting for system response.")
-        return "Error: System timeout"
+        new_error_text = "Timeout while waiting for system response."
+        logging.error(new_error_text)
+        errorText += new_error_text 
     except Exception as e:
-        logging.error(f"Error while waiting for system response: {e}")
-        return "Error: System error " + str(e)
-
-    return ""
+        new_error_text = f"Error while waiting for system response: {e}"
+        logging.error(new_error_text)
+        errorText += new_error_text 
+    return errorText
 
 def getStepsStatus(driver):
     """
@@ -142,6 +152,12 @@ def sparklisllm_question(driver, question, endpoint_sparql) -> tuple[str, str, s
     # Retrieve the error messages from the system
     if chatbot_errors.text != "":
         error += "Errors from the system [" + chatbot_errors.text + "]"
+
+    # Find the alert messages stored in the local storage
+    alert_messages = driver.execute_script("return localStorage.getItem('alertMessages');")
+    # Retrieve the alert messages from the system
+    if alert_messages != "":
+        error += "Alert messages from the system [" + alert_messages + "]"
 
     # Get the current status of the steps
     steps_status = getStepsStatus(driver)

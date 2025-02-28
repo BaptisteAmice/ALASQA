@@ -3,8 +3,10 @@ import json
 import matplotlib.pyplot as plt
 import os
 
-# Extract precision, recall and f1 list from dictionary (["data"][str(i)][Precision]
 def extract_scores(file_name: str) -> tuple[list, list, list]:
+    """
+    Extracts precision, recall, and F1 scores from a JSON file.
+    """
     with open(file_name, 'r') as file:
         data = json.load(file)
     precisions = []
@@ -19,6 +21,9 @@ def extract_scores(file_name: str) -> tuple[list, list, list]:
 
 # Plot the accuracy, recall and f1 scores for each question
 def accuracy_recall_f1_plot(accuracy, recall, f1_scores):
+    """
+    Plot the accuracy, recall and f1 scores for each question.
+    """
     questions = range(1, len(accuracy) + 1)  # Adjust based on your data length
     plt.scatter(questions, accuracy, label="Accuracy", marker="o")
     plt.scatter(questions, recall, label="Recall", marker="s")
@@ -33,6 +38,9 @@ def accuracy_recall_f1_plot(accuracy, recall, f1_scores):
 
 # Boxplot of the scores
 def boxplot_scores(accuracy, recall, f1_scores):
+    """
+    Boxplot of the scores.
+    """
     plt.boxplot([accuracy, recall, f1_scores], tick_labels=["Accuracy", "Recall", "F1-score"])
     plt.ylabel("Score")
     plt.title("Boxplot of the scores")

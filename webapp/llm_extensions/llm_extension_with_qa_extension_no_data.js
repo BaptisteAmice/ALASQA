@@ -163,7 +163,7 @@ async function qa_control() {
 
         currentStep++;
         updateStepsStatus(currentStep, STATUS_ONGOING);
-        let resultText;
+        let resultText = "";
         if (results && results.rows) {
             try {
                 let rows = results.rows;
@@ -176,11 +176,13 @@ async function qa_control() {
                 errors += message;
                 updateStepsStatus(currentStep, STATUS_FAILED);
             }
+        } else {
+            updateStepsStatus(currentStep, STATUS_FAILED);
         }
 
         updateAnswer(questionId, resultText, "???", sparql, errors); //todo sparklis_request 
 
-        //re-enable interactions
+        //re-enable interactions (used as the condition to end the wait from tests)
         enableInputs();
     });    
     
