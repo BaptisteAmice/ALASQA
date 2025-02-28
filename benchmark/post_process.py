@@ -1,5 +1,6 @@
 from collections import defaultdict
 import json
+import logging
 import matplotlib.pyplot as plt
 import os
 
@@ -102,6 +103,27 @@ def count_metric_values(filtered_data):
         "F1ScoreCounts": dict(sorted(f1_counts.items(), key=sort_key))
     }
 
+import matplotlib.pyplot as plt
+import numpy as np
+
+def hist_first_non_done_step(data):
+    # Convert None to a string for proper sorting
+    filtered_data = ['None' if x is None else x for x in data]
+    
+    # Count occurrences of each unique value
+    unique_values, counts = np.unique(filtered_data, return_counts=True)
+    
+    # Sort values to ensure 'None' is at the end
+    unique_values = sorted(unique_values, key=lambda x: (x == 'None', x))
+    
+    # Plot histogram
+    plt.bar(unique_values, counts, color='skyblue', edgecolor='black')
+    plt.xlabel('First non-Done Step')
+    plt.ylabel('Count')
+    plt.title('Histogram of First Non-Done Steps')
+    plt.xticks(unique_values)  # Ensure all unique values appear on x-axis
+    plt.show()
+
 def find_first_non_done_step(steps_status):
     """
     Finds the first step number in the StepsStatus field whose status is different from 'DONE'.
@@ -116,6 +138,9 @@ def find_first_non_done_step(steps_status):
     for entry in filtered_data:
         steps_status = entry.get("StepsStatus")
 
+        if not steps_status:
+            logging.warning("StepsStatus field is missing in the entry, skipping.")
+            continue
 
         # Parse the StepsStatus field into a dictionary
         steps = json.loads(steps_status)
@@ -132,7 +157,7 @@ def find_first_non_done_step(steps_status):
 
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.realpath(__file__))
-    input_file = script_dir + "/Outputs/QALD-10_sparklisllm_20250228_134806.json"
+    input_file = script_dir + "/Outputs/to_keep\llm_extension_with_qa_extension_no_data\QALD-10_sparklisllm_20250228_141051_partiel.json"
     precisions, recalls, f1_scores = extract_scores(input_file)
     accuracy_recall_f1_plot(precisions, recalls, f1_scores)
     boxplot_scores(precisions, recalls, f1_scores)
@@ -144,3 +169,4 @@ if __name__ == "__main__":
     filtered_data = load_and_filter_data(input_file, constraints)
     non_done_step = find_first_non_done_step(filtered_data)
     print(non_done_step)
+    hist_first_non_done_step(non_done_step)
