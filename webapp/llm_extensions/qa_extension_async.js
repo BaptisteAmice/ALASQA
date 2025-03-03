@@ -96,12 +96,22 @@ function process_step(place, step) {
 	let sugg = {type: "IncrConstr", constr: constr, filterType: "OnlyLiterals"};
 	return apply_suggestion(place, "between", sugg)
 	
-	} else if ((match = /^match\s*(.+)$/.exec(step))) {
-	console.log("MAAAAAAAAAAAAATCH");
-	let constr = { type: "MatchesAny", kwds: [match[1]] }; //todo don't work with wikidata because its too slow
-	//let constr = { type: "IsExactly", kwd: match[1] };  //aussi trop lent
-	let sugg = {type: "IncrConstr", constr: constr, filterType: "Mixed"};
-	return apply_suggestion(place, "match", sugg)
+	} else if ((match = /^match\s*(.+)$/.exec(step))) { // Regex or Wikidata search
+	return new Promise((resolve, reject) => {
+		get_constr("WikidataSearch", match[1]).
+		then(constr => 
+			place.onEvaluated(() => {
+				let sugg = {type: "IncrConstr", constr: constr, filterType: "Mixed"};
+				apply_suggestion(place, "match", sugg)
+				.then(next_place => {
+					resolve(next_place);
+				})
+				.catch(msg => {
+					reject(msg);
+				})
+			}
+		))
+	})	
 
     } else if ((match = /^a\s+(.+)\s*$/.exec(step))) {
 	return search_and_apply_suggestion(
