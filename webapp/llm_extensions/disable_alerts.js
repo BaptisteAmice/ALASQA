@@ -5,3 +5,11 @@ window.alert = function (text) {
     localStorage.setItem("alertMessages", JSON.stringify(alerts));
     console.log('Captured alert:', text);
 };
+
+function getAlerts() {
+    return JSON.parse(localStorage.getItem("alertMessages") || "[]");
+}
+
+function clearAlerts() {
+    localStorage.setItem("alertMessages", "[]");
+}

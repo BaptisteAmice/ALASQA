@@ -73,7 +73,7 @@ def main(benchmark_file: str, benchmark_name: str, tested_system_name: str, endp
         with open(config.OUTPUT_FOLDER + filename, 'w') as file:
             json.dump(data, file, indent=4)
         
-        logging.info(f'Batch {i} done')
+        logging.info(f'Batch {i} done') # todo add interval
 
     #close the system
     system.end_system()

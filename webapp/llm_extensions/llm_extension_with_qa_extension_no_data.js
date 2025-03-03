@@ -51,7 +51,8 @@ function countCommands(commands) {
 }
 
 async function qa_control() {
-    resetStepsStatus();
+    resetStepsStatus(); // Reset steps for each new question
+    clearAlerts(); // Clear alerts for each new question
     currentStep = 0;
     updateStepsStatus(currentStep, STATUS_DONE);
 

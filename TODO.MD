@@ -14,8 +14,6 @@ champs erreur nombre
 1) etape 1: llm, etape 2: sparklis, etc... -> histogramme
 communication js <-> python
 
-todo envoyer requetes à sebastien cas mauvaise requete, cas is remove
-
 
 #todo patcher is something
 ->considéré comme entité -> si pas de rep -> seul suggrestion est celle obtenue -> l'annule
@@ -35,7 +33,7 @@ todo envoyer requetes à sebastien cas mauvaise requete, cas is remove
 - ...
 - prop something
 
-todo fuseki v2
+todo fuseki v2 <-> heberger dump graphe
 
 -todo
 -limites
