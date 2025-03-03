@@ -173,6 +173,17 @@ def find_first_non_done_step(filtered_data):
         non_done_steps.append(non_done_step)
     return non_done_steps
 
+def plot_box_system_time(filtered_data):
+    """
+    Plot the boxplot of the SystemTime.
+    """
+    system_times = [entry.get("SystemTime") for entry in filtered_data]
+    plt.boxplot(system_times)
+    plt.ylabel("System Time")
+    plt.title("Boxplot of the System Time")
+    plt.grid(True)
+    plt.show()
+
 def all_prints(file_name: str):
     # Unvalid data
     constraints_invalid = {
@@ -181,10 +192,9 @@ def all_prints(file_name: str):
     filtered_invalid_data = load_and_filter_data(file_name, constraints_invalid)
     print("Number of invalid data:", len(filtered_invalid_data))
     
-
     # Valid data
     constraints_none = {
-        "BenchmarkResult": lambda x : x is not None
+        "BenchmarkResult": lambda x : x not in [None, []]
     }   
     filtered_valid_data = load_and_filter_data(file_name, constraints_none)
     print("Number of valid data:", len(filtered_valid_data))
@@ -192,6 +202,8 @@ def all_prints(file_name: str):
     precisions, recalls, f1_scores = extract_scores(filtered_valid_data)
     precision_recall_f1_plot(precisions, recalls, f1_scores)
     boxplot_scores(precisions, recalls, f1_scores, "Boxplot of the scores for valid data")
+
+    plot_box_system_time(filtered_valid_data)
 
     non_done_step = find_first_non_done_step(filtered_valid_data)
     hist_first_non_done_step(non_done_step, "Histogram of First Non-Done Steps for Valid Data")
@@ -253,6 +265,21 @@ def all_prints(file_name: str):
 
     non_done_step = find_first_non_done_step(filtered_expected_literal_data)
     hist_first_non_done_step(non_done_step, "Histogram of First Non-Done Steps for Expected Literal")
+
+    # Non empty response from the system
+    filtered_non_empty_response = {
+        "SystemResult" : lambda x: x not in [None, "", []],
+    }
+    filtered_non_empty_response_data = load_and_filter_data(file_name, filtered_non_empty_response)
+    print("Number of non empty responses:", len(filtered_non_empty_response_data))
+
+    # Non empty response from the system but with a score at  0
+    filtered_non_empty_response_score_at_zero = {
+        "SystemResult" : lambda x: x not in [None, "", []],
+        "F1Score": lambda x: x == 0
+    }
+    filtered_non_empty_response_score_at_zero_data = load_and_filter_data(file_name, filtered_non_empty_response_score_at_zero)
+    print("Number of non empty responses with a score at 0:", len(filtered_non_empty_response_score_at_zero_data))
 
 
 

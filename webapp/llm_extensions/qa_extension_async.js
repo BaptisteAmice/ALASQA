@@ -87,11 +87,11 @@ function process_step(place, step) {
 	let constr = { type: "HigherThan", value: match[1] };
 	let sugg = {type: "IncrConstr", constr: constr, filterType: "OnlyLiterals"};
 	return apply_suggestion(place, "higher-than", sugg)
-    } else if ((match = /^<\s*(.+)$/.exec(step))) {
+    } else if ((match = /^<\s*(.+)$/.exec(step))) { //todo empecher si pas numerique? //juste test js ou est ce qu'on veut pouvoir utiliser propriétés?
 	let constr = { type: "LowerThan", value: match[1] };
 	let sugg = {type: "IncrConstr", constr: constr, filterType: "OnlyLiterals"};
 	return apply_suggestion(place, "lower-than", sugg)
-    } else if ((match = /^between\s+(.+)\s+and\s+(.+)$/.exec(step))) {
+    } else if ((match = /^between\s+(.+)\s+and\s+(.+)$/.exec(step))) {//todo empecher si pas numerique?
 	let constr = { type: "Between", valueFrom: match[1], valueTo: match[2] };
 	let sugg = {type: "IncrConstr", constr: constr, filterType: "OnlyLiterals"};
 	return apply_suggestion(place, "between", sugg)

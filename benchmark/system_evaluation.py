@@ -34,6 +34,7 @@ def main(benchmark_file: str, benchmark_name: str, tested_system_name: str, endp
     all_precisions, all_recalls, all_f1_scores = [], [], []
 
     # Process in batches (to save incrementally the results in case of crash)
+    batches_dones = 0
     batch_size = config.BATCH_SIZE
     for i in range(0, len(questions), batch_size):
         batch_questions = questions[i:i + batch_size]
@@ -73,7 +74,8 @@ def main(benchmark_file: str, benchmark_name: str, tested_system_name: str, endp
         with open(config.OUTPUT_FOLDER + filename, 'w') as file:
             json.dump(data, file, indent=4)
         
-        logging.info(f'Batch {i} done') # todo add interval
+        batches_dones += 1
+        logging.info(f'Batch {batches_dones} done.')
 
     #close the system
     system.end_system()
