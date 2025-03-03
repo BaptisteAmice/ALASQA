@@ -217,7 +217,7 @@ def stats_calculation(benchmark_results: list, system_results: list) -> tuple[li
     precisions = []
     recalls = []
     f1_scores = []
-    for i in range(len(benchmark_results)): #todo cas pas de prédiction (system ou benchmark) -> les compter et pas les prendre en compte?
+    for i in range(len(benchmark_results)):
         benchmark_list = []
         system_list = []
         if benchmark_results[i] is not None:

@@ -1,4 +1,5 @@
 #todo prochaine fois
+#todo generate whole report from matplot
 - faire passer les requetes, savoir EXACTEMENT QUAND PASSE PAS, identifier tt les scenarios
 
 1) LLM generation: No problem | error

@@ -3,6 +3,26 @@ import json
 import logging
 import matplotlib.pyplot as plt
 import os
+import re
+
+command_list = [
+    "a",
+    "forwardProperty",
+    "backwardProperty",
+    "match ",
+    "higherThan",
+    "lowerThan",
+    "between",
+    "before",
+    "after",
+    "asc",
+    "desc",
+    "and",
+    "or",
+    "not",
+    "up",
+    "down"
+]
 
 def extract_scores_from_file(file_name: str) -> tuple[list, list, list]:
     """
@@ -184,6 +204,126 @@ def plot_box_system_time(filtered_data):
     plt.grid(True)
     plt.show()
 
+def get_commands_from_reasoning(reasoning: str) -> list:
+    """
+    Extracts commands from the reasoning field.
+
+    Args:
+        reasoning (str): The reasoning field.
+        command_list (list): A list of valid command names.
+
+    Returns:
+        list: List of commands extracted from the reasoning field.
+    """
+    # Extract content inside <commands>...</commands>
+    match = re.search(r"<commands>(.*?)</commands>", reasoning, re.DOTALL)
+    if not match:
+        return []
+
+    commands_str = match.group(1)
+    commands = [cmd.strip() for cmd in commands_str.split(";") if cmd.strip()]
+
+    used_commands = []
+    for command in commands:
+        found = False
+        for c in command_list:
+            # Ensure the command is a standalone word (beginning, end, or surrounded by spaces)
+            if re.search(rf"(^|\s){re.escape(c)}(\s|$)", command):
+                used_commands.append(c)
+                found = True
+                break
+        if not found:
+            used_commands.append("entity/literal")
+
+    return used_commands
+
+def get_commands_list(filtered_data):
+    """
+    Extracts commands from the reasoning field of the filtered data entries.
+
+    Args:
+        filtered_data (list): List of filtered data entries.
+        command_list (list): List of valid commands.
+
+    Returns:
+        list: List of commands extracted from the reasoning field.
+    """
+    commands_list = []
+    for entry in filtered_data:
+        reasoning = entry.get("Reasoning")
+        if not reasoning:
+            logging.warning("Reasoning field is missing in the entry.")
+            commands_list.append([])
+            continue
+
+        # Extract <reasoning>...</reasoning>
+        match = re.search(r"(<commands>.*?</commands>)", reasoning, re.DOTALL)
+
+        if not match:
+            logging.warning("No <commands> tag found in the entry.")
+            commands_list.append([])
+            continue
+        
+        reasoning_content = match.group(1).strip()
+        if not reasoning_content:
+            logging.warning("Reasoning field is empty in the entry.")
+            commands_list.append([])
+            continue
+
+        commands = get_commands_from_reasoning(reasoning_content)
+        commands_list.append(commands)
+
+    return commands_list
+
+def plot_command_boxplots(used_commands_lists, scores):
+    """
+    Plots box plots for each unique command, showing the distribution of scores where the command appears.
+    Also overlays the mean as a red marker.
+
+    Args:
+        used_commands_lists (list of list): List of command lists used in each case.
+        scores (list of float): Corresponding scores for each command list.
+    """
+    # Step 1: Find all unique commands
+    all_commands = set(cmd for sublist in used_commands_lists for cmd in sublist)
+
+    # Step 2: Create a mapping of command -> list of scores where it appears
+    command_scores = {cmd: [] for cmd in all_commands}
+
+    for cmd_list, score in zip(used_commands_lists, scores):
+        for cmd in set(cmd_list):  # Use set to avoid duplicate counts per list
+            command_scores[cmd].append(score)
+
+    # Step 3: Prepare Data for Seaborn
+    boxplot_data = []
+    boxplot_labels = []
+    means = []
+
+    for cmd, cmd_scores in command_scores.items():
+        if cmd_scores:  # Only plot commands that actually appear in some lists
+            boxplot_data.append(cmd_scores)
+            boxplot_labels.append(cmd)
+            means.append(np.mean(cmd_scores))  # Calculate mean for each command
+
+    # Step 4: Plot the Box Plot
+    plt.figure(figsize=(12, 6))
+    plt.boxplot(boxplot_data, labels=boxplot_labels)
+
+    # Overlay mean values
+    for i, mean in enumerate(means):
+        plt.scatter(i, mean, color='red', marker='o', label="Mean" if i == 0 else "")
+
+    # Customize labels
+    plt.xticks(range(len(boxplot_labels)), boxplot_labels, rotation=45)
+    plt.ylabel("Scores")
+    plt.xlabel("Commands")
+    plt.title("Score Distribution per Command")
+    plt.grid(True)
+
+    # Add legend for the mean marker
+    plt.legend()
+    plt.show()
+
 def all_prints(file_name: str):
     # Unvalid data
     constraints_invalid = {
@@ -198,6 +338,12 @@ def all_prints(file_name: str):
     }   
     filtered_valid_data = load_and_filter_data(file_name, constraints_none)
     print("Number of valid data:", len(filtered_valid_data))
+
+    # Commands
+    commands_list = get_commands_list(filtered_valid_data)
+    precisions, recalls, f1_scores = extract_scores(filtered_valid_data)
+    plot_command_boxplots(commands_list, f1_scores)
+    print("Commands", commands_list)
 
     precisions, recalls, f1_scores = extract_scores(filtered_valid_data)
     precision_recall_f1_plot(precisions, recalls, f1_scores)
@@ -228,6 +374,8 @@ def all_prints(file_name: str):
     #todo specific warnings (from alerts, etc.)
 
     #todo specific used commands
+
+    #todo matrice etape premiere erreur / commande
 
     # Expected boolean
     constraints_expected_boolean = {
@@ -287,5 +435,5 @@ def all_prints(file_name: str):
 
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.realpath(__file__))
-    input_file = script_dir + "/Outputs/to_keep/llm_extension_with_qa_extension_no_data/QALD-10_sparklisllm_20250228_171915.json"
+    input_file = script_dir + "/Outputs/to_keep/llm_extension_with_qa_extension_no_data/QALD-10_sparklisllm_20250303_153759_partiel.json"
     all_prints(input_file)
