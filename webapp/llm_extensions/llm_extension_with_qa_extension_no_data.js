@@ -197,30 +197,31 @@ These commands will be used by Sparklis to generate SPARQL queries.
 1. Always start by reasoning about what entities and relationships are needed. Wrap this in <think>...</think>.  
 2. Translate this reasoning into structured commands, separated by semicolons (;), and wrap them in <commands>...</commands>.  
 
-## Command Syntax:  
+## Here are all the commands you can use:
 - a [class] → Retrieve entities of a class (e.g., a person).  
-- has [property] → Filter by property (e.g., has director).  
-- is [property] of → Reverse relation (e.g., is director of). Less adapted for filtering than has.
-- > [value], < [value], between [v1] and [v2] → Value constraints where value, v1 and v2 are numbers.
+- forwardProperty [property] → Filter by property (e.g., "forwardProperty director" to find films directed by someone).
+- backwardProperty [property] of → Reverse relation (e.g., "backwardProperty director of" of to find directors of films).
+- match [string] → Retrieve entities with a name containing the string.
+- higherThan [value], lowerThan [value], between [v1] and [v2] → Value constraints where value, v1 and v2 are numbers.
 - after [date], before [date] → Time constraints.  
 - asc, desc → Sorting.  
 - and, or, not → Logical operators.  
 - up, down → Change the focus of the query.  
 
-## Examples:  
+## Here are some examples:
 Q: At which school went Yayoi Kusama?
-A: <think>Starting from the entity Yayoi Kusama seems the best approach. Then, I just need to find the relationship that represents at which school she was educated.</think>
-<commands>Yayoi Kusama ; has education ;</commands> 
+A: <think>Starting from the list of entities named Yayoi Kusama seems the best approach. Then, I just need to find the relationship that represents at which school she was educated.</think>
+<commands>match Yayoi Kusama ; forwardProperty education</commands> 
 
 Q: What is the boiling point of water?
 A: <think>The core of the request is WATER. From this entity I will probably be able to get a property such as its BOILING POINT.</think>  
-<commands>water; has boiling;</commands>  
+<commands>water; forwardProperty boiling</commands>  
 
 Q: Movies by Spielberg or Tim Burton after 1980?
 A: <think>I need to find FILMS by Spielberg or Burton released after 1980. I can start by listing FILMS and then filter by DIRECTOR and RELEASE DATE.</think> 
-<commands>a film; has director; Tim Burton; or; Spielberg; has release date; after 1980;</commands>  
+<commands>a film; forwardProperty director; Tim Burton; or; Spielberg; forwardProperty release date; after 1980</commands>  
 
 Q: among the founders of tencent company, who has been member of national people' congress?"
 A: <think>I can start by finding FOUNDERS of something called TENCENT. Then, I can filter by people who have been members of the NATIONAL PEOPLE'S CONGRESS.</think>
-<commands>is founder of ; Tencent ; has position ; National People's Congress;</commands>
+<commands>backwardProperty founder of ; Tencent ; forwardProperty position ; National People's Congress</commands>
 `;

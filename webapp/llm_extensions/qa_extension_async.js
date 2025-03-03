@@ -83,11 +83,11 @@ function process_step(place, step) {
 	let constr = { type: "FromTo", kwdFrom: match[1], kwdTo: match[2] };
 	let sugg = {type: "IncrConstr", constr: constr, filterType: "OnlyLiterals"};
 	return apply_suggestion(place, "from-to", sugg)
-    } else if ((match = /^>\s*(.+)$/.exec(step))) {
+    } else if ((match = /^higherThan\s*(.+)$/.exec(step))) {
 	let constr = { type: "HigherThan", value: match[1] };
 	let sugg = {type: "IncrConstr", constr: constr, filterType: "OnlyLiterals"};
 	return apply_suggestion(place, "higher-than", sugg)
-    } else if ((match = /^<\s*(.+)$/.exec(step))) { //todo empecher si pas numerique? //juste test js ou est ce qu'on veut pouvoir utiliser propriétés?
+    } else if ((match = /^lowerThan\s*(.+)$/.exec(step))) { //todo empecher si pas numerique? //juste test js ou est ce qu'on veut pouvoir utiliser propriétés?
 	let constr = { type: "LowerThan", value: match[1] };
 	let sugg = {type: "IncrConstr", constr: constr, filterType: "OnlyLiterals"};
 	return apply_suggestion(place, "lower-than", sugg)
@@ -119,7 +119,7 @@ function process_step(place, step) {
 	    (place,constr) => place.getConceptSuggestions(false,constr),
 	    sugg => suggestion_type(sugg) === "IncrType",
 	    sparklis.classLabels())
-    } else if ((match = /^has\s+(.+)$/.exec(step))) {
+    } else if ((match = /^forwardProperty\s+(.+)$/.exec(step))) {
 	return search_and_apply_suggestion(
 	    place, "fwd property", match[1],
 	    (place,constr) => place.getConceptSuggestions(false,constr),
@@ -127,7 +127,7 @@ function process_step(place, step) {
 	    suggestion_type(sugg) === "IncrRel" && sugg.orientation === "Fwd"
 		|| suggestion_type(sugg) === "IncrPred" && sugg.arg === "S",
 	    sparklis.propertyLabels())
-    } else if ((match = /^is\s+(.+)\s+of$/.exec(step))) {
+    } else if ((match = /^backwardProperty\s+(.+)\s+of$/.exec(step))) {
 	return search_and_apply_suggestion(
 	    place, "bwd property", match[1],
 	    (place,constr) => place.getConceptSuggestions(false,constr),
