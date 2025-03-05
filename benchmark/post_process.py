@@ -384,6 +384,11 @@ def all_prints(file_name: str):
     table_headers = []
     table_data = []
 
+    # All data
+    table_headers.append("Question Count")
+    all_data = load_and_filter_data(file_name, {})
+    table_data.append([len(all_data)])
+
     # Unvalid data
     constraints_invalid = {
         "BenchmarkResult": lambda x : x is None or x == []
@@ -442,21 +447,21 @@ def all_prints(file_name: str):
     non_done_step = find_first_non_done_step(filtered_empty_system_result_data)
     hist_first_non_done_step(non_done_step, "Empty SystemResult")
 
-    # Non empty response from the system
+    # Non-empty response from the system
     filtered_non_empty_response = {
         "SystemResult" : lambda x: x not in [None, "", []],
     }
     filtered_non_empty_response_data = load_and_filter_data(file_name, filtered_non_empty_response)
-    table_headers.append("Non Empty SystemResult")
+    table_headers.append("Non-empty SystemResult")
     table_data.append([len(filtered_non_empty_response_data)])
 
-    # Non empty response from the system but with a score at  0
+    # Non-empty response from the system but with a score at  0
     filtered_non_empty_response_score_at_zero = {
         "SystemResult" : lambda x: x not in [None, "", []],
         "F1Score": lambda x: x == 0
     }
     filtered_non_empty_response_score_at_zero_data = load_and_filter_data(file_name, filtered_non_empty_response_score_at_zero)
-    table_headers.append("Non Empty SystemResult (score at 0)")
+    table_headers.append("Non-empty SystemResult\n(score at 0)")
     table_data.append([len(filtered_non_empty_response_score_at_zero_data)])
 
         # Expected boolean
@@ -510,7 +515,11 @@ def all_prints(file_name: str):
     # Table 
     fig, ax = plt.subplots()  # Adjust figure size
     ax.axis("off")  # Hide axes
-    ax.table(cellText=table_data, colLabels=["Number of"], rowLabels=table_headers, bbox=[0.5, 0, 0.5, 1], cellLoc="center", colWidths=[0.5,1])
+    for i in range(len(table_data)):
+        percentage = round(table_data[i][0] / len(all_data) * 100, 2)
+        table_data[i].append(percentage)
+
+    ax.table(cellText=table_data, colLabels=["Number of","%"], rowLabels=table_headers, bbox=[0.3, 0, 0.5, 1], cellLoc="center", colWidths=[1/6, 1/6])
     pp.savefig(fig)
     if show:
         plt.show()
