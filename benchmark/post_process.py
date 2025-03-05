@@ -16,7 +16,7 @@ command_list = [
     "a",
     "forwardProperty",
     "backwardProperty",
-    "match ",
+    "match",
     "higherThan",
     "lowerThan",
     "between",
@@ -319,6 +319,8 @@ def get_system_errors(filtered_data):
             for error in error_messages:
                 if error in error_field:
                     question_errors.append(error)
+            if not question_errors:
+                question_errors.append("No error message")
             system_errors.append(question_errors)
         else:
             system_errors.append([])
@@ -337,7 +339,9 @@ def generate_boxplot(list_of_lists, values, x_label: str, y_label: str, label_ro
 
     # Group the values by the first list's elements
     for i, sublist in enumerate(list_of_lists):
-        for item in sublist:
+        # Convert each sublist to a set to remove duplicates, then add each item
+        unique_items = set(sublist)
+        for item in unique_items:
             grouped_data[item].append(values[i])
 
     # Convert the grouped data to a format that seaborn can handle
@@ -353,11 +357,21 @@ def generate_boxplot(list_of_lists, values, x_label: str, y_label: str, label_ro
     # Create a DataFrame-like structure
     data = {str(x_label): categories, str(y_label): boxplot_data}
     
-    # Create the boxplot
+    # Create the figure
     plt.figure(figsize=(10, 8))
+
     # Plot the means as red dots on the boxplot
     for i, mean in enumerate(means):
         plt.scatter(x=i, y=mean, color='red', label='Mean' if i == 0 else "")
+
+    # Display the count of items per group
+    for i, (category, group) in enumerate(grouped_data.items()):
+        # Calculate the number of items in each group
+        count = len(group)
+        # Annotate the count near the x-axis for each category
+        plt.text(i, max(boxplot_data) + 0.2, f'n={count}', ha='center', fontsize=10, color='black')
+   
+    # Make the boxplot
     sns.boxplot(x=str(x_label), y=str(y_label), data=data, fill=False)
     plt.xticks(rotation=label_rotation, ha="right", fontsize=10)  # Adjust rotation and alignment
     plt.title("Boxplot of " + y_label + " per " + x_label)
@@ -393,7 +407,7 @@ def all_prints(file_name: str):
 
     precisions, recalls, f1_scores = extract_scores(filtered_valid_data)
     plot_box_system_time(filtered_valid_data)
-    
+
     # Commands
     commands_list = get_commands_list(filtered_valid_data)
     generate_boxplot(commands_list, f1_scores, "Commands", "F1 Scores")
@@ -402,7 +416,7 @@ def all_prints(file_name: str):
     # System errors
     system_errors = get_system_errors(filtered_valid_data)
     print("System Errors", system_errors)
-    generate_boxplot(system_errors, f1_scores, "System Errors", "F1 Scores", label_rotation=0)
+    generate_boxplot(system_errors, f1_scores, "System Errors", "F1 Scores", label_rotation=20)
 
     matrix_command_error(commands_list, system_errors)
 

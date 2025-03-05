@@ -205,7 +205,6 @@ These commands will be used by Sparklis to generate SPARQL queries.
 - a [class] → Retrieve entities of a class (e.g., a person).  
 - forwardProperty [property] → Filter by property (e.g., "forwardProperty director" to find films directed by someone).
 - backwardProperty [property] of → Reverse relation (e.g., "backwardProperty director of" of to find directors of films).
-- match [string] → Retrieve entities with a name containing the string.
 - higherThan [value], lowerThan [value], between [v1] and [v2] → Value constraints where value, v1 and v2 are numbers.
 - after [date], before [date] → Time constraints.  
 - asc, desc → Sorting.  
@@ -215,7 +214,7 @@ These commands will be used by Sparklis to generate SPARQL queries.
 ## Here are some examples:
 Q: At which school went Yayoi Kusama?
 A: <think>Starting from the list of entities named Yayoi Kusama seems the best approach. Then, I just need to find the relationship that represents at which school she was educated.</think>
-<commands>match Yayoi Kusama ; forwardProperty education</commands> 
+<commands>Yayoi Kusama ; forwardProperty education</commands> 
 
 Q: What is the boiling point of water?
 A: <think>The core of the request is WATER. From this entity I will probably be able to get a property such as its BOILING POINT.</think>  
