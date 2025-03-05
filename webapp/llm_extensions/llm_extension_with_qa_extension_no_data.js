@@ -1,10 +1,6 @@
 //Dependencies: qa_extension.js, llm_add_interface_extension.js, llm_utils.js
 console.log("LLM with QA extension active");
 
-ERROR_PREFIX = "Error: ";
-WARNING_PREFIX = "Warning: ";
-
-
 STATUS_NOT_STARTED = "Not started";
 STATUS_ONGOING = "ONGOING";
 STATUS_DONE = "DONE";
@@ -17,6 +13,14 @@ var steps_status = {
     "4" : { "Name" : "Evaluate SPARQL in Sparklis", "Status" : STATUS_NOT_STARTED },
     "5" : { "Name" : "Parsing results for display", "Status" : STATUS_NOT_STARTED },
 };
+
+// If updated, also update the post-processing script
+var error_messages = [
+    "Error: No match found for <commands>...</commands>;",
+    "Warning: Commands failed to finish due to: ",
+    "Error: error while evaluating SPARQL query",
+    "Error: error while parsing SPARQL results",
+];
 
 function resetStepsStatus() {
     for (let step in steps_status) {
@@ -98,14 +102,14 @@ async function qa_control() {
     updateStepsStatus(currentStep, STATUS_ONGOING);
     let matchCommands = output.match(/<commands>(.*?)<\/commands>/s);
 
-    let commands = matchCommands ? matchCommands[1].trim() : "output malformated"; 
+    let commands = matchCommands ? matchCommands[1].trim() : ""; // Safe access since we checked if matchCommands is not null
     let qa = document.getElementById("qa");
     
     if (commands) {
         qa.value = commands;  // Safe access since we checked if commands is not null
         updateStepsStatus(currentStep, STATUS_DONE);
     } else {
-        let message = ERROR_PREFIX + "No match found for <commands>...</commands>;"
+        let message = error_messages[0];
         console.log(message);
         errors += message;
         updateStepsStatus(currentStep, STATUS_FAILED);
@@ -125,7 +129,7 @@ async function qa_control() {
             }
         )
         .catch(error => {
-            let message = WARNING_PREFIX + "Commands failed to finish due to: " + error;
+            let message = error_messages[1] + error;
             console.log(message);
             errors += message;
             updateStepsStatus(currentStep, STATUS_FAILED);
@@ -156,7 +160,7 @@ async function qa_control() {
             updateStepsStatus(currentStep, STATUS_DONE);
         } catch (e) {
             //catch error thrown by wikidata endpoint
-            let message = ERROR_PREFIX + "error while evaluating SPARQL query";
+            let message = error_messages[2];
             console.log(message, e);
             errors += message;
             updateStepsStatus(currentStep, STATUS_FAILED);
@@ -172,7 +176,7 @@ async function qa_control() {
                 console.log("result",resultText);
                 updateStepsStatus(currentStep, STATUS_DONE);
             } catch (e) {
-                let message = ERROR_PREFIX + "error while parsing SPARQL results";
+                let message = error_messages[3];
                 console.log(message, e);
                 errors += message;
                 updateStepsStatus(currentStep, STATUS_FAILED);

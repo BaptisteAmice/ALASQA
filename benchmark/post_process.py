@@ -3,6 +3,7 @@ import json
 import logging
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
+import seaborn as sns
 import os
 import re
 
@@ -28,6 +29,13 @@ command_list = [
     "not",
     "up",
     "down"
+]
+
+error_messages = [
+    "Error: No match found for <commands>...</commands>;",
+    "Warning: Commands failed to finish due to: ",
+    "Error: error while evaluating SPARQL query",
+    "Error: error while parsing SPARQL results",
 ]
 
 def extract_scores_from_file(file_name: str) -> tuple[list, list, list]:
@@ -293,53 +301,66 @@ def get_commands_list(filtered_data):
 
     return commands_list
 
-def plot_command_boxplots(used_commands_lists, scores):
+def get_system_errors(filtered_data):
     """
-    Plots box plots for each unique command, showing the distribution of scores where the command appears.
-    Also overlays the mean as a red marker.
+    Extracts system errors from the filtered data entries.
 
     Args:
-        used_commands_lists (list of list): List of command lists used in each case.
-        scores (list of float): Corresponding scores for each command list.
+        filtered_data (list): List of filtered data entries.
+
+    Returns:
+        list: List of system errors extracted from the SystemResult field.
     """
-    # Step 1: Find all unique commands
-    all_commands = set(cmd for sublist in used_commands_lists for cmd in sublist)
+    system_errors = []
+    for entry in filtered_data:
+        error_field = entry.get("Error")
+        if error_field:
+            question_errors = []
+            for error in error_messages:
+                if error in error_field:
+                    question_errors.append(error)
+            system_errors.append(question_errors)
+        else:
+            system_errors.append([])
+    return system_errors
 
-    # Step 2: Create a mapping of command -> list of scores where it appears
-    command_scores = {cmd: [] for cmd in all_commands}
+def matrix_command_error(commands_list, system_errors):
+    """
+    Creates a matrix of used commands and system errors for each question.
+    """
+    #todo
+    pass
 
-    for cmd_list, score in zip(used_commands_lists, scores):
-        for cmd in set(cmd_list):  # Use set to avoid duplicate counts per list
-            command_scores[cmd].append(score)
+def generate_boxplot(list_of_lists, values, x_label: str, y_label: str, label_rotation=45):
+    # Create a dictionary to group values by their corresponding categories
+    grouped_data = defaultdict(list)
 
-    # Step 3: Prepare Data for Seaborn
+    # Group the values by the first list's elements
+    for i, sublist in enumerate(list_of_lists):
+        for item in sublist:
+            grouped_data[item].append(values[i])
+
+    # Convert the grouped data to a format that seaborn can handle
     boxplot_data = []
-    boxplot_labels = []
+    categories = []
     means = []
+    
+    for category, group in grouped_data.items():
+        categories.extend([category] * len(group))
+        boxplot_data.extend(group)
+        means.append(np.mean(group))
 
-    for cmd, cmd_scores in command_scores.items():
-        if cmd_scores:  # Only plot commands that actually appear in some lists
-            boxplot_data.append(cmd_scores)
-            boxplot_labels.append(cmd)
-            means.append(np.mean(cmd_scores))  # Calculate mean for each command
-
-    # Step 4: Plot the Box Plot
-    plt.figure()
-    plt.boxplot(boxplot_data, labels=boxplot_labels)
-
-    # Overlay mean values
+    # Create a DataFrame-like structure
+    data = {str(x_label): categories, str(y_label): boxplot_data}
+    
+    # Create the boxplot
+    plt.figure(figsize=(10, 8))
+    # Plot the means as red dots on the boxplot
     for i, mean in enumerate(means):
-        plt.scatter(i, mean, color='red', marker='o', label="Mean" if i == 0 else "")
-
-    # Customize labels
-    plt.xticks(range(len(boxplot_labels)), boxplot_labels, rotation=45)
-    plt.ylabel("Scores")
-    plt.xlabel("Commands")
-    plt.title("Score Distribution per Command")
-    plt.grid(True)
-
-    # Add legend for the mean marker
-    plt.legend()
+        plt.scatter(x=i, y=mean, color='red', label='Mean' if i == 0 else "")
+    sns.boxplot(x=str(x_label), y=str(y_label), data=data, fill=False)
+    plt.xticks(rotation=label_rotation, ha="right", fontsize=10)  # Adjust rotation and alignment
+    plt.title("Boxplot of " + y_label + " per " + x_label)
     pp.savefig()
     if show:
         plt.show()
@@ -365,17 +386,25 @@ def all_prints(file_name: str):
     table_headers.append("Valid Data")
     table_data.append([len(filtered_valid_data)])
 
-    # Commands
-    commands_list = get_commands_list(filtered_valid_data)
-    precisions, recalls, f1_scores = extract_scores(filtered_valid_data)
-    plot_command_boxplots(commands_list, f1_scores)
-    print("Commands", commands_list)
 
     precisions, recalls, f1_scores = extract_scores(filtered_valid_data)
     precision_recall_f1_plot(precisions, recalls, f1_scores)
     boxplot_scores(precisions, recalls, f1_scores, "valid data")
 
+    precisions, recalls, f1_scores = extract_scores(filtered_valid_data)
     plot_box_system_time(filtered_valid_data)
+    
+    # Commands
+    commands_list = get_commands_list(filtered_valid_data)
+    generate_boxplot(commands_list, f1_scores, "Commands", "F1 Scores")
+    print("Commands", commands_list)
+
+    # System errors
+    system_errors = get_system_errors(filtered_valid_data)
+    print("System Errors", system_errors)
+    generate_boxplot(system_errors, f1_scores, "System Errors", "F1 Scores", label_rotation=0)
+
+    matrix_command_error(commands_list, system_errors)
 
     non_done_step = find_first_non_done_step(filtered_valid_data)
     hist_first_non_done_step(non_done_step, "Valid Data")
@@ -476,5 +505,5 @@ def all_prints(file_name: str):
 
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.realpath(__file__))
-    input_file = script_dir + "/Outputs/to_keep/llm_extension_with_qa_extension_no_data/QALD-10_sparklisllm_20250303_153759.json"
+    input_file = script_dir + "/Outputs/to_keep/llm_extension_with_qa_extension_no_data/QALD-10_sparklisllm_20250228_171915.json"
     all_prints(input_file)

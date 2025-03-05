@@ -1,12 +1,7 @@
+#todo enlever match parce que pas fou?
+
 #todo prochaine fois
 - faire passer les requetes, savoir EXACTEMENT QUAND PASSE PAS, identifier tt les scenarios
-
-1) LLM generation: No problem | error
-2) SPARKLIS (QA extension) commands to execute: No problem
-3) popup????
-...???
-
-champs erreur nombre
 
 
 #todo patcher is something
