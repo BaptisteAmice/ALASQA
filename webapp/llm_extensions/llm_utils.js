@@ -23,7 +23,6 @@ async function sendPrompt(input, streamOption = true, updateCallback = null, use
             let reader = response.body.getReader();
             let decoder = new TextDecoder('utf-8');
             let done = false;
-            let text = "";
         
             while (!done) {
                 let { value, done: readerDone } = await reader.read();
