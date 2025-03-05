@@ -1,4 +1,8 @@
 # Ignore virtual environment
 .venv/
 
+# Ignore experimental files
 experiments/
+
+# Ignore post-process results
+*.pdf
