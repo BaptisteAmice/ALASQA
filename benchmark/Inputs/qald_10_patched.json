@@ -124,7 +124,7 @@
                             {
                                 "result": {
                                     "type": "uri",
-                                    "value": "http://www.wikidata.org/entity/Q4205826"
+                                    "value": "http://www.wikidata.org/entity/Q2492923"
                                 }
                             }
                         ]
@@ -132,7 +132,7 @@
                 }
             ],
             "query": {
-                "sparql": "PREFIX bd: <http://www.bigdata.com/rdf#> PREFIX dct: <http://purl.org/dc/terms/> PREFIX geo: <http://www.opengis.net/ont/geosparql#> PREFIX p: <http://www.wikidata.org/prop/> PREFIX pq: <http://www.wikidata.org/prop/qualifier/> PREFIX ps: <http://www.wikidata.org/prop/statement/> PREFIX psn: <http://www.wikidata.org/prop/statement/value-normalized/> PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> PREFIX wd: <http://www.wikidata.org/entity/> PREFIX wds: <http://www.wikidata.org/entity/statement/> PREFIX wdt: <http://www.wikidata.org/prop/direct/> PREFIX wdv: <http://www.wikidata.org/value/> PREFIX wikibase: <http://wikiba.se/ontology#> PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> SELECT DISTINCT ?result WHERE {wd:Q11835640 wdt:P674 ?result. ?result wdt:P451 ?p1, ?p2. FILTER(?p1 != ?p2 &&(?result IN (wd:Q4205826, wd:Q4463198)))}"
+                "sparql": "PREFIX wd: <http://www.wikidata.org/entity/> PREFIX p: <http://www.wikidata.org/prop/> PREFIX ps: <http://www.wikidata.org/prop/statement/> SELECT DISTINCT ?P674_44 WHERE { wd:Q18935909 p:P144 [ ps:P144 ?thing_7 ] . ?thing_7 p:P674 [ ps:P674 ?P674_44 ] . wd:Q4463198 p:P451 [ ps:P451 ?P674_44 ] . wd:Q4205826 p:P451 [ ps:P451 ?P674_44 ] . } LIMIT 200"
             }
         },
         {
@@ -6914,7 +6914,7 @@
                                 "result": {
                                     "datatype": "http://www.w3.org/2001/XMLSchema#integer",
                                     "type": "literal",
-                                    "value": "77"
+                                    "value": "79"
                                 }
                             }
                         ]
@@ -6922,7 +6922,7 @@
                 }
             ],
             "query": {
-                "sparql": "PREFIX bd: <http://www.bigdata.com/rdf#> PREFIX dct: <http://purl.org/dc/terms/> PREFIX geo: <http://www.opengis.net/ont/geosparql#> PREFIX p: <http://www.wikidata.org/prop/> PREFIX pq: <http://www.wikidata.org/prop/qualifier/> PREFIX ps: <http://www.wikidata.org/prop/statement/> PREFIX psn: <http://www.wikidata.org/prop/statement/value-normalized/> PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> PREFIX wd: <http://www.wikidata.org/entity/> PREFIX wds: <http://www.wikidata.org/entity/statement/> PREFIX wdt: <http://www.wikidata.org/prop/direct/> PREFIX wdv: <http://www.wikidata.org/value/> PREFIX wikibase: <http://wikiba.se/ontology#> PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> SELECT DISTINCT ?result WHERE{wd:Q3044693 wdt:P582 ?time. BIND(YEAR(NOW()) - YEAR(?time) AS ?result) }"
+                "sparql": "PREFIX wd: <http://www.wikidata.org/entity/> PREFIX p: <http://www.wikidata.org/prop/> PREFIX ps: <http://www.wikidata.org/prop/statement/> SELECT DISTINCT (YEAR(NOW()) - YEAR(?P580_45) AS ?year_difference)  WHERE { SERVICE <https://query.wikidata.org/sparql> { SELECT ?thing_7 ?P580_45 WHERE { wd:Q3044693 p:P156 [ ps:P156 ?thing_7 ] . ?thing_7 p:P580 [ ps:P580 ?P580_45 ] .  }  LIMIT 200 }}"
             }
         },
         {
@@ -13141,7 +13141,7 @@
                 }
             ],
             "query": {
-                "sparql": "PREFIX bd: <http://www.bigdata.com/rdf#> PREFIX dct: <http://purl.org/dc/terms/> PREFIX geo: <http://www.opengis.net/ont/geosparql#> PREFIX p: <http://www.wikidata.org/prop/> PREFIX pq: <http://www.wikidata.org/prop/qualifier/> PREFIX ps: <http://www.wikidata.org/prop/statement/> PREFIX psn: <http://www.wikidata.org/prop/statement/value-normalized/> PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> PREFIX wd: <http://www.wikidata.org/entity/> PREFIX wds: <http://www.wikidata.org/entity/statement/> PREFIX wdt: <http://www.wikidata.org/prop/direct/> PREFIX wdv: <http://www.wikidata.org/value/> PREFIX wikibase: <http://wikiba.se/ontology#> PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> SELECT ?result WHERE {?result wdt:P31/wdt:P279* wd:Q11436; wdt:P178 wd:Q189081}"
+                "sparql": "PREFIX wd: <http://www.wikidata.org/entity/> PREFIX p: <http://www.wikidata.org/prop/> PREFIX ps: <http://www.wikidata.org/prop/statement/> SELECT * WHERE { SERVICE <https://query.wikidata.org/sparql> { SELECT DISTINCT ?thing_6 WHERE { VALUES ?P178_1 { wd:Q189081 wd:Q1512226 wd:Q5919927 wd:Q3519758 wd:Q1634683 wd:Q112476311 wd:Q7410090 wd:Q1521254 wd:Q164075 wd:Q14398035 wd:Q12521253 wd:Q3141564 wd:Q19874435 wd:Q106641258 wd:Q131181423 wd:Q16979190 wd:Q8454459 wd:Q24521435 wd:Q112965594 wd:Q5919930 wd:Q112307181 wd:Q113185531 wd:Q112457724 wd:Q128797091 wd:Q115795118 wd:Q123736744 wd:Q47350258 wd:Q25189976 wd:Q8526770 wd:Q116774860} ?thing_6 p:P178 [ ps:P178 ?P178_1 ] . } LIMIT 200 }}"
             }
         },
         {

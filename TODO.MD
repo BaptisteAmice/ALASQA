@@ -1,3 +1,8 @@
+#todo
+qald 10: 
+-id 2: faux la requete et son résultat (mm l'ancien)
+-id 145: MAIS LEQUEL? YA UNE ADAPTATION MAIS YA FORCEMENT UN ORIGINAL WORK
+
 #todo enlever match parce que pas fou?
 
 #todo prochaine fois
