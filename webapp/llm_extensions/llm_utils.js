@@ -21,26 +21,37 @@ async function sendPrompt(input, streamOption = true, updateCallback = null, use
         let text = "";
         if (streamOption) {
             let reader = response.body.getReader();
-            let result;
             let decoder = new TextDecoder('utf-8');
             let done = false;
+            let text = "";
+        
             while (!done) {
-                result = await reader.read();
-                let chunk = decoder.decode(result.value);
+                let { value, done: readerDone } = await reader.read();
+                if (readerDone) break;
+        
+                let chunk = decoder.decode(value, { stream: true });
                 console.log(chunk);
-                //postprocess to be able to parse string into json
-                let chunkDataString = chunk.slice(6).trim(); // remove "data:"
-                chunkDataString = chunkDataString.replace (/\ndata: \[DONE\]$/g, (match) => {
-                    done = true; //end of stream
-                    return ''; //remove matched part
-                });
-
-                let chunkData = JSON.parse(chunkDataString);
-                text += chunkData.choices[0].delta["content"] || '';
-
-                if (updateCallback != null) {
-                    updateCallback(text);
-                }   
+        
+                // Split the chunk into multiple JSON objects
+                let parts = chunk.split("data: ").filter(p => p.trim()); // Remove empty parts
+        
+                for (let part of parts) {
+                    if (part.includes("[DONE]")) {
+                        done = true;
+                        break;
+                    }
+        
+                    try {
+                        let chunkData = JSON.parse(part.trim());
+                        text += chunkData.choices[0].delta["content"] || '';
+        
+                        if (updateCallback != null) {
+                            updateCallback(text);
+                        }
+                    } catch (error) {
+                        console.error("JSON Parsing Error:", error, "Chunk Part:", part);
+                    }
+                }
             }
         } else {
             const data = await response.json();

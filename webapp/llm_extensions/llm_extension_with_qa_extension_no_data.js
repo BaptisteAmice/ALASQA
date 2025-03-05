@@ -88,7 +88,7 @@ async function qa_control() {
             updateReasoning(questionId, text); // Capture `questionId` and send `text`
             reasoningText = text;
         } 
-    );  //todo la maj de lmstudio a cassé le await
+    );
 
     if (reasoningText != "") {
         updateStepsStatus(currentStep, STATUS_DONE);
