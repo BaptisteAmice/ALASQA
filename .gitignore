@@ -6,3 +6,6 @@ experiments/
 
 # Ignore post-process results
 *.pdf
+
+# Ignore temporary files
+~$*

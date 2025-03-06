@@ -12,6 +12,7 @@ import re
 pp = PdfPages("post_process_data.pdf")
 show = False
 
+# List of recognizable commands
 command_list = [
     "a",
     "forwardProperty",
@@ -31,6 +32,7 @@ command_list = [
     "down"
 ]
 
+# List of recognizable error messages
 error_messages = [
     "Error: No match found for <commands>...</commands>;",
     "Warning: Commands failed to finish due to: ",
@@ -62,7 +64,7 @@ def precision_recall_f1_plot(precision, recall, f1_scores):
     Plot the precision, recall and f1 scores for each question.
     """
     questions = range(1, len(precision) + 1)  # Adjust based on your data length
-    plt.figure()
+    plt.figure(figsize=(10, 6))
     plt.scatter(questions, precision, label="Precision", marker="o")
     plt.scatter(questions, recall, label="Recall", marker="s")
     plt.scatter(questions, f1_scores, label="F1-score", marker="^")
@@ -419,18 +421,18 @@ def all_prints(file_name: str):
     # table_headers.append("Empty BenchmarkResult")
     # table_data.append([len(filtered_invalid_data)])
         
-    # Valid data
+    # Valid benchmark results
     constraints_none = {
         "BenchmarkResult": lambda x : x not in [None, []]
     }   
     filtered_valid_data = load_and_filter_data(file_name, constraints_none)
-    table_headers.append("Valid benchmark result")
+    table_headers.append("Valid benchmark results")
     table_data.append([len(filtered_valid_data)])
 
 
     precisions, recalls, f1_scores = extract_scores(filtered_valid_data)
     precision_recall_f1_plot(precisions, recalls, f1_scores)
-    boxplot_scores(precisions, recalls, f1_scores, "valid data")
+    boxplot_scores(precisions, recalls, f1_scores, "valid benchmark results")
 
     precisions, recalls, f1_scores = extract_scores(filtered_valid_data)
     plot_box_system_time(filtered_valid_data)
@@ -448,7 +450,7 @@ def all_prints(file_name: str):
     matrix_command_error(commands_list, system_errors)
 
     non_done_step = find_first_non_done_step(filtered_valid_data)
-    hist_first_non_done_step(non_done_step, "Valid Data")
+    hist_first_non_done_step(non_done_step, "valid benchmark results")
 
     # Empty reasoning
     constraints_empty_reasoning = {
