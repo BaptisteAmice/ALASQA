@@ -192,7 +192,7 @@ def hist_first_non_done_step(data: list, title_end: str):
                      else x for x in unique_values]
     
     # Plot histogram
-    plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(15, 6))
     plt.bar(unique_values, counts, color='skyblue', edgecolor='black')
     plt.xlabel('First non-Done Step')
     plt.ylabel('Count')
@@ -552,5 +552,5 @@ def all_prints(file_name: str):
 
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.realpath(__file__))
-    input_file = script_dir + "/Outputs/to_keep/llm_extension_with_qa_extension_no_data/QALD-10_sparklisllm_20250305_152238.json"
+    input_file = script_dir + "/Outputs/to_keep/llm_extension_with_qa_extension_no_data/pas_ouf.json"
     all_prints(input_file)
