@@ -54,6 +54,19 @@ function countCommands(commands) {
     return commands.split(";").filter(cmd => cmd.trim().length > 0).length;
 }
 
+/**
+ * Convert p.onEvaluated() to a promise to avoid nested callbacks
+ * @param {*} p 
+ * @returns 
+ */
+function waitForEvaluation(p) {
+    return new Promise((resolve) => {
+        p.onEvaluated(() => {
+            resolve();
+        });
+    });
+}
+
 async function qa_control() {
     resetStepsStatus(); // Reset steps for each new question
     clearAlerts(); // Clear alerts for each new question
@@ -146,51 +159,50 @@ async function qa_control() {
     //get sparklis results from the commands
     let place = sparklis.currentPlace();
 
-    //define callback
-    place.onEvaluated(async () => { //todo à mettre dans un promise
-        console.log("Place evaluated");
-        let sparql = place.sparql();
-        console.log("sparql",sparql);
-        let results;
-        currentStep++;
-        updateStepsStatus(currentStep, STATUS_ONGOING);
-        try { 
-            sparql = removePrefixes(sparql); //todo temp patch because of wikidata endpoint for which the prefixes are duplicated when requested by the LLM (only difference is that the event is automatically activated)
-            results = await sparklis.evalSparql(sparql); //todo peut etre pas comme ca
+    //wait for evaluation of the place
+    await waitForEvaluation(place);
+
+    console.log("Place evaluated");
+    let sparql = place.sparql();
+    console.log("sparql",sparql);
+    let results;
+    currentStep++;
+    updateStepsStatus(currentStep, STATUS_ONGOING);
+    try { 
+        sparql = removePrefixes(sparql); //todo temp patch because of wikidata endpoint for which the prefixes are duplicated when requested by the LLM (only difference is that the event is automatically activated)
+        results = await sparklis.evalSparql(sparql); //todo peut etre pas comme ca
+        updateStepsStatus(currentStep, STATUS_DONE);
+    } catch (e) {
+        //catch error thrown by wikidata endpoint
+        let message = error_messages[2];
+        console.log(message, e);
+        errors += message;
+        updateStepsStatus(currentStep, STATUS_FAILED);
+    }
+
+    currentStep++;
+    updateStepsStatus(currentStep, STATUS_ONGOING);
+    let resultText = "";
+    if (results && results.rows) {
+        try {
+            let rows = results.rows;
+            resultText = JSON.stringify(rows);
+            console.log("result",resultText);
             updateStepsStatus(currentStep, STATUS_DONE);
         } catch (e) {
-            //catch error thrown by wikidata endpoint
-            let message = error_messages[2];
+            let message = error_messages[3];
             console.log(message, e);
             errors += message;
             updateStepsStatus(currentStep, STATUS_FAILED);
         }
+    } else {
+        updateStepsStatus(currentStep, STATUS_FAILED);
+    }
 
-        currentStep++;
-        updateStepsStatus(currentStep, STATUS_ONGOING);
-        let resultText = "";
-        if (results && results.rows) {
-            try {
-                let rows = results.rows;
-                resultText = JSON.stringify(rows);
-                console.log("result",resultText);
-                updateStepsStatus(currentStep, STATUS_DONE);
-            } catch (e) {
-                let message = error_messages[3];
-                console.log(message, e);
-                errors += message;
-                updateStepsStatus(currentStep, STATUS_FAILED);
-            }
-        } else {
-            updateStepsStatus(currentStep, STATUS_FAILED);
-        }
+    updateAnswer(questionId, resultText, "???", sparql, errors); //todo sparklis_request 
 
-        updateAnswer(questionId, resultText, "???", sparql, errors); //todo sparklis_request 
-
-        //re-enable interactions (used as the condition to end the wait from tests)
-        enableInputs();
-    });    
-    
+    //re-enable interactions (used as the condition to end the wait from tests)
+    enableInputs(); 
 }
 
 const prompt_template = `

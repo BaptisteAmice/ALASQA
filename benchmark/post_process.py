@@ -38,6 +38,8 @@ error_messages = [
     "Error: error while parsing SPARQL results",
 ]
 
+steps_names = {} # Global variable to store the names of the steps (need to call find_first_non_done_step to set it)
+
 def extract_scores_from_file(file_name: str) -> tuple[list, list, list]:
     """
     Extracts precision, recall, and F1 scores from a JSON file.
@@ -80,12 +82,21 @@ def boxplot_scores(precision, recall, f1_scores, title_end: str):
     Boxplot of the scores.
     """
     plt.figure()
-    plt.boxplot([precision, recall, f1_scores], 
+    try:
+        # boxplots
+        plt.boxplot([precision, recall, f1_scores], 
                 tick_labels=[ "Precision \n(Mean: {:.2f})".format(sum(precision) / len(precision)),
                               "Recall \n(Mean: {:.2f})".format(sum(recall) / len(recall)),
                               "F1-score \n(Mean: {:.2f})".format(sum(f1_scores) / len(f1_scores))])
+        # plot means
+        plt.scatter([1, 2, 3], [sum(precision) / len(precision), sum(recall) / len(recall), sum(f1_scores) / len(f1_scores)],
+                    color='red', label='Mean')
+    except:
+        plt.text(x=0.5,y=0.5,s="No scores to plot.")
+
     plt.ylabel("Score")
     plt.title("Boxplot of the scores for " + title_end)
+    plt.legend()
     plt.grid(True)
     pp.savefig()
     if show:
@@ -172,16 +183,25 @@ def hist_first_non_done_step(data: list, title_end: str):
     # Count occurrences of each unique value
     unique_values, counts = np.unique(filtered_data, return_counts=True)
     
-    # Sort values to ensure 'None' is at the end
+    # Sort values and ensure 'None' is at the end
     unique_values = sorted(unique_values, key=lambda x: (x == 'None', x))
+    # Add corresponding names to the steps (if not None)
+    unique_values = ["(" + x + ") " + steps_names[int(x)] if x != 'None' 
+                     else x for x in unique_values]
     
     # Plot histogram
-    plt.figure()
+    plt.figure(figsize=(10, 6))
     plt.bar(unique_values, counts, color='skyblue', edgecolor='black')
     plt.xlabel('First non-Done Step')
     plt.ylabel('Count')
     plt.title("Histogram of First Non-Done Steps for "  + title_end)
     plt.xticks(unique_values)  # Ensure all unique values appear on x-axis
+    plt.grid(axis='y')
+
+    # Annotate each bar with its count
+    for i, count in enumerate(counts):
+        plt.text(i, count, str(count), ha='center', va='bottom', fontsize=8)
+
     pp.savefig()
     if show:
         plt.show()
@@ -210,6 +230,7 @@ def find_first_non_done_step(filtered_data):
         non_done_step = None
         # Iterate over steps and find the first one that is not 'DONE'
         for step_num, step in steps.items():
+            steps_names[int(step_num)] = step["Name"]
             if step["Status"] != "DONE":
                 non_done_step = int(step_num)
                 break
@@ -375,6 +396,7 @@ def generate_boxplot(list_of_lists, values, x_label: str, y_label: str, label_ro
     sns.boxplot(x=str(x_label), y=str(y_label), data=data, fill=False)
     plt.xticks(rotation=label_rotation, ha="right", fontsize=10)  # Adjust rotation and alignment
     plt.title("Boxplot of " + y_label + " per " + x_label)
+    plt.grid()
     pp.savefig()
     if show:
         plt.show()
@@ -390,19 +412,19 @@ def all_prints(file_name: str):
     table_data.append([len(all_data)])
 
     # Unvalid data
-    constraints_invalid = {
-        "BenchmarkResult": lambda x : x is None or x == []
-    }
-    filtered_invalid_data = load_and_filter_data(file_name, constraints_invalid)
-    table_headers.append("Empty BenchmarkResult")
-    table_data.append([len(filtered_invalid_data)])
+    # constraints_invalid = {
+    #     "BenchmarkResult": lambda x : x is None or x == []
+    # }
+    # filtered_invalid_data = load_and_filter_data(file_name, constraints_invalid)
+    # table_headers.append("Empty BenchmarkResult")
+    # table_data.append([len(filtered_invalid_data)])
         
     # Valid data
     constraints_none = {
         "BenchmarkResult": lambda x : x not in [None, []]
     }   
     filtered_valid_data = load_and_filter_data(file_name, constraints_none)
-    table_headers.append("Valid Data")
+    table_headers.append("Valid benchmark result")
     table_data.append([len(filtered_valid_data)])
 
 
@@ -421,7 +443,7 @@ def all_prints(file_name: str):
     # System errors
     system_errors = get_system_errors(filtered_valid_data)
     print("System Errors", system_errors)
-    generate_boxplot(system_errors, f1_scores, "System Errors", "F1 Scores", label_rotation=20)
+    generate_boxplot(system_errors, f1_scores, "System Errors", "F1 Scores", label_rotation=10)
 
     matrix_command_error(commands_list, system_errors)
 
@@ -528,5 +550,5 @@ def all_prints(file_name: str):
 
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.realpath(__file__))
-    input_file = script_dir + "/Outputs/to_keep/llm_extension_with_qa_extension_no_data/QALD-10_sparklisllm_20250228_171915.json"
+    input_file = script_dir + "/Outputs/to_keep/llm_extension_with_qa_extension_no_data/QALD-10_sparklisllm_20250305_152238.json"
     all_prints(input_file)
