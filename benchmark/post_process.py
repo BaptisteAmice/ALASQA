@@ -4,6 +4,7 @@ import logging
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import seaborn as sns
+import numpy as np
 import os
 import re
 
@@ -112,8 +113,6 @@ def boxplot_scores(precision, recall, f1_scores, title_end: str):
     if show:
         plt.show()
 
-import json
-from collections import defaultdict
 
 def load_and_filter_data(json_file, constraints=None):
     """
@@ -182,9 +181,6 @@ def count_metric_values(filtered_data):
         "RecallCounts": dict(sorted(recall_counts.items(), key=sort_key)),
         "F1ScoreCounts": dict(sorted(f1_counts.items(), key=sort_key))
     }
-
-import matplotlib.pyplot as plt
-import numpy as np
 
 def hist_first_non_done_step(data: list, title_end: str):
     # Convert None to a string for proper sorting
@@ -411,7 +407,77 @@ def generate_boxplot(list_of_lists, values, x_label: str, y_label: str, label_ro
     if show:
         plt.show()
 
-def all_prints(file_name: str):
+def make_core_good_responses(file_names: list):
+    """
+    todo???
+    """
+    # get scores for several files
+    precisions_lists = []
+    recalls_lists = []
+    f1_scores_lists = []
+    for file_name in file_names:
+        data = load_and_filter_data(file_name, {})
+        precisions, recalls, f1_scores = extract_scores(data)
+        precisions_lists.append(precisions)
+        recalls_lists.append(recalls)
+        f1_scores_lists.append(f1_scores)
+    # Only keep scores for questions that have a f1-score > 0 in all files
+    core_good_responses_ids = []
+    core_good_responses_precisions = []
+    core_good_responses_recalls = []
+    core_good_responses_f1 = []
+
+    for i in range(len(f1_scores_lists[0])):
+        if all(f1_scores[i] > 0 for f1_scores in f1_scores_lists):
+            core_good_responses_ids.append(i)
+            core_good_responses_precisions.append([precisions[i] for precisions in precisions_lists])
+            core_good_responses_recalls.append([recalls[i] for recalls in recalls_lists])
+            core_good_responses_f1.append([f1_scores[i] for f1_scores in f1_scores_lists])
+            
+    return core_good_responses_ids, core_good_responses_precisions, core_good_responses_recalls, core_good_responses_f1
+
+
+def plot_comparison_to_core_good_responses(core_files: list, new_file: str):
+    core_ids, core_precisions, core_recalls, core_f1s = make_core_good_responses(core_files)
+    new_data = load_and_filter_data(new_file, {})
+    
+    new_precisions, new_recalls, new_f1s = extract_scores(new_data)
+    new_precisions = [new_precisions[i] for i in core_ids]
+    new_recalls = [new_recalls[i] for i in core_ids]
+    new_f1s = [new_f1s[i] for i in core_ids]
+
+    metrics = [("Precision", core_precisions, new_precisions),
+               ("Recall", core_recalls, new_recalls),
+               ("F1-score", core_f1s, new_f1s)]
+
+    for metric, core_values, new_values in metrics:
+        plt.figure(figsize=(10, 6))
+        plt.boxplot(core_values, tick_labels=core_ids)
+        #if lower than the lowest value of the core values, plot it in red
+        for i, new_value in enumerate(new_values):
+            if new_value < min(core_values[i]):
+                plt.scatter(i + 1, new_value, color='red', label='New response worse than core')
+            elif new_value > max(core_values[i]):
+                plt.scatter(i + 1, new_value, color='green', label='New response better than core')
+            else:
+                plt.scatter(i + 1, new_value, color='blue', label='New response in the core range')
+        plt.xlabel("Questions")
+        plt.ylabel(metric)
+        plt.title(f"Comparison to the core good responses for {metric}")
+        # Remove duplicates in legend
+        handles, labels = plt.gca().get_legend_handles_labels()
+        unique = dict(zip(labels, handles))  # Remove duplicates by using a dict
+        # Show unique legend
+        plt.legend(unique.values(), unique.keys())
+        plt.grid(True)
+        pp.savefig()
+        if show:
+            plt.show()
+
+
+
+
+def all_prints(file_name: str, core_files_names: list[str]):
     # Data to be displayed in a table
     table_headers = []
     table_data = []
@@ -448,11 +514,9 @@ def all_prints(file_name: str):
     # Commands
     commands_list = get_commands_list(filtered_valid_data)
     generate_boxplot(commands_list, f1_scores, "Commands", "F1 Scores")
-    print("Commands", commands_list)
 
     # System errors
     system_errors = get_system_errors(filtered_valid_data)
-    print("System Errors", system_errors)
     generate_boxplot(system_errors, f1_scores, "System Errors", "F1 Scores", label_rotation=10)
 
     matrix_command_error(commands_list, system_errors)
@@ -551,6 +615,8 @@ def all_prints(file_name: str):
 
     #todo matrice etape premiere erreur / commande
 
+    plot_comparison_to_core_good_responses(core_files_names, file_name)
+
     # Table 
     fig, ax = plt.subplots()  # Adjust figure size
     ax.axis("off")  # Hide axes
@@ -567,5 +633,9 @@ def all_prints(file_name: str):
 
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.realpath(__file__))
-    input_file = script_dir + "/Outputs/to_keep/llm_extension_with_qa_extension_no_data/QALD-10_sparklisllm_20250306_175413.json"
-    all_prints(input_file)
+    input_file = script_dir + "/Outputs/to_keep/llm_extension_with_qa_extension_no_data/QALD-10_sparklisllm_20250305_205624.json"
+    core_files = [
+        script_dir + "/Outputs/to_keep/llm_extension_with_qa_extension_no_data/QALD-10_sparklisllm_20250305_152238.json",
+        script_dir + "/Outputs/to_keep/llm_extension_with_qa_extension_no_data/QALD-10_sparklisllm_20250306_175413.json"
+    ]
+    all_prints(input_file, core_files)
