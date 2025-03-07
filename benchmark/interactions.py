@@ -156,7 +156,7 @@ def sparklisllm_question(driver, question, endpoint_sparql) -> tuple[str, str, s
     # Find the alert messages stored in the local storage
     alert_messages = driver.execute_script("return localStorage.getItem('alertMessages');")
     # Retrieve the alert messages from the system
-    if alert_messages != "":
+    if alert_messages != "" and alert_messages != "[]":
         error += "Alert messages from the system [" + alert_messages + "]"
 
     # Get the current status of the steps

@@ -7,11 +7,11 @@ STATUS_DONE = "DONE";
 STATUS_FAILED = "FAILED";
 var steps_status = {
     "0" : { "Name" : "Start", "Status" : STATUS_NOT_STARTED },
-    "1" : { "Name" : "LLM generation", "Status" : STATUS_NOT_STARTED },
-    "2" : { "Name" : "Retrieving commands", "Status" : STATUS_NOT_STARTED },
-    "3" : { "Name" : "QA extension commands execution", "Status" : STATUS_NOT_STARTED },
-    "4" : { "Name" : "Evaluate SPARQL in Sparklis", "Status" : STATUS_NOT_STARTED },
-    "5" : { "Name" : "Parsing results for display", "Status" : STATUS_NOT_STARTED },
+    "1" : { "Name" : "LLM generation (p1)", "Status" : STATUS_NOT_STARTED },
+    "2" : { "Name" : "Retrieving cmds (p1)", "Status" : STATUS_NOT_STARTED },
+    "3" : { "Name" : "QA extension cmds execution (p1)", "Status" : STATUS_NOT_STARTED },
+    "4" : { "Name" : "Evaluate SPARQL in Sparklis (p1)", "Status" : STATUS_NOT_STARTED },
+    "5" : { "Name" : "Parsing res. for display", "Status" : STATUS_NOT_STARTED },
 };
 
 // If updated, also update the post-processing script

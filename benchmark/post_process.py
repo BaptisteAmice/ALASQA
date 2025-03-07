@@ -34,13 +34,21 @@ command_list = [
 
 # List of recognizable error messages
 error_messages = [
+    # System error messages
     "Error: No match found for <commands>...</commands>;",
-    "Warning: Commands failed to finish due to: ",
+    "Warning: Commands failed to finish",
     "Error: error while evaluating SPARQL query",
     "Error: error while parsing SPARQL results",
+
+    # Alert messages
+    "The query was not understood by the SPARQL endpoint",
+
+    # System evaluation/test system error messages
+    "Timeout",
+    "Error: please try to intercept the error before.",
 ]
 
-steps_names = {} # Global variable to store the names of the steps (need to call find_first_non_done_step to set it)
+step_names = {} # Global variable to store the names of the steps (need to call find_first_non_done_step to set it)
 
 def extract_scores_from_file(file_name: str) -> tuple[list, list, list]:
     """
@@ -188,7 +196,7 @@ def hist_first_non_done_step(data: list, title_end: str):
     # Sort values and ensure 'None' is at the end
     unique_values = sorted(unique_values, key=lambda x: (x == 'None', x))
     # Add corresponding names to the steps (if not None)
-    unique_values = ["(" + x + ") " + steps_names[int(x)] if x != 'None' 
+    unique_values = ["(" + x + ") " + step_names[int(x)] if x != 'None' 
                      else x for x in unique_values]
     
     # Plot histogram
@@ -232,7 +240,7 @@ def find_first_non_done_step(filtered_data):
         non_done_step = None
         # Iterate over steps and find the first one that is not 'DONE'
         for step_num, step in steps.items():
-            steps_names[int(step_num)] = step["Name"]
+            step_names[int(step_num)] = step["Name"]
             if step["Status"] != "DONE":
                 non_done_step = int(step_num)
                 break
@@ -392,7 +400,7 @@ def generate_boxplot(list_of_lists, values, x_label: str, y_label: str, label_ro
         # Calculate the number of items in each group
         count = len(group)
         # Annotate the count near the x-axis for each category
-        plt.text(i, max(boxplot_data) + 0.2, f'n={count}', ha='center', fontsize=10, color='black')
+        plt.text(i, -0.045, f'n={count}', ha='center', fontsize=10, color='black')
    
     # Make the boxplot
     sns.boxplot(x=str(x_label), y=str(y_label), data=data, fill=False)
@@ -530,9 +538,16 @@ def all_prints(file_name: str):
     non_done_step = find_first_non_done_step(filtered_expected_literal_data)
     hist_first_non_done_step(non_done_step, "Expected Literal")
 
-    #todo specific warnings (from alerts, etc.)
+    # Error: error while evaluating SPARQL query, for a non empty SystemQuery
+    constraints_sparql_error = {
+        "SystemQuery": lambda x: x not in [None, "", []],
+        "Error": lambda x: "error while evaluating SPARQL query" in x
+    }
+    filtered_sparql_error_but_not_empty_data = load_and_filter_data(file_name, constraints_sparql_error)
+    table_headers.append("Error while evaluating non-empty SystemQuery")
+    table_data.append([len(filtered_sparql_error_but_not_empty_data)])
 
-    #todo specific used commands
+    #todo specific warnings (from alerts, etc.)
 
     #todo matrice etape premiere erreur / commande
 
@@ -543,7 +558,7 @@ def all_prints(file_name: str):
         percentage = round(table_data[i][0] / len(all_data) * 100, 2)
         table_data[i].append(percentage)
 
-    ax.table(cellText=table_data, colLabels=["Number of","%"], rowLabels=table_headers, bbox=[0.3, 0, 0.5, 1], cellLoc="center", colWidths=[1/6, 1/6])
+    ax.table(cellText=table_data, colLabels=["Number of","%"], rowLabels=table_headers, bbox=[0.6, 0, 0.5, 1], cellLoc="center", colWidths=[1/4, 1/4])
     pp.savefig(fig)
     if show:
         plt.show()
@@ -552,5 +567,5 @@ def all_prints(file_name: str):
 
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.realpath(__file__))
-    input_file = script_dir + "/Outputs/to_keep/llm_extension_with_qa_extension_no_data/pas_ouf.json"
+    input_file = script_dir + "/Outputs/to_keep/llm_extension_with_qa_extension_no_data/QALD-10_sparklisllm_20250306_175413.json"
     all_prints(input_file)
