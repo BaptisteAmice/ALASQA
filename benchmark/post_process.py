@@ -86,6 +86,7 @@ def precision_recall_f1_plot(precision, recall, f1_scores):
     pp.savefig()
     if show:
         plt.show() 
+    plt.close()
 
 # Boxplot of the scores
 def boxplot_scores(precision, recall, f1_scores, title_end: str):
@@ -112,6 +113,7 @@ def boxplot_scores(precision, recall, f1_scores, title_end: str):
     pp.savefig()
     if show:
         plt.show()
+    plt.close()
 
 
 def load_and_filter_data(json_file, constraints=None):
@@ -211,6 +213,7 @@ def hist_first_non_done_step(data: list, title_end: str):
     pp.savefig()
     if show:
         plt.show()
+    plt.close()
 
 def find_first_non_done_step(filtered_data):
     """
@@ -256,6 +259,7 @@ def plot_box_system_time(filtered_data):
     pp.savefig()
     if show:
         plt.show()
+    plt.close()
 
 def get_commands_from_reasoning(reasoning: str) -> list:
     """
@@ -406,8 +410,9 @@ def generate_boxplot(list_of_lists, values, x_label: str, y_label: str, label_ro
     pp.savefig()
     if show:
         plt.show()
+    plt.close()
 
-def make_core_good_responses(file_names: list):
+def make_core(file_names: list, exclusive_core: bool = True):
     """
     todo???
     """
@@ -428,7 +433,8 @@ def make_core_good_responses(file_names: list):
     core_good_responses_f1 = []
 
     for i in range(len(f1_scores_lists[0])):
-        if all(f1_scores[i] > 0 for f1_scores in f1_scores_lists):
+        if ((exclusive_core and all((f1_scores[i] > 0) for f1_scores in f1_scores_lists))
+            or (not exclusive_core and any((f1_scores[i] > 0) for f1_scores in f1_scores_lists))):
             core_good_responses_ids.append(i)
             core_good_responses_precisions.append([precisions[i] for precisions in precisions_lists])
             core_good_responses_recalls.append([recalls[i] for recalls in recalls_lists])
@@ -437,8 +443,8 @@ def make_core_good_responses(file_names: list):
     return core_good_responses_ids, core_good_responses_precisions, core_good_responses_recalls, core_good_responses_f1
 
 
-def plot_comparison_to_core_good_responses(core_files: list, new_file: str):
-    core_ids, core_precisions, core_recalls, core_f1s = make_core_good_responses(core_files)
+def plot_comparison_to_core_good_responses(core_files: list, new_file: str, exclusive_core: bool = True):
+    core_ids, core_precisions, core_recalls, core_f1s = make_core(core_files, exclusive_core)
     new_data = load_and_filter_data(new_file, {})
     
     new_precisions, new_recalls, new_f1s = extract_scores(new_data)
@@ -463,7 +469,8 @@ def plot_comparison_to_core_good_responses(core_files: list, new_file: str):
                 plt.scatter(i + 1, new_value, color='blue', label='New response in the core range')
         plt.xlabel("Questions")
         plt.ylabel(metric)
-        plt.title(f"Comparison to the core good responses for {metric}")
+        core_type = "exclusive" if exclusive_core else "inclusive"
+        plt.title(f"Comparison to the ({core_type}) core good responses for {metric}")
         # Remove duplicates in legend
         handles, labels = plt.gca().get_legend_handles_labels()
         unique = dict(zip(labels, handles))  # Remove duplicates by using a dict
@@ -473,6 +480,42 @@ def plot_comparison_to_core_good_responses(core_files: list, new_file: str):
         pp.savefig()
         if show:
             plt.show()
+        plt.close()
+
+
+def plot_hist_scores_per_thresholds(filtered_data, thresholds: list = [0, 0.25, 0.5, 0.75, 1]):
+    """
+    Plot the histogram of the scores (precision, recall, f1) per thresholds and save to a PDF file.
+    
+    Parameters:
+    - filtered_data: Data from which precision, recall, and f1 scores will be extracted.
+    - thresholds: List of thresholds to group the data.
+    """
+    # Extract the precision, recall, and f1 scores from the filtered data
+    precisions, recalls, f1_scores = extract_scores(filtered_data)
+    
+    # For each metric (precision, recall, f1), create a single plot
+    for metric_name, scores in [("Precision", precisions), ("Recall", recalls), ("F1 Score", f1_scores)]:
+        # Count how many values fall within each threshold range
+        counts = []
+        sum_previous_counts = 0
+        for i in range(len(thresholds) - 1):
+            count = sum(score <= thresholds[i] for score in scores)
+            counts.append(count - sum_previous_counts)
+            sum_previous_counts = count
+        
+        # Plot the histogram for the current metric
+        plt.figure()
+        plt.bar(range(len(counts)), counts, color='skyblue', edgecolor='black')
+        plt.xticks(range(len(counts)), [f"{thresholds[i]} - {thresholds[i + 1]}" for i in range(len(counts))])
+        plt.xlabel("Threshold Range")
+        plt.ylabel("Count")
+        plt.title(f"Histogram of {metric_name}s per Threshold")
+        plt.grid(True)
+        pp.savefig()  # Save the plot to the PDF
+        if show:
+            plt.show()  # Show the plot if 'show' is True
+        plt.close()
 
 
 
@@ -506,6 +549,7 @@ def all_prints(file_name: str, core_files_names: list[str]):
 
     precisions, recalls, f1_scores = extract_scores(filtered_valid_data)
     precision_recall_f1_plot(precisions, recalls, f1_scores)
+    plot_hist_scores_per_thresholds(filtered_valid_data)
     boxplot_scores(precisions, recalls, f1_scores, "valid benchmark results")
 
     precisions, recalls, f1_scores = extract_scores(filtered_valid_data)
@@ -615,7 +659,8 @@ def all_prints(file_name: str, core_files_names: list[str]):
 
     #todo matrice etape premiere erreur / commande
 
-    plot_comparison_to_core_good_responses(core_files_names, file_name)
+    plot_comparison_to_core_good_responses(core_files_names, file_name, exclusive_core=True)
+    plot_comparison_to_core_good_responses(core_files_names, file_name, exclusive_core=False)
 
     # Table 
     fig, ax = plt.subplots()  # Adjust figure size
@@ -628,6 +673,7 @@ def all_prints(file_name: str, core_files_names: list[str]):
     pp.savefig(fig)
     if show:
         plt.show()
+    plt.close()
 
     pp.close() # Close the pdf file
 
