@@ -374,5 +374,6 @@ if __name__ == "__main__":
     logging.info(f"Used LLM model: {used_llm}")
 
     # Start the evaluation
-    main(config.BENCHMARK_FILE, config.BENCHMARK_NAME, config.TESTED_SYSTEM, 
-         config.SPARQL_ENDPOINT, used_llm)
+    for _ in range(config.NB_TESTS):
+        main(config.BENCHMARK_FILE, config.BENCHMARK_NAME, config.TESTED_SYSTEM, 
+            config.SPARQL_ENDPOINT, used_llm)

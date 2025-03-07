@@ -36,6 +36,9 @@ OUTPUT_FOLDER = script_dir + '/Outputs/'
 
 ####### 
 
+# number of time to test the dataset and of output files to generate
+NB_TESTS = 3
+
 # Input json file containing the benchmark
 BENCHMARK_FILE = script_dir + '/Inputs/' + 'qald3_10.json'
 
