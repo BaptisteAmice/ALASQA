@@ -43,6 +43,7 @@ error_messages = [
 
     # Alert messages
     "The query was not understood by the SPARQL endpoint",
+    "There was an error at the SPARQL endpoint",
 
     # System evaluation/test system error messages
     "Timeout",
@@ -351,10 +352,10 @@ def get_system_errors(filtered_data):
                 if error in error_field:
                     question_errors.append(error)
             if not question_errors:
-                question_errors.append("No error message")
+                question_errors.append("No matched error message")
             system_errors.append(question_errors)
         else:
-            system_errors.append([])
+            system_errors.append(["No error message"])
     return system_errors
 
 def matrix_command_error(commands_list, system_errors):
@@ -499,7 +500,7 @@ def plot_hist_scores_per_thresholds(filtered_data, thresholds: list = [0, 0.25, 
         # Count how many values fall within each threshold range
         counts = []
         sum_previous_counts = 0
-        for i in range(len(thresholds) - 1):
+        for i in range(len(thresholds)):
             count = sum(score <= thresholds[i] for score in scores)
             counts.append(count - sum_previous_counts)
             sum_previous_counts = count
@@ -507,7 +508,7 @@ def plot_hist_scores_per_thresholds(filtered_data, thresholds: list = [0, 0.25, 
         # Plot the histogram for the current metric
         plt.figure()
         plt.bar(range(len(counts)), counts, color='skyblue', edgecolor='black')
-        plt.xticks(range(len(counts)), [f"{thresholds[i]} - {thresholds[i + 1]}" for i in range(len(counts))])
+        plt.xticks(range(len(thresholds)), [f"<={threshold}" for threshold in thresholds])
         plt.xlabel("Threshold Range")
         plt.ylabel("Count")
         plt.title(f"Histogram of {metric_name}s per Threshold")
@@ -649,7 +650,7 @@ def all_prints(file_name: str, core_files_names: list[str]):
     # Error: error while evaluating SPARQL query, for a non empty SystemQuery
     constraints_sparql_error = {
         "SystemQuery": lambda x: x not in [None, "", []],
-        "Error": lambda x: "error while evaluating SPARQL query" in x
+        "Error": lambda x: x is not None and "error while evaluating SPARQL query" in x
     }
     filtered_sparql_error_but_not_empty_data = load_and_filter_data(file_name, constraints_sparql_error)
     table_headers.append("Error while evaluating non-empty SystemQuery")
@@ -661,6 +662,7 @@ def all_prints(file_name: str, core_files_names: list[str]):
 
     plot_comparison_to_core_good_responses(core_files_names, file_name, exclusive_core=True)
     plot_comparison_to_core_good_responses(core_files_names, file_name, exclusive_core=False)
+    #todo also show improvement in another figure
 
     # Table 
     fig, ax = plt.subplots()  # Adjust figure size
@@ -679,9 +681,9 @@ def all_prints(file_name: str, core_files_names: list[str]):
 
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.realpath(__file__))
-    input_file = script_dir + "/Outputs/to_keep/llm_extension_with_qa_extension_no_data/QALD-10_sparklisllm_20250305_205624.json"
+    input_file = script_dir + "/Outputs/QALD-10_sparklisllm_20250307_234947.json"
     core_files = [
-        script_dir + "/Outputs/to_keep/llm_extension_with_qa_extension_no_data/QALD-10_sparklisllm_20250305_152238.json",
-        script_dir + "/Outputs/to_keep/llm_extension_with_qa_extension_no_data/QALD-10_sparklisllm_20250306_175413.json"
+        script_dir + "/Outputs/QALD-10_sparklisllm_20250307_183805.json",
+        script_dir + "/Outputs/QALD-10_sparklisllm_20250307_211841.json",
     ]
     all_prints(input_file, core_files)
