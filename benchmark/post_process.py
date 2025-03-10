@@ -3,7 +3,9 @@ import json
 import logging
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
+import matplotlib.lines as mlines
 import seaborn as sns
+import networkx as nx
 import numpy as np
 import os
 import re
@@ -88,6 +90,66 @@ def precision_recall_f1_plot(precision, recall, f1_scores):
     if show:
         plt.show() 
     plt.close()
+
+def plot_scores_relative_to_core_responses(core_files: list[str], new_file: str):
+    """
+    Red is worse than the core, green is better, blue is in the core range.
+    """
+    for metric in ["Precision", "Recall", "F1Score"]:
+        plt.figure(figsize=(12, 6))
+
+        nbre_improvments = 0
+        nbre_degradations = 0
+        nbre_no_change = 0
+        
+        # Load data from the new file
+        new_data = load_and_filter_data(new_file, {})
+        new_scores = [entry.get(metric, 0.0) for entry in new_data]
+        
+        # Load data from the core files
+        core_scores_per_file = []
+        for core_file in core_files:
+            core_data = load_and_filter_data(core_file, {})
+            core_scores_per_file.append([entry.get(metric, 0.0) for entry in core_data])
+
+        # Transpose core_scores to group values per response index
+        core_scores = list(zip(*core_scores_per_file))  # Now core_scores[i] corresponds to response i across all files
+
+        # Plot the new scores
+        for i, new_score in enumerate(new_scores):
+            if i >= len(core_scores):  # Safety check in case of mismatched lengths
+                continue
+
+            # replace 'NoneType' by 0
+            core_scores[i] = [0 if x is None else x for x in core_scores[i]]
+            new_score = 0 if new_score is None else new_score
+
+            min_core = min(core_scores[i])
+            max_core = max(core_scores[i])
+
+            if new_score < min_core:
+                color = 'red'
+                nbre_degradations += 1
+            elif new_score > max_core:
+                color = 'green'
+                nbre_improvments += 1
+            else:
+                color = 'blue'
+                nbre_no_change += 1            
+            plt.scatter(i, new_score, color=color)
+        # Define legend handles
+        worse_handle = mlines.Line2D([], [], color='red', marker='o', linestyle='None', markersize=8, label='Worse (' + str(nbre_degradations) + ')')
+        better_handle = mlines.Line2D([], [], color='green', marker='o', linestyle='None', markersize=8, label='Better (' + str(nbre_improvments) + ')')
+        in_range_handle = mlines.Line2D([], [], color='blue', marker='o', linestyle='None', markersize=8, label='In core range (' + str(nbre_no_change) + ')')
+        plt.legend(handles=[worse_handle, better_handle, in_range_handle])
+        plt.xlabel("Response Index")
+        plt.ylabel(metric)
+        plt.title(f"Comparison of {metric} scores to all core responses")
+        plt.grid(True)
+        pp.savefig()
+        if show:
+            plt.show()
+        plt.close()
 
 # Boxplot of the scores
 def boxplot_scores(precision, recall, f1_scores, title_end: str):
@@ -463,20 +525,21 @@ def plot_comparison_to_core_good_responses(core_files: list, new_file: str, excl
         #if lower than the lowest value of the core values, plot it in red
         for i, new_value in enumerate(new_values):
             if new_value < min(core_values[i]):
-                plt.scatter(i + 1, new_value, color='red', label='New response worse than core')
+                plt.scatter(i + 1, new_value, color='red')
             elif new_value > max(core_values[i]):
-                plt.scatter(i + 1, new_value, color='green', label='New response better than core')
+                plt.scatter(i + 1, new_value, color='green')
             else:
-                plt.scatter(i + 1, new_value, color='blue', label='New response in the core range')
+                plt.scatter(i + 1, new_value, color='blue')
         plt.xlabel("Questions")
         plt.ylabel(metric)
         core_type = "exclusive" if exclusive_core else "inclusive"
         plt.title(f"Comparison to the ({core_type}) core good responses for {metric}")
-        # Remove duplicates in legend
-        handles, labels = plt.gca().get_legend_handles_labels()
-        unique = dict(zip(labels, handles))  # Remove duplicates by using a dict
-        # Show unique legend
-        plt.legend(unique.values(), unique.keys())
+        # Define legend handles
+        worse_handle = mlines.Line2D([], [], color='red', marker='o', linestyle='None', markersize=8, label='New response worse than core')
+        better_handle = mlines.Line2D([], [], color='green', marker='o', linestyle='None', markersize=8, label='New response better than core')
+        in_range_handle = mlines.Line2D([], [], color='blue', marker='o', linestyle='None', markersize=8, label='New response within core range')
+        plt.legend(handles=[worse_handle, better_handle, in_range_handle])
+
         plt.grid(True)
         pp.savefig()
         if show:
@@ -519,17 +582,79 @@ def plot_hist_scores_per_thresholds(filtered_data, thresholds: list = [0, 0.25, 
         plt.close()
 
 
+def plot_tree(data, title="Tree Representation"):
+    """
+    Plots a tree from a nested dictionary structure.
+
+    Parameters:
+        data (dict): The hierarchical dictionary containing 'count' and 'children'.
+        title (str): The title of the plot.
+    """
+    def add_nodes_edges(graph, parent, node_data):
+        """ Recursively add nodes and edges to the graph. """
+        if isinstance(node_data, dict) and 'count' in node_data:
+            node_label = f"{parent}\n({node_data['count']})"  # Label with count
+            graph.add_node(node_label)  # Add node
+
+            for child_name, child_data in node_data['children'].items():
+                child_label = f"{child_name}\n({child_data['count']})"
+                graph.add_edge(node_label, child_label)  # Add edge
+                add_nodes_edges(graph, child_name, child_data)  # Recursive call
+
+            # add secondary links to sub-children
+            for child_name in node_data.get("sub_children_names", []):
+                # Find the node containing the child name as its label
+                child_node = next((node for node in graph.nodes if child_name in node), None)
+                if child_node:
+                    graph.add_edge(node_label, child_node)
+
+    # Create the graph
+    G = nx.DiGraph()
+    for root, root_data in data.items():
+        add_nodes_edges(G, root, root_data)
+
+    # Draw the graph
+    plt.figure(figsize=(12, 8))
+    try:
+        pos = nx.nx_agraph.graphviz_layout(G, prog="dot")  # Tree layout (requires pygraphviz)
+    except:
+        pos = nx.spring_layout(G, seed=42)  # Alternative if pygraphviz is not installed
+
+    nx.draw(G, pos, with_labels=True, node_size=2000, node_color="lightblue", edge_color="gray", font_size=10)
+    plt.title(title)
+    pp.savefig()
+    if show:
+        plt.show()
+    plt.close()
+
+def plot_table(table_headers, table_data, all_data):
+    """
+    Plots a table with the given headers and data.
+    """
+    fig, ax = plt.subplots()  # Adjust figure size
+    ax.axis("off")  # Hide axes
+    for i in range(len(table_data)):
+        percentage = round(table_data[i][0] / len(all_data) * 100, 2)
+        table_data[i].append(percentage)
+
+    ax.table(cellText=table_data, colLabels=["Number of","%"], rowLabels=table_headers, bbox=[0.6, 0, 0.5, 1], cellLoc="center", colWidths=[1/4, 1/4])
+    pp.savefig()
+    if show:
+        plt.show()
+    plt.close()
 
 
 def all_prints(file_name: str, core_files_names: list[str]):
     # Data to be displayed in a table
     table_headers = []
     table_data = []
+    tree_data = {}
 
     # All data
     table_headers.append("Question Count")
     all_data = load_and_filter_data(file_name, {})
     table_data.append([len(all_data)])
+    tree_data["All questions"] = {"count": len(all_data), "children": {}}
 
     # Unvalid data
     # constraints_invalid = {
@@ -540,16 +665,18 @@ def all_prints(file_name: str, core_files_names: list[str]):
     # table_data.append([len(filtered_invalid_data)])
         
     # Valid benchmark results
-    constraints_none = {
+    constraints_valid_benchmark = {
         "BenchmarkResult": lambda x : x not in [None, []]
     }   
-    filtered_valid_data = load_and_filter_data(file_name, constraints_none)
+    filtered_valid_data = load_and_filter_data(file_name, constraints_valid_benchmark)
     table_headers.append("Valid benchmark results")
     table_data.append([len(filtered_valid_data)])
 
 
     precisions, recalls, f1_scores = extract_scores(filtered_valid_data)
     precision_recall_f1_plot(precisions, recalls, f1_scores)
+    plot_scores_relative_to_core_responses(core_files_names, file_name)
+    plot_comparison_to_core_good_responses(core_files_names, file_name, exclusive_core=True)
     plot_hist_scores_per_thresholds(filtered_valid_data)
     boxplot_scores(precisions, recalls, f1_scores, "valid benchmark results")
 
@@ -558,10 +685,14 @@ def all_prints(file_name: str, core_files_names: list[str]):
 
     # Commands
     commands_list = get_commands_list(filtered_valid_data)
+    generate_boxplot(commands_list, precisions, "Commands", "Precisions")
+    generate_boxplot(commands_list, recalls, "Commands", "Recalls")
     generate_boxplot(commands_list, f1_scores, "Commands", "F1 Scores")
 
     # System errors
     system_errors = get_system_errors(filtered_valid_data)
+    generate_boxplot(system_errors, precisions, "System Errors", "Precisions", label_rotation=10)
+    generate_boxplot(system_errors, recalls, "System Errors", "Recalls", label_rotation=10)
     generate_boxplot(system_errors, f1_scores, "System Errors", "F1 Scores", label_rotation=10)
 
     matrix_command_error(commands_list, system_errors)
@@ -569,43 +700,46 @@ def all_prints(file_name: str, core_files_names: list[str]):
     non_done_step = find_first_non_done_step(filtered_valid_data)
     hist_first_non_done_step(non_done_step, "valid benchmark results")
 
-    # Empty reasoning
-    constraints_empty_reasoning = {
-        "Reasoning": lambda x: x == ""
+    #Score at 0
+    constraints_score_at_zero = {
+        "F1Score": lambda x: x == 0
     }
-    filtered_empty_reasoning_data = load_and_filter_data(file_name, constraints_empty_reasoning)
-    table_headers.append("Empty Reasoning")
-    table_data.append([len(filtered_empty_reasoning_data)])    
+    filtered_score_at_zero_data = load_and_filter_data(file_name, constraints_score_at_zero)
+    tree_data["All questions"]["children"]["Score at 0"] = {"count": len(filtered_score_at_zero_data), "children": {}}
 
     # Empty SystemResult
     constraints_empty_system_result = {
         "SystemResult": lambda x: x == "" or x is None or x == []
     }
     filtered_empty_system_result_data = load_and_filter_data(file_name, constraints_empty_system_result)
-    table_headers.append("Empty SystemResult")
-    table_data.append([len(filtered_empty_system_result_data)])
+    tree_data["All questions"]["children"]["Score at 0"]["children"]["Empty SystemResult"] = {"count": len(filtered_empty_system_result_data), "children": {}}
 
     non_done_step = find_first_non_done_step(filtered_empty_system_result_data)
     hist_first_non_done_step(non_done_step, "Empty SystemResult")
+
+    # Empty reasoning traces
+    constraints_empty_reasoning = {
+        "Reasoning": lambda x: x == ""
+    }
+    filtered_empty_reasoning_data = load_and_filter_data(file_name, constraints_empty_reasoning)
+    tree_data["All questions"]["children"]["Score at 0"]["children"]["Empty system reasoning traces"] = {"count": len(filtered_empty_reasoning_data), "children": {}}
 
     # Non-empty response from the system
     filtered_non_empty_response = {
         "SystemResult" : lambda x: x not in [None, "", []],
     }
     filtered_non_empty_response_data = load_and_filter_data(file_name, filtered_non_empty_response)
-    table_headers.append("Non-empty SystemResult")
-    table_data.append([len(filtered_non_empty_response_data)])
-
+    tree_data["All questions"]["children"]["Non-empty SystemResult"] = {"count": len(filtered_non_empty_response_data), "children": {}, "sub_children_names": {"Non-empty SystemResult\n(score at 0)"}}
+    
     # Non-empty response from the system but with a score at  0
     filtered_non_empty_response_score_at_zero = {
         "SystemResult" : lambda x: x not in [None, "", []],
         "F1Score": lambda x: x == 0
     }
     filtered_non_empty_response_score_at_zero_data = load_and_filter_data(file_name, filtered_non_empty_response_score_at_zero)
-    table_headers.append("Non-empty SystemResult\n(score at 0)")
-    table_data.append([len(filtered_non_empty_response_score_at_zero_data)])
+    tree_data["All questions"]["children"]["Score at 0"]["children"]["Non-empty SystemResult\n(score at 0)"] = {"count": len(filtered_non_empty_response_score_at_zero_data), "children": {}}
 
-        # Expected boolean
+    # Expected boolean
     constraints_expected_boolean = {
         "BenchmarkResultType": lambda x: x == "boolean"
     }
@@ -653,37 +787,25 @@ def all_prints(file_name: str, core_files_names: list[str]):
         "Error": lambda x: x is not None and "error while evaluating SPARQL query" in x
     }
     filtered_sparql_error_but_not_empty_data = load_and_filter_data(file_name, constraints_sparql_error)
-    table_headers.append("Error while evaluating non-empty SystemQuery")
-    table_data.append([len(filtered_sparql_error_but_not_empty_data)])
+    tree_data["All questions"]["children"]["Error while evaluating non-empty SystemQuery"] = {"count": len(filtered_sparql_error_but_not_empty_data), "children": {}}
 
     #todo specific warnings (from alerts, etc.)
 
     #todo matrice etape premiere erreur / commande
 
-    plot_comparison_to_core_good_responses(core_files_names, file_name, exclusive_core=True)
-    plot_comparison_to_core_good_responses(core_files_names, file_name, exclusive_core=False)
-    #todo also show improvement in another figure
-
     # Table 
-    fig, ax = plt.subplots()  # Adjust figure size
-    ax.axis("off")  # Hide axes
-    for i in range(len(table_data)):
-        percentage = round(table_data[i][0] / len(all_data) * 100, 2)
-        table_data[i].append(percentage)
-
-    ax.table(cellText=table_data, colLabels=["Number of","%"], rowLabels=table_headers, bbox=[0.6, 0, 0.5, 1], cellLoc="center", colWidths=[1/4, 1/4])
-    pp.savefig(fig)
-    if show:
-        plt.show()
-    plt.close()
+    plot_table(table_headers, table_data, all_data)
+    # Plot the tree
+    plot_tree(tree_data)
 
     pp.close() # Close the pdf file
 
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.realpath(__file__))
-    input_file = script_dir + "/Outputs/QALD-10_sparklisllm_20250307_234947.json"
+    input_file = script_dir + "/Outputs/to_keep/llm_extension_with_qa_extension_no_data/QALD-10_sparklisllm_20250306_175413.json"
     core_files = [
-        script_dir + "/Outputs/QALD-10_sparklisllm_20250307_183805.json",
-        script_dir + "/Outputs/QALD-10_sparklisllm_20250307_211841.json",
+        script_dir + "/BestOutputs/QALD-10_sparklisllm_20250307_183805.json",
+        script_dir + "/BestOutputs/QALD-10_sparklisllm_20250307_211841.json",
+        script_dir + "/BestOutputs/QALD-10_sparklisllm_20250307_234947.json"
     ]
     all_prints(input_file, core_files)

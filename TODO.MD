@@ -1,9 +1,18 @@
+todo
+- cf todo diapo
+
+perso
+#experimentations à faire:
+- low temperature
+- autre modèles
+- change prompt
+- suite de prompts
+----------------------------------
 #todo
 qald 10: 
 -id 2: faux la requete et son résultat (mm l'ancien)
 -id 145: MAIS LEQUEL? YA UNE ADAPTATION MAIS YA FORCEMENT UN ORIGINAL WORK
 
-#todo enlever match parce que pas fou?
 
 #todo prochaine fois
 - faire passer les requetes, savoir EXACTEMENT QUAND PASSE PAS, identifier tt les scenarios
