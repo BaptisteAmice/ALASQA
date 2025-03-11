@@ -84,6 +84,8 @@ function process_step(place, step) {
 	let sugg = {type: "IncrConstr", constr: constr, filterType: "OnlyLiterals"};
 	return apply_suggestion(place, "from-to", sugg)
     } else if ((match = /^higherThan\s*(.+)$/.exec(step))) {
+	//todo only allow if number on both sides
+	console.log(place.results());
 	let constr = { type: "HigherThan", value: match[1] };
 	let sugg = {type: "IncrConstr", constr: constr, filterType: "OnlyLiterals"};
 	return apply_suggestion(place, "higher-than", sugg)
@@ -113,6 +115,13 @@ function process_step(place, step) {
 		))
 	})	
 
+	} else if ((match = /^filter\s+(.+)$/.exec(step))) {
+		let constr = { type: "MatchesAll", kwds: match[1].split(/\s+/) };
+		sparklis.setConceptConstr(constr);
+		sparklis.setTermConstr(constr);
+		sparklis.setModifierConstr(constr);
+		return Promise.resolve(sparklis.currentPlace());
+
     } else if ((match = /^a\s+(.+)\s*$/.exec(step))) {
 	return search_and_apply_suggestion(
 	    place, "class", match[1],
@@ -127,7 +136,7 @@ function process_step(place, step) {
 	    suggestion_type(sugg) === "IncrRel" && sugg.orientation === "Fwd"
 		|| suggestion_type(sugg) === "IncrPred" && sugg.arg === "S",
 	    sparklis.propertyLabels())
-    } else if ((match = /^backwardProperty\s+(.+)\s+of$/.exec(step))) {
+    } else if ((match = /^backwardProperty\s+(.+)$/.exec(step))) {
 	return search_and_apply_suggestion(
 	    place, "bwd property", match[1],
 	    (place,constr) => place.getConceptSuggestions(false,constr),

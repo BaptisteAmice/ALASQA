@@ -1,12 +1,33 @@
 todo
 - cf todo diapo
+- ajouter commande filter (trouver comment gérer par colonne)
+//comment traduire suggestions d'objet vers texte affichage (il y a un hook pour?)
+await sparklis.currentPlace().getConceptSuggestions(false,sparklis.conceptConstr())
+-add prompt version in final log
+
+//commande revient en arriere
+//commande erreur
+
+//probleme : higherThan -> higher or equal to
+
+- Question is ..., we currently have filter by what ? -> pick
+-> enough to respond ?
+-> filter by what ? -> pick
+
+property ??? not found
+
 
 perso
+finetuning? huggingface -> lmstudio (extracteur réponse au format pour finetuning->pp)
 #experimentations à faire:
 - low temperature
 - autre modèles
 - change prompt
 - suite de prompts
+-------------
+probleme commandes
+forwardProperty namedAfter -> fowardProperty named after
+
 ----------------------------------
 #todo
 qald 10: 

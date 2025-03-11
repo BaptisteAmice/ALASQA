@@ -66,6 +66,31 @@ async function sendPrompt(input, streamOption = true, updateCallback = null, use
     }
 }
 
+
+////////// UTILS //////////
+function removePrefixes(sparqlQuery) {
+    return sparqlQuery.split('\n')
+        .filter(line => !line.startsWith('PREFIX'))
+        .join('\n');
+}
+
+function countCommands(commands) {
+    return commands.split(";").filter(cmd => cmd.trim().length > 0).length;
+}
+
+/**
+ * Convert place.onEvaluated() to a promise to avoid nested callbacks
+ * @param {*} place
+ * @returns 
+ */
+function waitForEvaluation(place) {
+    return new Promise((resolve) => {
+        place.onEvaluated(() => {
+            resolve();
+        });
+    });
+}
+
 ////////// COMMANDS //////////
 //todo à voir si on fait vraiment ca
 
@@ -93,6 +118,37 @@ const QueryTypes = {
     verify: "verify", // ???
     search: "search", //search for a specific result // ???
 };
+
+async function getSuggestions() {
+    //place needs to be evaluated
+    //await sparklis.currentPlace().getConceptSuggestions(false,sparklis.conceptConstr());
+    //les 2 autres
+    return; //todo
+}
+
+function pickSuggestion() {
+    //applySuggestion
+    return; //todo
+}
+
+async function getResults() {
+    //todo
+    return await sparklis.evalSparql(removePrefixes(sparklis.currentPlace().sparql()));
+}
+
+function getQuery() {
+    //let sparql = place.sparql();
+    return; //todo
+}
+
+function llmHelp() {
+    //current question
+    //current query
+    //current results (not all if too many) 
+    //is this query responding to the question
+    //can you alter this query to respond to the question
+    return; //todo
+}
 
 function queryWrapping(query, type, options = {}) {
     //todo deplacer prefixes, mettre query dans wrapper filtrer grace aux options
@@ -127,3 +183,9 @@ function queryWrapping(query, type, options = {}) {
 //     }
 //   }
 // }
+
+/////// MODULES ////////
+
+//find best suggestion
+
+//choose between reasoners

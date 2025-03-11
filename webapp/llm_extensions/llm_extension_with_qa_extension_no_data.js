@@ -1,6 +1,8 @@
 //Dependencies: qa_extension.js, llm_add_interface_extension.js, llm_utils.js
 console.log("LLM with QA extension active");
 
+
+/////// Steps status ////////
 STATUS_NOT_STARTED = "Not started";
 STATUS_ONGOING = "ONGOING";
 STATUS_DONE = "DONE";
@@ -32,6 +34,9 @@ function updateStepsStatus(step, status) {
     steps_status[step.toString()]["Status"] = status;
     localStorage.setItem("steps_status", JSON.stringify(steps_status));
 }
+
+/////// System ////////
+
 // upon window load... create text field and ENTER handler
 window.addEventListener(
     'load',
@@ -43,29 +48,6 @@ window.addEventListener(
         }
 	})
 });
-
-function removePrefixes(sparqlQuery) {
-    return sparqlQuery.split('\n')
-        .filter(line => !line.startsWith('PREFIX'))
-        .join('\n');
-}
-
-function countCommands(commands) {
-    return commands.split(";").filter(cmd => cmd.trim().length > 0).length;
-}
-
-/**
- * Convert p.onEvaluated() to a promise to avoid nested callbacks
- * @param {*} p 
- * @returns 
- */
-function waitForEvaluation(p) {
-    return new Promise((resolve) => {
-        p.onEvaluated(() => {
-            resolve();
-        });
-    });
-}
 
 async function qa_control() {
     resetStepsStatus(); // Reset steps for each new question
@@ -201,6 +183,25 @@ async function qa_control() {
 
     updateAnswer(questionId, resultText, "???", sparql, errors); //todo sparklis_request 
 
+
+    //does the llm think the answer is correct? //todo improve
+    let systemMessage_verifier = `For a given question, a given request SPARQL and a given result, do you think the result is correct?
+    Think step by step, then finish your response by <answer>correct</answer> or <answer>incorrect</answer>.`;
+    let input_verifier = `
+    <question>${input_question}</question>
+    <sparql>${sparql}</sparql>
+    <result>${resultText}</result>
+    `;
+    let output_verifier = await sendPrompt( //todo for wikipedia translate id
+        usualPrompt(systemMessage_verifier, input_verifier), 
+        true, 
+        (text) => { 
+            updateReasoning(questionId, output 
+                + " - Prompt verification - " + text); // Capture `questionId` and send `text`
+            reasoningText = text;
+        } 
+    );
+
     //re-enable interactions (used as the condition to end the wait from tests)
     enableInputs(); 
 }
@@ -216,7 +217,7 @@ const prompt_template = `
 - a [concept] → Retrieve entities of a given concept (e.g., "a book" to find books).
 - [entity] → Retrieve an entity (e.g., "Albert Einstein" to find the entity representing Einstein).
 - forwardProperty [property] → Filter by property (e.g., "forwardProperty director" to find films directed by someone).
-- backwardProperty [property] of → Reverse relation (e.g., "backwardProperty director of" of to find directors of films).
+- backwardProperty [property] → Reverse relation (e.g., "backwardProperty director" to find directors of films).
 - higherThan [number], lowerThan [number] → Value constraints.
 - after [date], before [date] → Time constraints.  
 - and, or → Logical operators.  
@@ -236,5 +237,5 @@ A: I need to find FILMS by Spielberg or Burton released after 1980. I can start 
 
 Q: among the founders of tencent company, who has been member of national people' congress?"
 A: I can start by finding FOUNDERS of something called TENCENT. Then, I can filter by people who have been members of the NATIONAL PEOPLE'S CONGRESS.
-<commands>backwardProperty founder of ; Tencent ; forwardProperty position ; National People's Congress</commands>
+<commands>backwardProperty founder ; Tencent ; forwardProperty position ; National People's Congress</commands>
 `;

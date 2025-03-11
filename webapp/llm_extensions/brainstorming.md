@@ -5,9 +5,9 @@
 Un seul prompt posant la question au LLM, lui donnant une syntaxe de commandes à exécuter pour obtenir la réponse. Retourne la réponse telle quelle.
 
 Résultats:
-- Rappel: 0.0
-- Précision: 0.0
-- F1: 0.0
+- Rappel: 10.0
+- Précision: 10.0
+- F1: 10.0
 
 Limites:
 - Ne retourne que des listes de réponses
