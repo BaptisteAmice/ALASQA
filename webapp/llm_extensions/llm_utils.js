@@ -17,7 +17,7 @@ async function sendPrompt(input, streamOption = true, updateCallback = null, use
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ messages: input, temperature: usedTemperature,  stream : streamOption })
         });
-        console.log("Ongoing...")
+        console.log("Ongoing LLM generation...")
         let text = "";
         if (streamOption) {
             let reader = response.body.getReader();
@@ -89,6 +89,20 @@ function waitForEvaluation(place) {
             resolve();
         });
     });
+}
+
+async function getWikidataLabel(wikidataURI, language = "en") {
+    const entityId = wikidataURI.split('/').pop();
+    const url = `https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${entityId}&format=json&props=labels&languages=${language}&origin=*`;
+
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+        return data.entities[entityId]?.labels[language]?.value || "Label not found";
+    } catch (error) {
+        console.error("Error fetching data:", error);
+        return "Error fetching label";
+    }
 }
 
 ////////// COMMANDS //////////

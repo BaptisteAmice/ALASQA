@@ -184,13 +184,23 @@ async function qa_control() {
     updateAnswer(questionId, resultText, "???", sparql, errors); //todo sparklis_request 
 
 
+    let resultText_verifier = resultText;
+    //for all wikidata links, get the labels
+    let wikidataLinks = resultText_verifier.match(/http:\/\/www.wikidata.org\/entity\/Q\d+/g);
+    if (wikidataLinks) {
+        for (let link of wikidataLinks) {
+            let label = await getWikidataLabel(link);
+            resultText_verifier = resultText_verifier.replace(link, label);
+        }
+    }
+
     //does the llm think the answer is correct? //todo improve
     let systemMessage_verifier = `For a given question, a given request SPARQL and a given result, do you think the result is correct?
     Think step by step, then finish your response by <answer>correct</answer> or <answer>incorrect</answer>.`;
     let input_verifier = `
     <question>${input_question}</question>
     <sparql>${sparql}</sparql>
-    <result>${resultText}</result>
+    <result>${resultText_verifier}</result>
     `;
     let output_verifier = await sendPrompt( //todo for wikipedia translate id
         usualPrompt(systemMessage_verifier, input_verifier), 
@@ -201,6 +211,7 @@ async function qa_control() {
             reasoningText = text;
         } 
     );
+    //todo if not correct -> let the llm alter the query (not in no data version)
 
     //re-enable interactions (used as the condition to end the wait from tests)
     enableInputs(); 

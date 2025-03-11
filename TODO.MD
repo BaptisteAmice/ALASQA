@@ -18,6 +18,7 @@ property ??? not found
 
 
 perso
+tester si prediction résultat est bon 
 finetuning? huggingface -> lmstudio (extracteur réponse au format pour finetuning->pp)
 #experimentations à faire:
 - low temperature
@@ -63,9 +64,6 @@ todo fuseki v2 <-> heberger dump graphe
 -limites
 -superlatif
 -boolean
-
--if wikidata mod -> wikidata search -> extarnal search -> get_constr inspi
-
 
 
 

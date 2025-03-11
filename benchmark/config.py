@@ -15,8 +15,8 @@ logging.basicConfig(
     ]
 )
 
-# time constraints
-SYSTEM_TIMEOUT = 500
+# time constraint for a single question (in seconds)
+SYSTEM_TIMEOUT = 1500
 
 # Number of queries executed between each save for a benchmark evaluation
 BATCH_SIZE = 10
