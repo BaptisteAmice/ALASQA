@@ -257,7 +257,7 @@ def hist_first_non_done_step(data: list, title_end: str):
     # Sort values and ensure 'None' is at the end
     unique_values = sorted(unique_values, key=lambda x: (x == 'None', x))
     # Add corresponding names to the steps (if not None)
-    unique_values = ["(" + x + ") " + step_names[int(x)] if x != 'None' 
+    unique_values = ["(" + str(x) + ") " + step_names[int(x)] if x != 'None' 
                      else x for x in unique_values]
     
     # Plot histogram
@@ -511,9 +511,14 @@ def plot_comparison_to_core_good_responses(core_files: list, new_file: str, excl
     new_data = load_and_filter_data(new_file, {})
     
     new_precisions, new_recalls, new_f1s = extract_scores(new_data)
-    new_precisions = [new_precisions[i] for i in core_ids]
-    new_recalls = [new_recalls[i] for i in core_ids]
-    new_f1s = [new_f1s[i] for i in core_ids]
+    # Handle cases where the new file has fewer responses than the core (unfinished runs)
+    valid_core_ids = [i for i in core_ids if i < len(new_precisions)]
+    #warn if there are less responses in the new file than in the core
+    if len(valid_core_ids) < len(core_ids):
+        logging.warning(f"Less responses in the new file ({len(valid_core_ids)}) than in the core ({len(core_ids)}).")
+    new_precisions = [new_precisions[i] for i in valid_core_ids]
+    new_recalls = [new_recalls[i] for i in valid_core_ids]
+    new_f1s = [new_f1s[i] for i in valid_core_ids]
 
     metrics = [("Precision", core_precisions, new_precisions),
                ("Recall", core_recalls, new_recalls),
@@ -627,7 +632,7 @@ def plot_tree(data, title="Tree Representation"):
         plt.show()
     plt.close()
 
-def plot_table(table_headers, table_data, all_data):
+def plot_table(table_headers, table_data, all_data, table_name):
     """
     Plots a table with the given headers and data.
     """
@@ -638,6 +643,7 @@ def plot_table(table_headers, table_data, all_data):
         table_data[i].append(percentage)
 
     ax.table(cellText=table_data, colLabels=["Number of","%"], rowLabels=table_headers, bbox=[0.6, 0, 0.5, 1], cellLoc="center", colWidths=[1/4, 1/4])
+    ax.set_title(f"Table of {table_name}")
     pp.savefig()
     if show:
         plt.show()
@@ -794,15 +800,63 @@ def all_prints(file_name: str, core_files_names: list[str]):
     #todo matrice etape premiere erreur / commande
 
     # Table 
-    plot_table(table_headers, table_data, all_data)
+    plot_table(table_headers, table_data, all_data, "global data")
     # Plot the tree
     plot_tree(tree_data)
+
+
+    # Todo temp
+    # Test the verifier fiability
+    constraints_verifier_tp = { # True positive
+        "BenchmarkResult": lambda x : x not in [None, []],
+        "F1Score": lambda x: x > 0,
+        "Reasoning": lambda x: x is not None and "<answer>correct</answer>" in x
+    }
+    constraints_verifier_fp = { # False positive
+        "BenchmarkResult": lambda x : x not in [None, []],
+        "F1Score": lambda x: x == 0,
+        "Reasoning": lambda x: x is not None and "<answer>correct</answer>" in x
+    }
+    constraints_verifier_fn = { # False negative
+        "BenchmarkResult": lambda x : x not in [None, []],
+        "F1Score": lambda x: x > 0,
+        "Reasoning": lambda x: x is not None and "<answer>incorrect</answer>" in x
+    }
+    constraints_verifier_tn = { # True negative
+        "BenchmarkResult": lambda x : x not in [None, []],
+        "F1Score": lambda x: x == 0,
+        "Reasoning": lambda x: x is not None and "<answer>incorrect</answer>" in x
+    }
+    constraint_verifier_failed = { # Failed
+        "BenchmarkResult": lambda x : x not in [None, []],
+        "F1Score": lambda x: x == 0,
+        "Reasoning": lambda x: x is not None and "<answer>correct</answer>" not in x and "<answer>incorrect</answer>" not in x
+    }
+    #make table with all the data
+    table_headers_verifier = []
+    table_data_verifier = []
+    table_headers_verifier.append("True positive")
+    filtered_verifier_tp_data = load_and_filter_data(file_name, constraints_verifier_tp)
+    table_data_verifier.append([len(filtered_verifier_tp_data)])
+    table_headers_verifier.append("False positive")
+    filtered_verifier_fp_data = load_and_filter_data(file_name, constraints_verifier_fp)
+    table_data_verifier.append([len(filtered_verifier_fp_data)])
+    table_headers_verifier.append("False negative")
+    filtered_verifier_fn_data = load_and_filter_data(file_name, constraints_verifier_fn)
+    table_data_verifier.append([len(filtered_verifier_fn_data)])
+    table_headers_verifier.append("True negative")
+    filtered_verifier_tn_data = load_and_filter_data(file_name, constraints_verifier_tn)
+    table_data_verifier.append([len(filtered_verifier_tn_data)])
+    table_headers_verifier.append("Failed")
+    filtered_verifier_failed_data = load_and_filter_data(file_name, constraint_verifier_failed)
+    table_data_verifier.append([len(filtered_verifier_failed_data)])
+    plot_table(table_headers_verifier, table_data_verifier, all_data, "verifier fidelity")
 
     pp.close() # Close the pdf file
 
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.realpath(__file__))
-    input_file = script_dir + "/Outputs/to_keep/llm_extension_with_qa_extension_no_data/QALD-10_sparklisllm_20250306_175413.json"
+    input_file = script_dir + "/Outputs/QALD-10_sparklisllm_20250311_151513_partiel.json"
     core_files = [
         script_dir + "/BestOutputs/QALD-10_sparklisllm_20250307_183805.json",
         script_dir + "/BestOutputs/QALD-10_sparklisllm_20250307_211841.json",
