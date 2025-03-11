@@ -152,7 +152,7 @@ async function qa_control() {
     updateStepsStatus(currentStep, STATUS_ONGOING);
     try { 
         sparql = removePrefixes(sparql); //todo temp patch because of wikidata endpoint for which the prefixes are duplicated when requested by the LLM (only difference is that the event is automatically activated)
-        results = await sparklis.evalSparql(sparql); //todo peut etre pas comme ca
+        results = await getResultsWithLabels(sparql);
         updateStepsStatus(currentStep, STATUS_DONE);
     } catch (e) {
         //catch error thrown by wikidata endpoint
@@ -240,7 +240,7 @@ A: Starting from the list of entities named Yayoi Kusama seems the best approach
 
 Q: What is the boiling point of water?
 A: The core of the request is WATER. From this entity I will probably be able to get a property such as its BOILING POINT.  
-<commands>water; forwardProperty boiling</commands>  
+<commands>water; forwardProperty boiling point</commands>  
 
 Q: Movies by Spielberg or Tim Burton after 1980?
 A: I need to find FILMS by Spielberg or Burton released after 1980. I can start by listing FILMS and then filter by DIRECTOR and RELEASE DATE. 

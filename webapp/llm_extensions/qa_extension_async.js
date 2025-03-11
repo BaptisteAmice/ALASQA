@@ -84,12 +84,18 @@ function process_step(place, step) {
 	let sugg = {type: "IncrConstr", constr: constr, filterType: "OnlyLiterals"};
 	return apply_suggestion(place, "from-to", sugg)
     } else if ((match = /^higherThan\s*(.+)$/.exec(step))) {
+	if (!isNumeric(match[1])) {
+		return Promise.reject("higherThan something that is not a number");
+	}
 	//todo only allow if number on both sides
 	console.log(place.results());
 	let constr = { type: "HigherThan", value: match[1] };
 	let sugg = {type: "IncrConstr", constr: constr, filterType: "OnlyLiterals"};
 	return apply_suggestion(place, "higher-than", sugg)
     } else if ((match = /^lowerThan\s*(.+)$/.exec(step))) { //todo empecher si pas numerique? //juste test js ou est ce qu'on veut pouvoir utiliser propriétés?
+	if (!isNumeric(match[1])) {
+		return Promise.reject("lowerThan something that is not a number");
+	}
 	let constr = { type: "LowerThan", value: match[1] };
 	let sugg = {type: "IncrConstr", constr: constr, filterType: "OnlyLiterals"};
 	return apply_suggestion(place, "lower-than", sugg)
@@ -346,6 +352,12 @@ function editDistance(str1, str2) {
 
     return dp[len1][len2];
 }
+
+function isNumeric(str) {
+	if (typeof str != "string") return false // we only process strings!  
+	return !isNaN(str) && // use type coercion to parse the _entirety_ of the string (`parseFloat` alone does not do this)...
+		   !isNaN(parseFloat(str)) // ...and ensure strings of whitespace fail
+  }
 
 // example steps
 // on DBpedia Core: a film; has director; Tim Burton; down; or; Spielberg; up; up; has starring ; has birthdate ; after 1980

@@ -133,21 +133,39 @@ const QueryTypes = {
     search: "search", //search for a specific result // ???
 };
 
-async function getSuggestions() {
+async function getConceptSuggestionsWithLabels() { //todo
+    //conceptSuggestions.forest -> for sugg in forest -> .item.suggestion.pred -> .uriE ou uriO
     //place needs to be evaluated
-    //await sparklis.currentPlace().getConceptSuggestions(false,sparklis.conceptConstr());
+    let conceptSuggestions = await sparklis.currentPlace().getConceptSuggestions(false,sparklis.conceptConstr());
+    console.log(conceptSuggestions);
+    //replace wiki data uri by labels
+    for (let suggestion of conceptSuggestions.forest) {
+        if (suggestion && suggestion.item && suggestion.item.suggestion && suggestion.item.suggestion.pred && suggestion.item.suggestion.pred.uriE &&
+            suggestion.item.suggestion.pred.uriE.startsWith("http://www.wikidata.org/")) {
+            suggestion.item.suggestion.pred.label = await getWikidataLabel(suggestion.item.suggestion.pred.uriE);
+        }
+    }
+
+
     //les 2 autres
-    return; //todo
+    return conceptSuggestions;
 }
 
 function pickSuggestion() {
     //applySuggestion
     return; //todo
 }
-
-async function getResults() {
-    //todo
-    return await sparklis.evalSparql(removePrefixes(sparklis.currentPlace().sparql()));
+async function getResultsWithLabels(sparqlQuery) {
+    let results = await sparklis.evalSparql(sparqlQuery);
+    for (let row of results.rows) {
+        for (let value of row) {
+            // for each value, if it is a wikidata uri, add the corresponding label from wikidata
+            if (value && value.type === "uri" && value.uri.startsWith("http://www.wikidata.org/entity/")) {
+                value.label = await getWikidataLabel(value.uri);
+            }
+        }
+    }
+    return results;
 }
 
 function getQuery() {
