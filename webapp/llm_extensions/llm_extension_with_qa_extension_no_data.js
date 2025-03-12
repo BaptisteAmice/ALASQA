@@ -1,7 +1,6 @@
 //Dependencies: qa_extension.js, llm_add_interface_extension.js, llm_utils.js, prompts.js
 console.log("LLM with QA extension active");
 
-
 /////// Steps status ////////
 STATUS_NOT_STARTED = "Not started";
 STATUS_ONGOING = "ONGOING";
@@ -59,17 +58,17 @@ async function qa_control() {
     updateStepsStatus(currentStep, STATUS_DONE);
     sparklis.home(); //reset sparklis
     let errors = "";
-
     //disable interactions with the llm input field (used as the condition to wait for the end of the process in tests)
     disableInputs();
 
     let systemMessage = commands_chain_system_prompt();
     let input_field = document.getElementById("user-input");
     let input_question = commands_chain_input_prompt(input_field.value);
+    let qa = document.getElementById("qa"); // input field of the qa extension
 
     /////////// Extraction ///////////
 
-    questionId = addLLMQuestion(input_question);
+    questionId = addLLMQuestion(input_question); //  Add a div in the interface to display the question and the answer
    
     let reasoningText = ""; //to keep reasoning text and be able to update it
     let reasoningTextStep = "";
@@ -98,7 +97,6 @@ async function qa_control() {
     let matchCommands = output.match(/<commands>(.*?)<\/commands>/s);
 
     let commands = matchCommands ? matchCommands[1].trim() : ""; // Safe access since we checked if matchCommands is not null
-    let qa = document.getElementById("qa");
     
     if (commands) {
         qa.value = commands;  // Safe access since we checked if commands is not null
@@ -136,7 +134,6 @@ async function qa_control() {
     let remainingCommandsCount = countCommands(remainingCommands);
     console.log("Remaining commands:", remainingCommandsCount);
     let executedCommmandsCount = commandsCount - remainingCommandsCount;
-
 
     //get sparklis results from the commands
     let place = sparklis.currentPlace();
@@ -189,7 +186,7 @@ async function qa_control() {
     updateStepsStatus(currentStep, STATUS_ONGOING);
     let resultText_verifier = resultText;
     //only keep the first n results (to avoid too long prompts)
-    let results_to_keep = 5;
+    let results_to_keep = 3;
     let resultsArray;
     try {//todo mieux gérer cas où resulttext est vide
         resultsArray = JSON.parse(resultText_verifier);

@@ -13,13 +13,13 @@ function commands_chain_system_prompt() {
     - forwardProperty [property] → Filter by property (e.g., "forwardProperty director" to find films directed by someone).
     - backwardProperty [property] → Reverse relation (e.g., "backwardProperty director" to find directors of films).
     - higherThan [number], lowerThan [number] → Value constraints.
-    - after [date], before [date] → Time constraints.  
-    - and, or → Logical operators.  
+    - after [date], before [date] → Time constraints (e.g., "after 2000").
+    - and, or → Logical operators (e.g., "Tim Burton; or; Steven Spielberg").
 
     ## Examples:
     Q: At which school went Yayoi Kusama?
-    A: Starting from the list of entities named Yayoi Kusama seems the best approach. Then, I just need to find the relationship that represents at which school she was educated.
-    <commands>Yayoi Kusama ; forwardProperty education</commands> 
+    A: To answer this question, we need to identify the entity for "Yayoi Kusama" and the property "educated at" that connects her to the schools she attended. Using the forwardProperty educated at command will allow us to filter the institutions where she received her education.
+    <commands>Yayoi Kusama ; forwardProperty educated at</commands> 
 
     Q: What is the boiling point of water?
     A: The core of the request is WATER. From this entity I will probably be able to get a property such as its BOILING POINT.  
@@ -31,7 +31,7 @@ function commands_chain_system_prompt() {
 
     Q: among the founders of tencent company, who has been member of national people' congress?"
     A: I can start by finding FOUNDERS of something called TENCENT. Then, I can filter by people who have been members of the NATIONAL PEOPLE'S CONGRESS.
-    <commands>backwardProperty founder ; Tencent ; forwardProperty position ; National People's Congress</commands>
+    <commands>backwardProperty founder of; Tencent ; forwardProperty position ; National People's Congress</commands>
     `;
 }
 
@@ -57,3 +57,14 @@ function verifier_input_prompt(input_question, sparql, resultText) {
 ///// Patch
 
 //todo
+
+
+///// Direct question to SPARQL
+function direct_qa_system_prompt(endpoint) {
+    return `For a given question, generate a SPARQL query to retrieve the relevant information from the knowledge graph (the endpoint to use is ${endpoint}).
+    Think step by step, then finish your response by the generated SPARQL query wrapped in <sparql>...</sparql>.`;
+}
+
+function direct_qa_input_prompt(input) {
+    return "Q: " + input + "\nA: ";
+}

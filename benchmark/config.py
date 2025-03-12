@@ -19,7 +19,7 @@ logging.basicConfig(
 SYSTEM_TIMEOUT = 1500
 
 # Number of queries executed between each save for a benchmark evaluation
-BATCH_SIZE = 10
+BATCH_SIZE = 1
 
 # Location of the Sparklis file (local or remote)
 SPARKLIS_FILE = "http://localhost:8000/static/osparklis.html"

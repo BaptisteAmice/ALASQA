@@ -174,3 +174,6 @@ call_llm -> just call another llm to adapt request
         - count -> compte le nombre de résultat dans un dict
         - search -> cherche une valeur dans un dict
         - traduction entité -> string
+
+----------------
+backwardProperty member of ; India ; down ; or ; France

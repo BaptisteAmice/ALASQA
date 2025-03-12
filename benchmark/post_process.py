@@ -856,7 +856,7 @@ def all_prints(file_name: str, core_files_names: list[str]):
 
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.realpath(__file__))
-    input_file = script_dir + "/BestOutputs/QALD-10_sparklisllm_20250307_234947.json"
+    input_file = script_dir + "/BestOutputs/QALD-10_sparklisllm_20250312_003603.json"
     core_files = [
         script_dir + "/BestOutputs/QALD-10_sparklisllm_20250307_183805.json",
         script_dir + "/BestOutputs/QALD-10_sparklisllm_20250307_211841.json",

@@ -5,6 +5,13 @@ todo
 await sparklis.currentPlace().getConceptSuggestions(false,sparklis.conceptConstr())
 -add prompt version in final log
 
+//todo separer les commandes 
+-> les executer individuelement et regarder résultat
+    - commande pas executée
+        - dire llm -> commande pas fonctionnée (existe pas), autre idée de commande?
+    - commande executée
+        - on a fait ca, on a eu ca -> on fait quoi maintenant?
+
 //commande revient en arriere
 //commande erreur
 
@@ -18,6 +25,7 @@ property ??? not found
 
 
 perso
+essayer mintaka
 tester si prediction résultat est bon 
 finetuning? huggingface -> lmstudio (extracteur réponse au format pour finetuning->pp)
 #experimentations à faire:
