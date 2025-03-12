@@ -183,8 +183,18 @@ async function qa_control() {
 
     updateAnswer(questionId, resultText, "???", sparql, errors); //todo sparklis_request 
 
-
+    //verify the result, does the llm think the answer is correct? //todo improve
     let resultText_verifier = resultText;
+    //only keep the first n results (to avoid too long prompts)
+    let results_to_keep = 5;
+    let resultsArray = JSON.parse(resultText_verifier);
+    if (resultsArray.length > results_to_keep) {
+        resultsArray = resultsArray.slice(0, results_to_keep);
+        resultText_verifier = JSON.stringify(resultsArray);
+        //add ... to indicate that there are more results
+        resultText_verifier = resultText_verifier.slice(0, -1) + ", ...]";
+        console.log("resultText_verifier", resultText_verifier);
+    }
     //for all wikidata links, get the labels
     let wikidataLinks = resultText_verifier.match(/http:\/\/www.wikidata.org\/entity\/Q\d+/g);
     if (wikidataLinks) {
@@ -193,16 +203,14 @@ async function qa_control() {
             resultText_verifier = resultText_verifier.replace(link, label);
         }
     }
-
-    //does the llm think the answer is correct? //todo improve
     let systemMessage_verifier = `For a given question, a given request SPARQL and a given result, do you think the result is correct?
-    Think step by step, then finish your response by <answer>correct</answer> or <answer>incorrect</answer>.`;
+    Think step by step, then finish your response by either <answer>correct</answer> or <answer>incorrect</answer> (but nothing else).`;
     let input_verifier = `
     <question>${input_question}</question>
     <sparql>${sparql}</sparql>
     <result>${resultText_verifier}</result>
     `;
-    let output_verifier = await sendPrompt( //todo for wikipedia translate id
+    let output_verifier = await sendPrompt(
         usualPrompt(systemMessage_verifier, input_verifier), 
         true, 
         (text) => { 
