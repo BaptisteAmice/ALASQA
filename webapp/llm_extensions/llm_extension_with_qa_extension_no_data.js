@@ -1,4 +1,4 @@
-//Dependencies: qa_extension.js, llm_add_interface_extension.js, llm_utils.js
+//Dependencies: qa_extension.js, llm_add_interface_extension.js, llm_utils.js, prompts.js
 console.log("LLM with QA extension active");
 
 
@@ -14,6 +14,7 @@ var steps_status = {
     "3" : { "Name" : "QA extension cmds execution (p1)", "Status" : STATUS_NOT_STARTED },
     "4" : { "Name" : "Evaluate SPARQL in Sparklis (p1)", "Status" : STATUS_NOT_STARTED },
     "5" : { "Name" : "Parsing res. for display", "Status" : STATUS_NOT_STARTED },
+    "6" : { "Name" : "Prompt verifier", "Status" : STATUS_NOT_STARTED },
 };
 
 // If updated, also update the post-processing script
@@ -49,41 +50,40 @@ window.addEventListener(
 	})
 });
 
+//todo voir pour mieux decouper en fonctions et mieux sécuriser le flow
 async function qa_control() {
+    /////////// Initialization ///////////
     resetStepsStatus(); // Reset steps for each new question
     clearAlerts(); // Clear alerts for each new question
     currentStep = 0;
     updateStepsStatus(currentStep, STATUS_DONE);
-
-    //reset sparklis
-    sparklis.home();
-
+    sparklis.home(); //reset sparklis
     let errors = "";
 
-    //disable some interactions
+    //disable interactions with the llm input field (used as the condition to wait for the end of the process in tests)
     disableInputs();
 
+    let systemMessage = commands_chain_system_prompt();
     let input_field = document.getElementById("user-input");
-    let input_question = input_field.value;
+    let input_question = commands_chain_input_prompt(input_field.value);
 
-    //let systemMessage = "Your task is to build commands to query the knowledge graph to find data that answers the given question. Several successive commands can be used and should be separated by a semicolon. For example, to find the parent of Einstein, you can use the following reasoning and commands: \n <think>Einstein is a person, and his parents are the people who have him as a child</think>. \n<commands>a person; has child; Albert Einstein;</commands>.\n Another example with the question 'Which animal is from the camelini family?':<think>I need to find ANIMALS, that are members of a FAMILY, and this family needs to be camelini.</think><commands>a animal ; has family ; camelini;</commands> \n As in the examples, you don't need to anwer to the question but to make a quick reasonning about which kind of entity you need to find in the graphe and then construct a command in the same format to find the corresponding data in the knowledge graph.";
-    let systemMessage = prompt_template;
-
-    ////EXTRACTION
+    /////////// Extraction ///////////
 
     questionId = addLLMQuestion(input_question);
    
     let reasoningText = ""; //to keep reasoning text and be able to update it
+    let reasoningTextStep = "";
     currentStep++;
     updateStepsStatus(currentStep, STATUS_ONGOING);
     let output = await sendPrompt(
         usualPrompt(systemMessage, input_question), 
         true, 
         (text) => { 
-            updateReasoning(questionId, text); // Capture `questionId` and send `text`
-            reasoningText = text;
+            reasoningTextStep = "- Generation 1 - " + text;
+            updateReasoning(questionId, reasoningTextStep); // Capture `questionId` and send `text`
         } 
     );
+    reasoningText += reasoningTextStep;
 
     if (reasoningText != "") {
         updateStepsStatus(currentStep, STATUS_DONE);
@@ -181,13 +181,21 @@ async function qa_control() {
         updateStepsStatus(currentStep, STATUS_FAILED);
     }
 
+    //set the result in the answer field
     updateAnswer(questionId, resultText, "???", sparql, errors); //todo sparklis_request 
 
     //verify the result, does the llm think the answer is correct? //todo improve
+    currentStep++;
+    updateStepsStatus(currentStep, STATUS_ONGOING);
     let resultText_verifier = resultText;
     //only keep the first n results (to avoid too long prompts)
     let results_to_keep = 5;
-    let resultsArray = JSON.parse(resultText_verifier);
+    let resultsArray;
+    try {//todo mieux gérer cas où resulttext est vide
+        resultsArray = JSON.parse(resultText_verifier);
+    } catch (e) {
+        resultsArray = [];
+    }
     if (resultsArray.length > results_to_keep) {
         resultsArray = resultsArray.slice(0, results_to_keep);
         resultText_verifier = JSON.stringify(resultsArray);
@@ -203,58 +211,64 @@ async function qa_control() {
             resultText_verifier = resultText_verifier.replace(link, label);
         }
     }
-    let systemMessage_verifier = `For a given question, a given request SPARQL and a given result, do you think the result is correct?
-    Think step by step, then finish your response by either <answer>correct</answer> or <answer>incorrect</answer> (but nothing else).`;
-    let input_verifier = `
-    <question>${input_question}</question>
-    <sparql>${sparql}</sparql>
-    <result>${resultText_verifier}</result>
-    `;
+    let systemMessage_verifier = verifier_system_prompt();
+    let input_verifier = verifier_input_prompt(input_question, sparql, resultText_verifier);
     let output_verifier = await sendPrompt(
         usualPrompt(systemMessage_verifier, input_verifier), 
         true, 
         (text) => { 
-            updateReasoning(questionId, output 
-                + " - Prompt verification - " + text); // Capture `questionId` and send `text`
-            reasoningText = text;
+            reasoningTextStep = "- Prompt verification - " + text;
+            updateReasoning(questionId, reasoningText
+                 + reasoningTextStep); // Capture `questionId` and send `text`
         } 
     );
-    //todo if not correct -> let the llm alter the query (not in no data version)
+    reasoningText += reasoningTextStep;
+    updateStepsStatus(currentStep, STATUS_DONE);
+    // // get the answer
+    // let answer = output_verifier.match(/<answer>(.*?)<\/answer>/s);
+    // let answer_is_incorrect = answer && answer[1].toLowerCase() == "incorrect";
+    // //if the answer is incorrect, let the llm alter the query
+    // while (answer_is_incorrect) {
+    //     //todo step pp
+    //     //todo if not correct -> let the llm alter the query (not in no data version)
+    //     console.log("The LLM considers the answer incorrect");
+    //     let system_message_alter = "For the given question, an incorrect SPARQL query and its result are provided. Analyze them step by step, identify the mistake, and then provide a corrected SPARQL query inside <correction>...</correction>.";
+    //     let input_alter = `
+    //     <question>${input_question}</question>
+    //     <sparql>${sparql}</sparql>
+    //     <result>${resultText_verifier}</result>
+    //     Let's think step by step.
+    //     `;
+    //     let output_alter = await sendPrompt(
+    //         usualPrompt(system_message_alter, input_alter), 
+    //         true, 
+    //         (text) => { 
+    //             reasoningTextStep = "- Prompt alteration - " + text;
+    //             updateReasoning(questionId, reasoningText 
+    //                 + reasoningTextStep); // Capture `questionId` and send `text`
+                    
+    //         } 
+    //     );
+    //     reasoningText += reasoningTextStep;
+    //     //get the new request SPARQL from the response
+    //     let matchCorrect = output_alter.match(/<correction>(.*?)<\/correction>/s);
+    //     let correct = matchCorrect ? matchCorrect[1].trim() : "";
+    //     console.log("correct", correct);
+    //     if (correct != "") {
+    //         //update the sparql with the new request
+    //         sparql = correct; //todo tester avant
+    //         try {
+    //             results = await getResultsWithLabels(sparql);
+    //         } catch (e) {
+
+    //         }
+    //         //todo test it and more
+    //         //update the result in the answer field
+    //         //updateAnswer(questionId, resultText, "???", sparql, errors); //todo sparklis_request 
+    //     }
+    //     answer_is_incorrect = false;
+    // }
 
     //re-enable interactions (used as the condition to end the wait from tests)
     enableInputs(); 
 }
-
-const prompt_template = `
-## Task: Generate knowledge graph query commands for Sparklis.
-
-## Format:  
-1. Think step by step about what entities and relationships are needed 
-2. Then finish your response by a list of commands, separated by semicolons (;), and wrapped in <commands>...</commands>.  
-
-### Available Commands:
-- a [concept] → Retrieve entities of a given concept (e.g., "a book" to find books).
-- [entity] → Retrieve an entity (e.g., "Albert Einstein" to find the entity representing Einstein).
-- forwardProperty [property] → Filter by property (e.g., "forwardProperty director" to find films directed by someone).
-- backwardProperty [property] → Reverse relation (e.g., "backwardProperty director" to find directors of films).
-- higherThan [number], lowerThan [number] → Value constraints.
-- after [date], before [date] → Time constraints.  
-- and, or → Logical operators.  
-
-## Examples:
-Q: At which school went Yayoi Kusama?
-A: Starting from the list of entities named Yayoi Kusama seems the best approach. Then, I just need to find the relationship that represents at which school she was educated.
-<commands>Yayoi Kusama ; forwardProperty education</commands> 
-
-Q: What is the boiling point of water?
-A: The core of the request is WATER. From this entity I will probably be able to get a property such as its BOILING POINT.  
-<commands>water; forwardProperty boiling point</commands>  
-
-Q: Movies by Spielberg or Tim Burton after 1980?
-A: I need to find FILMS by Spielberg or Burton released after 1980. I can start by listing FILMS and then filter by DIRECTOR and RELEASE DATE. 
-<commands>a film; forwardProperty director; Tim Burton; or; Spielberg; forwardProperty release date; after 1980</commands>  
-
-Q: among the founders of tencent company, who has been member of national people' congress?"
-A: I can start by finding FOUNDERS of something called TENCENT. Then, I can filter by people who have been members of the NATIONAL PEOPLE'S CONGRESS.
-<commands>backwardProperty founder ; Tencent ; forwardProperty position ; National People's Congress</commands>
-`;

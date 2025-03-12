@@ -35,11 +35,6 @@ qald 10:
 -id 2: faux la requete et son résultat (mm l'ancien)
 -id 145: MAIS LEQUEL? YA UNE ADAPTATION MAIS YA FORCEMENT UN ORIGINAL WORK
 
-
-#todo prochaine fois
-- faire passer les requetes, savoir EXACTEMENT QUAND PASSE PAS, identifier tt les scenarios
-
-
 #todo patcher is something
 ->considéré comme entité -> si pas de rep -> seul suggrestion est celle obtenue -> l'annule
 ->pourrait mettre seuil sur la distance
@@ -66,28 +61,7 @@ todo fuseki v2 <-> heberger dump graphe
 -boolean
 
 
-
-react code
-https://github.com/ysymyth/ReAct/blob/master/hotpotqa.ipynb
-prompt file
-https://raw.githubusercontent.com/ysymyth/ReAct/refs/heads/master/prompts/prompts_naive.json
-
-instruction = """Generate a SPARQL query to solve a question answering task with interleaving Thought, Action, Observation steps. Thought can reason about the current situation, and Action can be three types: 
-(1) Search[entity], which searches --- la liste des matches ---
-(2) Lookup[keyword], which --- selectionne un match ---
-(3) Finish[answer], which returns the generated query and finishes the task.
-Here are some examples.
-"""
-webthink_prompt = instruction + webthink_examples
-
-filter suggestions
-- c quoi les 3 types?
-- get les 3 fields -> remplir et valider
-- eventuellement remplacer commande match par un filter puis appuis bouton
-get suggestions
-- ???
-get responses
-- ???
+react solution
 
 
 utilisation tool?
@@ -96,20 +70,7 @@ utilisation tool?
 #https://lmstudio.ai/docs/api/tools
 #todo yaml of python code
 
-#todo graphes par strategie score questions
-
-PK POPUP: SI CLIQUE AUTOMATISE -> LES PREFIXES SONT DUPLIQUES DANS LA REQUETE POST
-
-si requete vide -> undo (parce que une mauvaise commande peut supprimer ce qui a été construit av)
-
-->réponse vide car mauvaise condition de fin
-
-
-montrer questions et blocages
-->montrer commandes envisagées
-
 ????toask is year of???
-???toask comment chercher string matching???
 ------------------------
 
 #todo commenter mieux les raisons dans le code
@@ -118,24 +79,8 @@ montrer questions et blocages
 #todo qd client die -> fenetre reste ouverte
 #todo disable si llm pas dispo/erreur correspondante
 
-#jeudi aprem vers 15h30 réunion 
-#ajouter raisonnement sur bien ou pas à la fin (à faire plus tard)
-
-#todo? add tps par requete et tps global? -> peut etre fait dans test_system abstrait
-
-#todo enlever \ dans questions extraites
-
 #brainstorming des méthodes: pas à pas à la react, raisonneur à la fin
 #v1 2 llm en concurrence
-
-#todo etre plus fin sur els echecs : systeme, pas aboutis
-
-#todo url pour traduire entitées wikidata
-
-#todo prompt premiere question -> lire retour -> suite
-
-//wikidata requests -> popup comme quoi pas valides qui bloque le reste (alors que sans popup marcherait)
-
 ____________
 Jeux de données
 
@@ -148,8 +93,6 @@ https://query.wikidata.org/
 
 --
 Sparklis LLM
-dossier webapp (dans doc -> api js)
-Importer script "extension" dans js + ajouter dans html -> éventuellement en script
 
 demander plan de base -> essayer pour guider de base 
 comparer 2 stratégies simples
