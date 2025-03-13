@@ -2,12 +2,6 @@
 console.log("LLM with QA extension active");
 
 /////// Steps status ////////
-
-STATUS_NOT_STARTED = "Not started";
-STATUS_ONGOING = "ONGOING";
-STATUS_DONE = "DONE";
-STATUS_FAILED = "FAILED";
-
 var steps_status = {
     "0" : { "Name" : "Start", "Status" : STATUS_NOT_STARTED },
     "1" : { "Name" : "LLM generation", "Status" : STATUS_NOT_STARTED },
@@ -23,30 +17,8 @@ var error_messages = [
     "Error: error while parsing SPARQL results",
 ];
 
-function resetStepsStatus() {
-    for (let step in steps_status) {
-        steps_status[step]["Status"] = STATUS_NOT_STARTED;
-    }
-}
-
-function updateStepsStatus(step, status) {
-    steps_status[step.toString()]["Status"] = status;
-    localStorage.setItem("steps_status", JSON.stringify(steps_status));
-}
-
 /////// System ////////
 
-// upon window load... create text field and ENTER handler
-window.addEventListener(
-    'load',
-    function(ev) {
-    let input_field = document.getElementById("user-input");
-    input_field.addEventListener("keyup", function(event) {
-        if (event.keyCode == 13) { // ENTER
-            qa_control();
-        }
-	})
-});
 async function qa_control() {
     /////////// Initialization ///////////
     resetStepsStatus(); // Reset steps for each new question
@@ -61,7 +33,7 @@ async function qa_control() {
     let used_endpoint = sparklis.endpoint();
     let systemMessage = direct_qa_system_prompt(used_endpoint);
     let input_field = document.getElementById("user-input");
-    let input_question =direct_qa_input_prompt(input_field.value);
+    let input_question = q_a_input_prompt(input_field.value);
     let qa = document.getElementById("qa"); // input field of the qa extension
 
     /////////// Extraction ///////////
@@ -145,4 +117,3 @@ async function qa_control() {
     //re-enable interactions (used as the condition to end the wait from tests)
     enableInputs(); 
 }
-

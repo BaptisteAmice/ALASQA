@@ -2,10 +2,6 @@
 console.log("LLM with QA extension active");
 
 /////// Steps status ////////
-STATUS_NOT_STARTED = "Not started";
-STATUS_ONGOING = "ONGOING";
-STATUS_DONE = "DONE";
-STATUS_FAILED = "FAILED";
 var steps_status = {
     "0" : { "Name" : "Start", "Status" : STATUS_NOT_STARTED },
     "1" : { "Name" : "LLM generation (p1)", "Status" : STATUS_NOT_STARTED },
@@ -24,30 +20,7 @@ var error_messages = [
     "Error: error while parsing SPARQL results",
 ];
 
-function resetStepsStatus() {
-    for (let step in steps_status) {
-        steps_status[step]["Status"] = STATUS_NOT_STARTED;
-    }
-}
-
-function updateStepsStatus(step, status) {
-    steps_status[step.toString()]["Status"] = status;
-    localStorage.setItem("steps_status", JSON.stringify(steps_status));
-}
-
 /////// System ////////
-
-// upon window load... create text field and ENTER handler
-window.addEventListener(
-    'load',
-    function(ev) {
-    let input_field = document.getElementById("user-input");
-    input_field.addEventListener("keyup", function(event) {
-        if (event.keyCode == 13) { // ENTER
-            qa_control();
-        }
-	})
-});
 
 //todo voir pour mieux decouper en fonctions et mieux sécuriser le flow
 async function qa_control() {
@@ -63,7 +36,7 @@ async function qa_control() {
 
     let systemMessage = commands_chain_system_prompt();
     let input_field = document.getElementById("user-input");
-    let input_question = commands_chain_input_prompt(input_field.value);
+    let input_question = q_a_input_prompt(input_field.value);
     let qa = document.getElementById("qa"); // input field of the qa extension
 
     /////////// Extraction ///////////
@@ -181,49 +154,13 @@ async function qa_control() {
     //set the result in the answer field
     updateAnswer(questionId, resultText, "???", sparql, errors); //todo sparklis_request 
 
-    //verify the result, does the llm think the answer is correct? //todo improve
-    currentStep++;
-    updateStepsStatus(currentStep, STATUS_ONGOING);
-    let resultText_verifier = resultText;
-    //only keep the first n results (to avoid too long prompts)
-    let results_to_keep = 3;
-    let resultsArray;
-    try {//todo mieux gérer cas où resulttext est vide
-        resultsArray = JSON.parse(resultText_verifier);
-    } catch (e) {
-        resultsArray = [];
-    }
-    if (resultsArray.length > results_to_keep) {
-        resultsArray = resultsArray.slice(0, results_to_keep);
-        resultText_verifier = JSON.stringify(resultsArray);
-        //add ... to indicate that there are more results
-        resultText_verifier = resultText_verifier.slice(0, -1) + ", ...]";
-        console.log("resultText_verifier", resultText_verifier);
-    }
-    //for all wikidata links, get the labels
-    let wikidataLinks = resultText_verifier.match(/http:\/\/www.wikidata.org\/entity\/Q\d+/g);
-    if (wikidataLinks) {
-        for (let link of wikidataLinks) {
-            let label = await getWikidataLabel(link);
-            resultText_verifier = resultText_verifier.replace(link, label);
-        }
-    }
-    let systemMessage_verifier = verifier_system_prompt();
-    let input_verifier = verifier_input_prompt(input_question, sparql, resultText_verifier);
-    let output_verifier = await sendPrompt(
-        usualPrompt(systemMessage_verifier, input_verifier), 
-        true, 
-        (text) => { 
-            reasoningTextStep = "- Prompt verification - " + text;
-            updateReasoning(questionId, reasoningText
-                 + reasoningTextStep); // Capture `questionId` and send `text`
-        } 
-    );
-    reasoningText += reasoningTextStep;
-    updateStepsStatus(currentStep, STATUS_DONE);
-    // // get the answer
-    // let answer = output_verifier.match(/<answer>(.*?)<\/answer>/s);
-    // let answer_is_incorrect = answer && answer[1].toLowerCase() == "incorrect";
+    //verify the result, does the llm think the answer is correct
+    // currentStep++;
+    // updateStepsStatus(currentStep, STATUS_ONGOING);
+    // let result_considered_invalid;
+    // [result_considered_invalid, reasoningText] = await verify_incorrect_result(input_question, sparql, resultText, reasoningText)
+    // updateStepsStatus(currentStep, STATUS_DONE);
+
     // //if the answer is incorrect, let the llm alter the query
     // while (answer_is_incorrect) {
     //     //todo step pp

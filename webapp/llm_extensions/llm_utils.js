@@ -2,6 +2,12 @@ console.log("LLM utility active");
 
 const API = "http://localhost:1234/v1/chat/completions";
 
+/**
+ * Common prompt template : one system message and one user message
+ * @param {*} systemPrompt 
+ * @param {*} userPrompt 
+ * @returns
+ */
 function usualPrompt(systemPrompt, userPrompt) {
     return [
         {"role": "system", "content": systemPrompt},
@@ -9,6 +15,14 @@ function usualPrompt(systemPrompt, userPrompt) {
     ];
 }
 
+/**
+ * Send a prompt to the LLM and return the response
+ * @param {string} input - the prompt to send to the LLM
+ * @param {boolean} streamOption - if true, the response will be streamed
+ * @param {*} updateCallback - function to call when the LLM sends a response
+ * @param {*} usedTemperature - the temperature to use for the LLM
+ * @returns 
+ */
 async function sendPrompt(input, streamOption = true, updateCallback = null, usedTemperature = 0.8) {
     //careful the first parameter can be interpreted as several parameters...
     try {
@@ -68,19 +82,27 @@ async function sendPrompt(input, streamOption = true, updateCallback = null, use
 
 
 ////////// UTILS //////////
+/**
+ * Remove prefixes from a SPARQL query
+ */
 function removePrefixes(sparqlQuery) {
     return sparqlQuery.split('\n')
         .filter(line => !line.startsWith('PREFIX'))
         .join('\n');
 }
 
+/**
+ * Count the number of commands of Sparklis QA extension in a string
+ * @param {string} commands 
+ * @returns 
+ */
 function countCommands(commands) {
     return commands.split(";").filter(cmd => cmd.trim().length > 0).length;
 }
 
 /**
  * Convert place.onEvaluated() to a promise to avoid nested callbacks
- * @param {*} place
+ * @param {*} place - the place to wait for evaluation
  * @returns 
  */
 function waitForEvaluation(place) {
@@ -91,6 +113,12 @@ function waitForEvaluation(place) {
     });
 }
 
+/**
+ * Get the label corresponding to a Wikidata URI and add it to the result text as a new field
+ * @param {string} wikidataURI
+ * @param {string} language 
+ * @returns 
+ */
 async function getWikidataLabel(wikidataURI, language = "en") {
     const entityId = wikidataURI.split('/').pop();
     const url = `https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${entityId}&format=json&props=labels&languages=${language}&origin=*`;
@@ -103,6 +131,86 @@ async function getWikidataLabel(wikidataURI, language = "en") {
         console.error("Error fetching data:", error);
         return "Error fetching label";
     }
+}
+
+/**
+ * Verify the result. Does the llm think the answer is correct?
+ * @param {string} input_question 
+ * @param {string} sparql 
+ * @param {string} resultText 
+ * @param {string} reasoningText 
+ * @returns 
+ */
+async function verify_incorrect_result(input_question, sparql, resultText, reasoningText) {
+    let resultText_verifier = resultText;
+    let reasoningTextStep = "";
+    //only keep the first n results (to avoid too long prompts)
+    let results_to_keep = 3;
+    let resultsArray;
+    try {//todo mieux gérer cas où resulttext est vide
+        resultsArray = JSON.parse(resultText_verifier);
+    } catch (e) {
+        resultsArray = [];
+    }
+    if (resultsArray.length > results_to_keep) {
+        resultsArray = resultsArray.slice(0, results_to_keep);
+        resultText_verifier = JSON.stringify(resultsArray);
+        //add ... to indicate that there are more results
+        resultText_verifier = resultText_verifier.slice(0, -1) + ", ...]";
+        console.log("resultText_verifier", resultText_verifier);
+    }
+    //for all wikidata links, get the labels
+    let wikidataLinks = resultText_verifier.match(/http:\/\/www.wikidata.org\/entity\/Q\d+/g);
+    if (wikidataLinks) {
+        for (let link of wikidataLinks) {
+            let label = await getWikidataLabel(link);
+            resultText_verifier = resultText_verifier.replace(link, label);
+        }
+    }
+    let systemMessage_verifier = verifier_system_prompt();
+    let input_verifier = verifier_input_prompt(input_question, sparql, resultText_verifier);
+    let output_verifier = await sendPrompt(
+        usualPrompt(systemMessage_verifier, input_verifier), 
+        true, 
+        (text) => { 
+            reasoningTextStep = "- Prompt verification - " + text;
+            updateReasoning(questionId, reasoningText
+                 + reasoningTextStep); // Capture `questionId` and send `text`
+        } 
+    );
+    reasoningText += reasoningTextStep;
+
+    // get the answer
+    let answer = output_verifier.match(/<answer>(.*?)<\/answer>/s);
+    let answer_considered_incorrect = answer && answer[1].toLowerCase() == "incorrect";
+
+    return [answer_considered_incorrect, reasoningText];
+}
+
+////////// STEPS STATUS //////////
+
+STATUS_NOT_STARTED = "Not started";
+STATUS_ONGOING = "ONGOING";
+STATUS_DONE = "DONE";
+STATUS_FAILED = "FAILED";
+
+/**
+ * Reset all steps of the global variable steps_status, to STATUS_NOT_STARTED.
+ */
+function resetStepsStatus() {
+    for (let step in steps_status) {
+        steps_status[step]["Status"] = STATUS_NOT_STARTED;
+    }
+}
+
+/**
+ * Given a step index and a status, update on of the steps from the global variable steps_status.
+ * @param {number} step 
+ * @param {string} status 
+ */
+function updateStepsStatus(step, status) {
+    steps_status[step.toString()]["Status"] = status;
+    localStorage.setItem("steps_status", JSON.stringify(steps_status));
 }
 
 ////////// COMMANDS //////////
@@ -155,12 +263,18 @@ function pickSuggestion() {
     //applySuggestion
     return; //todo
 }
+
+/**
+ * Evaluate a SPARQL query and add labels to it's result if it's for every uri from wikidata.
+ * @param {*} sparqlQuery 
+ * @returns 
+ */
 async function getResultsWithLabels(sparqlQuery) {
     let results = await sparklis.evalSparql(sparqlQuery);
     for (let row of results.rows) {
         for (let value of row) {
             // for each value, if it is a wikidata uri, add the corresponding label from wikidata
-            if (value && value.type === "uri" && value.uri.startsWith("http://www.wikidata.org/entity/")) {
+            if (value && value.type === "uri" && value.uri.startsWith("http://www.wikidata.org/")) {
                 value.label = await getWikidataLabel(value.uri);
             }
         }

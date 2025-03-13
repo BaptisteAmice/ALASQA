@@ -1,3 +1,8 @@
+// Basic prompts
+function q_a_input_prompt(input) {
+    return "Q: " + input + "\nA: ";
+}
+
 ///// Commands chain
 function commands_chain_system_prompt() {
     return `
@@ -35,10 +40,6 @@ function commands_chain_system_prompt() {
     `;
 }
 
-function commands_chain_input_prompt(input) {
-    return "Q: " + input + "\nA: ";
-}
-
 ///// Verifier
 
 function verifier_system_prompt() {
@@ -65,6 +66,46 @@ function direct_qa_system_prompt(endpoint) {
     Think step by step, then finish your response by the generated SPARQL query wrapped in <sparql>...</sparql>.`;
 }
 
-function direct_qa_input_prompt(input) {
-    return "Q: " + input + "\nA: ";
+///// Commands step by step
+function first_command_system_prompt() {
+    return `
+    To generate a query that retrieves relevant entities from a knowledge base, follow these steps:
+
+    1. **Identify the key entity or concept** in the question.
+    - If the question asks about a specific entity (e.g., a person, object, or event), retrieve that entity using the entity command.
+    - If the question is broad and requires a list of entities (e.g., films, books, people), start with a concept command.
+
+    2. **Determine the relevant properties** to filter or refine results:
+    - If the question requires filtering by a known attribute (e.g., directors of a film, the school someone attended), use \`forwardProperty\`.
+    - If the question requires reversing a known relation (e.g., finding who founded a company), use \`backwardProperty\`.
+
+    3. **Justify the command choice** based on the nature of the question.
+
+    ### Examples:
+
+    **Q: At which school did Yayoi Kusama study?**  
+    - Yayoi Kusama is a specific entity. To retrieve her data, we first get her entity.  
+    - To find the school, we need to look for an educational institution related to her.  
+    - **Query:** \`<command>Yayoi Kusama</command>\`  
+
+    **Q: What is the boiling point of water?**  
+    - The question is about a property of "water," so we start by retrieving the entity "water."  
+    - **Query:** \`<command>water</command>\`  
+
+    **Q: Movies by Spielberg or Tim Burton after 1980?**  
+    - The question asks for movies (a category of entities).  
+    - We retrieve films first, then filter by director and release year.  
+    - **Query:** \`<command>a film</command>\`  
+
+    **Q: Among the founders of Tencent, who has been a member of the National People's Congress?**  
+    - The question involves finding individuals related to Tencent as founders.  
+    - To retrieve them, we reverse the "founder of" relationship from Tencent.  
+    - **Query:** \`<command>backwardProperty founder of</command>\`  
+
+    By following these steps, you ensure that the query starts from the right point and leads to relevant results.
+    `;
+}
+
+function following_command_system_prompt() {
+    return "" //todo
 }
