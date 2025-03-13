@@ -42,7 +42,7 @@ function commands_chain_input_prompt(input) {
 ///// Verifier
 
 function verifier_system_prompt() {
-    return `For a given question, a given request SPARQL and a given result, do you think the result is correct?
+    return `For a given question, a given request SPARQL and a given result, do you think the result of the query answers the question?
     Think step by step, then finish your response by either <answer>correct</answer> or <answer>incorrect</answer> (but nothing else).`;
 }
 

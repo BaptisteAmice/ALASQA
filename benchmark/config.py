@@ -40,7 +40,7 @@ OUTPUT_FOLDER = script_dir + '/Outputs/'
 NB_TESTS = 3
 
 # Input json file containing the benchmark
-BENCHMARK_FILE = script_dir + '/Inputs/' + 'qald3_10.json'
+BENCHMARK_FILE = script_dir + '/Inputs/' + 'qald_10_patched.json'
 
 # Benchmark name and tested system
 BENCHMARK_NAME = benchmark_extraction.QALD10 #todo
