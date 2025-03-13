@@ -1,5 +1,5 @@
 //Dependencies: llm_add_interface_extension.js, llm_utils.js
-console.log("LLM with QA extension active");
+console.log("LLM with direct SPARQL extension loaded");
 
 /////// Steps status ////////
 var steps_status = {

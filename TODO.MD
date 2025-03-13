@@ -23,8 +23,11 @@ await sparklis.currentPlace().getConceptSuggestions(false,sparklis.conceptConstr
 
 property ??? not found
 
+le premier prompt on pourrait le remplacer par celui du one shot -> on garde que la commande 1
 
 perso
+raffiner mes nouveaux prompts (et les factoriser aussi)
+tester : direct sparql, step by step
 essayer mintaka
 tester si prediction résultat est bon 
 finetuning? huggingface -> lmstudio (extracteur réponse au format pour finetuning->pp)

@@ -177,7 +177,7 @@ async function qa_control() {
     //         usualPrompt(system_message_alter, input_alter), 
     //         true, 
     //         (text) => { 
-    //             reasoningTextStep = "- Prompt alteration - " + text;
+    //             reasoningTextStep = "- Query alteration - " + text;
     //             updateReasoning(questionId, reasoningText 
     //                 + reasoningTextStep); // Capture `questionId` and send `text`
                     

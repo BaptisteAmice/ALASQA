@@ -134,6 +134,30 @@ async function getWikidataLabel(wikidataURI, language = "en") {
 }
 
 /**
+ * Only keep the first n results (to avoid too long prompts)
+ * @param {*} results_text 
+ * @param {*} res_number_to_keep 
+ * @returns 
+ */
+function truncateResults(results_text, res_number_to_keep) {
+    let resultsArray;
+    let truncated_results_text = results_text;
+    try {//todo mieux gérer cas où resulttext est vide
+        resultsArray = JSON.parse(truncated_results_text);
+    } catch (e) {
+        resultsArray = [];
+    }
+    if (resultsArray.length > res_number_to_keep) {
+        resultsArray = resultsArray.slice(0, res_number_to_keep);
+        truncated_results_text = JSON.stringify(resultsArray);
+        //add ... to indicate that there are more results
+        truncated_results_text = truncated_results_text.slice(0, -1) + ", ...]";
+        console.log("truncated_results_text", truncated_results_text);
+    }
+    return truncated_results_text;
+}
+
+/** //todo enlever le truncate d'ici?
  * Verify the result. Does the llm think the answer is correct?
  * @param {string} input_question 
  * @param {string} sparql 
@@ -142,38 +166,15 @@ async function getWikidataLabel(wikidataURI, language = "en") {
  * @returns 
  */
 async function verify_incorrect_result(input_question, sparql, resultText, reasoningText) {
-    let resultText_verifier = resultText;
     let reasoningTextStep = "";
-    //only keep the first n results (to avoid too long prompts)
-    let results_to_keep = 3;
-    let resultsArray;
-    try {//todo mieux gérer cas où resulttext est vide
-        resultsArray = JSON.parse(resultText_verifier);
-    } catch (e) {
-        resultsArray = [];
-    }
-    if (resultsArray.length > results_to_keep) {
-        resultsArray = resultsArray.slice(0, results_to_keep);
-        resultText_verifier = JSON.stringify(resultsArray);
-        //add ... to indicate that there are more results
-        resultText_verifier = resultText_verifier.slice(0, -1) + ", ...]";
-        console.log("resultText_verifier", resultText_verifier);
-    }
-    //for all wikidata links, get the labels
-    let wikidataLinks = resultText_verifier.match(/http:\/\/www.wikidata.org\/entity\/Q\d+/g);
-    if (wikidataLinks) {
-        for (let link of wikidataLinks) {
-            let label = await getWikidataLabel(link);
-            resultText_verifier = resultText_verifier.replace(link, label);
-        }
-    }
+    let resultText_verifier = truncateResults(resultText, 3);
     let systemMessage_verifier = verifier_system_prompt();
     let input_verifier = verifier_input_prompt(input_question, sparql, resultText_verifier);
     let output_verifier = await sendPrompt(
         usualPrompt(systemMessage_verifier, input_verifier), 
         true, 
         (text) => { 
-            reasoningTextStep = "- Prompt verification - " + text;
+            reasoningTextStep = "- Results verification - " + text;
             updateReasoning(questionId, reasoningText
                  + reasoningTextStep); // Capture `questionId` and send `text`
         } 
@@ -187,12 +188,45 @@ async function verify_incorrect_result(input_question, sparql, resultText, reaso
     return [answer_considered_incorrect, reasoningText];
 }
 
+/**
+ * 
+ * @param {string} input_question 
+ * @param {string} sparql 
+ * @param {string} resultText 
+ * @param {string} reasoningText 
+ * @returns 
+ */
+async function choose_next_action(input_question, sparql, resultText, reasoningText) {
+    let reasoningTextStep = "";
+    let systemMessage = choose_action_system_prompt();
+    let input = choose_action_input_prompt(input_question, sparql, resultText);
+    let output = await sendPrompt(
+        usualPrompt(systemMessage, input), 
+        true, 
+        (text) => { 
+            reasoningTextStep = "- Choose action - " + text;
+            updateReasoning(questionId, reasoningText
+                 + reasoningTextStep); // Capture `questionId` and send `text`
+        } 
+    );
+    reasoningText += reasoningTextStep;
+
+    //todo marche pas
+    console.log("output", output);
+
+    // Get the action
+    let actionMatch = output.match(/<action>(.*?)<\/action>/s);
+    let action = actionMatch ? actionMatch[1].trim() : "unknown";
+    return [action, reasoningText];
+}
+
+
 ////////// STEPS STATUS //////////
 
-STATUS_NOT_STARTED = "Not started";
-STATUS_ONGOING = "ONGOING";
-STATUS_DONE = "DONE";
-STATUS_FAILED = "FAILED";
+const STATUS_NOT_STARTED = "Not started";
+const STATUS_ONGOING = "ONGOING";
+const STATUS_DONE = "DONE";
+const STATUS_FAILED = "FAILED";
 
 /**
  * Reset all steps of the global variable steps_status, to STATUS_NOT_STARTED.

@@ -72,10 +72,10 @@ function first_command_system_prompt() {
     To generate a query that retrieves relevant entities from a knowledge base, follow these steps:
 
     1. **Identify the key entity or concept** in the question.
-    - If the question asks about a specific entity (e.g., a person, object, or event), retrieve that entity using the entity command.
-    - If the question is broad and requires a list of entities (e.g., films, books, people), start with a concept command.
+    - If the question asks about a specific entity (e.g., Tim Burton, water), retrieve that entity using its name.
+    - If the question is broad and requires a list of entities (e.g., a animal, a country), start with a concept command (e.g., "a film").
 
-    2. **Determine the relevant properties** to filter or refine results:
+    2. **Determine the relevant properties** if there isn't a direct entity in the question.
     - If the question requires filtering by a known attribute (e.g., directors of a film, the school someone attended), use \`forwardProperty\`.
     - If the question requires reversing a known relation (e.g., finding who founded a company), use \`backwardProperty\`.
 
@@ -106,6 +106,72 @@ function first_command_system_prompt() {
     `;
 }
 
-function following_command_system_prompt() {
-    return "" //todo
+function choose_action_system_prompt() {
+    return `Based on the question we are trying to answer, the current query and its results, choose the next action to refine the query.
+    Think step by step, then finish your response by one of the following actions:
+    - <action>done</action>: If you think the query is complete and the results exactly answer the question.
+    - <action>process</action>: If you think the results of the query are sufficient to answer the question but need further processing (e.g., filtering, counting).
+    - <action>add command</action>: If you think the query needs additional commands to retrieve the desired information.
+    `;
+}
+
+function choose_action_input_prompt(input_question, sparql, resultText) {
+    return `<question>${input_question}</question>
+    <sparql>${sparql}</sparql>
+    <result>${resultText}</result>
+    Let's think step by step.
+    `;
+}
+
+function refine_query_system_prompt() {
+    return `You will be given a question, a SPARQL query and its result.
+    You have to think step by step and refine the query in order for its output to respond exactly to the question.
+    For example, the question can expect a boolean response, if the query doesn't return a boolean but contains the necessary data to induce the boolean, you will have to adapt it in order to return the expected value.
+    Conclude your reasoning by wrapping the new query (without comments in it) in the balises <query>...</query>.
+    `;
+}
+
+function refine_query_input_prompt(question, sparql, results) {
+    return `<question>${question}</question>
+    <sparql>${sparql}</sparql>
+    <result>${results}</result>
+    Let's think step by step.
+    `;
+}
+
+function following_command_system_prompt() { //todo
+    return `
+    To continue building your query, follow these steps:
+
+    1. **Add one command at a time** to refine the query.
+    - Each command should add a new filter or condition to the query.
+    - Available Commands:
+        - a [concept] → Retrieve entities of a given concept (e.g., "a book" to find books).
+        - [entity] → Retrieve an entity (e.g., "Albert Einstein" to find the entity representing Einstein).
+        - forwardProperty [property] → Filter by property (e.g., "forwardProperty director" to find films directed by someone).
+        - backwardProperty [property] → Reverse relation (e.g., "backwardProperty director" to find directors of films).
+        - higherThan [number], lowerThan [number] → Value constraints.
+        - after [date], before [date] → Time constraints (e.g., "after 2000").
+        - and, or → Logical operators (e.g., "Tim Burton; or; Steven Spielberg").
+    
+    2. **Explain the reasoning** behind each command choice.
+    - Justify why each command is necessary to answer the question.
+    - Consider how each command narrows down the search space.
+
+    3. Conclude with the new command wrapped in <command>...</command>.
+
+    ### Examples:
+
+    **Q: Movies by Spielberg or Tim Burton after 1980?**
+    - We already retrieved films and filtered by director.
+    - To further narrow down the results, we need to filter by release date.
+    - **Query:** \`<command>forwardProperty release date;</command>\`
+    `;
+}
+function following_command_input_prompt(input_question, sparql, resultText) {
+    return `<question>${input_question}</question>
+    <sparql>${sparql}</sparql>
+    <result>${resultText}</result>
+    Let's think step by step.
+    `;
 }
