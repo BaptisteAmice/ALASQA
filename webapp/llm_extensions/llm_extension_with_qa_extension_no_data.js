@@ -1,6 +1,11 @@
 //Dependencies: qa_extension.js, llm_add_interface_extension.js, llm_utils.js, prompts.js
 console.log("LLM with QA extension active");
 
+// Enable or not extensions to the base flow
+const HANDLE_FAILED_COMMANDS = true;
+const CHECK_INCORRECT_RESULT = false;
+const ALTER_CONSIDERED_INCORRECT = CHECK_INCORRECT_RESULT && false;
+
 /////// Steps status ////////
 var steps_status = {
     "0" : { "Name" : "Start", "Status" : STATUS_NOT_STARTED },
@@ -9,8 +14,10 @@ var steps_status = {
     "3" : { "Name" : "QA extension cmds execution (p1)", "Status" : STATUS_NOT_STARTED },
     "4" : { "Name" : "Evaluate SPARQL in Sparklis (p1)", "Status" : STATUS_NOT_STARTED },
     "5" : { "Name" : "Parsing res. for display", "Status" : STATUS_NOT_STARTED },
-    "6" : { "Name" : "Prompt verifier", "Status" : STATUS_NOT_STARTED },
 };
+if (CHECK_INCORRECT_RESULT) {
+    steps_status["6"] = { "Name" : "Result verification", "Status" : STATUS_NOT_STARTED };
+}
 
 // If updated, also update the post-processing script
 var error_messages = [
@@ -97,6 +104,9 @@ async function qa_control() {
             console.log(message);
             errors += message;
             updateStepsStatus(currentStep, STATUS_FAILED);
+            if (HANDLE_FAILED_COMMANDS){ //todo tester
+                [reasoningText] = failed_command(questionId, commands, error, input_question, reasoningText);
+            }
         }
     );
 
@@ -153,11 +163,15 @@ async function qa_control() {
     updateAnswer(questionId, resultText, "???", sparql, errors); //todo sparklis_request 
 
     //verify the result, does the llm think the answer is correct
-    // currentStep++;
-    // updateStepsStatus(currentStep, STATUS_ONGOING);
-    // let result_considered_invalid;
-    // [result_considered_invalid, reasoningText] = await verify_incorrect_result(input_question, sparql, resultText, reasoningText)
-    // updateStepsStatus(currentStep, STATUS_DONE);
+
+    if (CHECK_INCORRECT_RESULT) { //todo re test
+        currentStep++;
+        updateStepsStatus(currentStep, STATUS_ONGOING);
+        let truncated_results_text = truncateResults(resultText, 5);
+        let result_considered_invalid;
+        [result_considered_invalid, reasoningText] = await verify_incorrect_result(input_question, sparql, truncated_results_text, reasoningText);
+        updateStepsStatus(currentStep, STATUS_DONE);
+    }
 
     // //if the answer is incorrect, let the llm alter the query
     // while (answer_is_incorrect) {

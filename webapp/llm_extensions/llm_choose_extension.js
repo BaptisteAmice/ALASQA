@@ -4,7 +4,7 @@
 
 document.addEventListener("DOMContentLoaded", () => {
   const scripts = [
-    "llm_extension_with_qa_extension_steps.js",
+    "llm_extension_with_qa_extension_no_data.js",
   ];
 
   scripts.forEach((script) => {

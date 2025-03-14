@@ -166,25 +166,145 @@ function truncateResults(results_text, res_number_to_keep) {
  * @returns 
  */
 async function verify_incorrect_result(input_question, sparql, resultText, reasoningText) {
-    let reasoningTextStep = "";
     let systemMessage_verifier = verifier_system_prompt();
     let input_verifier = verifier_input_prompt(input_question, sparql, resultText);
+    reasoningText += "- Results verification - ";
     let output_verifier = await sendPrompt(
         usualPrompt(systemMessage_verifier, input_verifier), 
         true, 
         (text) => { 
-            reasoningTextStep = "- Results verification - " + text;
-            updateReasoning(questionId, reasoningText
-                 + reasoningTextStep); // Capture `questionId` and send `text`
+            updateReasoning(questionId, reasoningText + text);
         } 
     );
-    reasoningText += reasoningTextStep;
-
     // get the answer
     let answer = output_verifier.match(/<answer>(.*?)<\/answer>/s);
     let answer_considered_incorrect = answer && answer[1].toLowerCase() == "incorrect";
 
     return [answer_considered_incorrect, reasoningText];
+}
+
+//todo tester et ameliorer
+/**
+ * Use the LLM to improve the query and get the new results (should only be used at the end of the process)
+ * @param {*} questionId 
+ * @param {*} question 
+ * @param {*} sparql 
+ * @param {*} results 
+ * @param {*} reasoningText 
+ * @returns 
+ */
+async function refine_query(questionId, question, sparql, results, reasoningText) { //todo catch error
+    reasoningText += "- Refine query - ";
+    let output_refine = await sendPrompt(
+        usualPrompt(refine_query_system_prompt(), refine_query_input_prompt(question, sparql, results)), 
+        true, 
+        (text) => { 
+            updateReasoning(questionId, reasoningText + text);
+        } 
+    );
+    //get the new query
+    let matchQuery = output.match(/<command>(.*?)<\/command>/s);
+    let newQuery = matchQuery ? matchQuery[1].trim() : "";
+    let newResults;
+    //try the new query and get its results
+    try { 
+        newQuery = removePrefixes(newQuery);
+        newResults = await getResultsWithLabels(newQuery);
+    } catch (e) {
+        //catch error thrown by wikidata endpoint
+        console.error("refine_query failed", e);
+        //If the new query fails, we keep the old one
+        newQuery = sparql;
+        newResults = results;
+    }
+    return  [new_query, new_results, reasoningText];
+}
+
+/**
+ * Add a single command to the QA extension field and execute it
+ * @param {*} questionId 
+ * @param {*} question 
+ * @param {*} sparql 
+ * @param {*} results 
+ * @param {*} reasoningText 
+ * @param {*} qa_field 
+ * @returns 
+ */
+async function add_command(questionId, question, sparql, results, reasoningText, qa_field) {
+    reasoningText += "- Add command - ";
+    let output_add_command = await sendPrompt(
+        usualPrompt(following_command_system_prompt(), following_command_input_prompt(question, sparql, results)), 
+        true, 
+        (text) => { 
+            updateReasoning(questionId, reasoningText + text);
+        } 
+    );
+    //get the new command
+    let matchCommand = output_add_command.match(/<command>(.*?)<\/command>/s);
+    let newCommand = matchCommand ? matchCommand[1].trim() : "";
+
+    //set the new command in the qa field
+    qa_field.value = newCommand;
+
+    //execute the new command
+    await process_question(qa_field).catch(async error => {
+        console.error("add_command failed", error);
+        //todo gerer erreur
+        [reasoningText] = await failed_command(questionId, newCommand, error, question, reasoningText);
+    });
+    //wait for evaluation of the place
+    let newPlace = sparklis.currentPlace();
+    await waitForEvaluation(newPlace);
+
+    //get the new results
+    let newSparql = newPlace.sparql();
+    let newResults;
+    try {
+        newSparql = removePrefixes(newSparql);
+        newResults = await getResultsWithLabels(newSparql);
+    } catch (e) {
+        //catch error thrown by wikidata endpoint
+        console.error("add_command sparql evaluation failed", e);
+        //If the new command fails, we keep the old results
+        newSparql = sparql;
+        newResults = results; 
+    }
+    return [newSparql, newResults, reasoningText];
+}
+
+async function failed_command(questionId, commands, error, input_question, reasoningText) {
+    // Find the failed command (the first one still in the qa field)
+    let qa_remaining_commands = document.getElementById("qa").value;
+    let failed_command = qa_remaining_commands.split(";")[0].trim();
+    reasoningText += "- Failed command " + failed_command + " (error: " + error + ") - ";
+    //todo
+    return [reasoningText];
+}
+
+
+/**
+ * Use the LLM to choose the next action to take
+ * @param {string} input_question 
+ * @param {string} sparql 
+ * @param {string} resultText 
+ * @param {string} reasoningText 
+ * @returns 
+ */
+async function choose_next_action(input_question, sparql, resultText, reasoningText) {
+    reasoningText += "- Choose action - ";
+    let systemMessage = choose_action_system_prompt();
+    let input = choose_action_input_prompt(input_question, sparql, resultText);
+    let output = await sendPrompt(
+        usualPrompt(systemMessage, input), 
+        true, 
+        (text) => { 
+            updateReasoning(questionId, reasoningText + text);
+        } 
+    );
+    // Get the action
+    let actionMatch = output.match(/<action>(.*?)<\/action>/s);
+    let action = actionMatch ? actionMatch[1].trim() : "unknown";
+    return [action, reasoningText];
 }
 
 ////////// STEPS STATUS //////////
