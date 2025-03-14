@@ -167,9 +167,8 @@ function truncateResults(results_text, res_number_to_keep) {
  */
 async function verify_incorrect_result(input_question, sparql, resultText, reasoningText) {
     let reasoningTextStep = "";
-    let resultText_verifier = truncateResults(resultText, 3);
     let systemMessage_verifier = verifier_system_prompt();
-    let input_verifier = verifier_input_prompt(input_question, sparql, resultText_verifier);
+    let input_verifier = verifier_input_prompt(input_question, sparql, resultText);
     let output_verifier = await sendPrompt(
         usualPrompt(systemMessage_verifier, input_verifier), 
         true, 
@@ -187,39 +186,6 @@ async function verify_incorrect_result(input_question, sparql, resultText, reaso
 
     return [answer_considered_incorrect, reasoningText];
 }
-
-/**
- * 
- * @param {string} input_question 
- * @param {string} sparql 
- * @param {string} resultText 
- * @param {string} reasoningText 
- * @returns 
- */
-async function choose_next_action(input_question, sparql, resultText, reasoningText) {
-    let reasoningTextStep = "";
-    let systemMessage = choose_action_system_prompt();
-    let input = choose_action_input_prompt(input_question, sparql, resultText);
-    let output = await sendPrompt(
-        usualPrompt(systemMessage, input), 
-        true, 
-        (text) => { 
-            reasoningTextStep = "- Choose action - " + text;
-            updateReasoning(questionId, reasoningText
-                 + reasoningTextStep); // Capture `questionId` and send `text`
-        } 
-    );
-    reasoningText += reasoningTextStep;
-
-    //todo marche pas
-    console.log("output", output);
-
-    // Get the action
-    let actionMatch = output.match(/<action>(.*?)<\/action>/s);
-    let action = actionMatch ? actionMatch[1].trim() : "unknown";
-    return [action, reasoningText];
-}
-
 
 ////////// STEPS STATUS //////////
 

@@ -40,21 +40,20 @@ async function qa_control() {
 
     questionId = addLLMQuestion(input_question); //  Add a div in the interface to display the question and the answer
    
-    let reasoningText = ""; //to keep reasoning text and be able to update it
-    let reasoningTextStep = "";
+    let reasoningText = ""; //to keep reasoning text and be able to update it    
     currentStep++;
     updateStepsStatus(currentStep, STATUS_ONGOING);
+
+    reasoningText += "- Generation 1 - ";
     let output = await sendPrompt(
         usualPrompt(systemMessage, input_question), 
         true, 
         (text) => { 
-            reasoningTextStep = "- Generation 1 - " + text;
-            updateReasoning(questionId, reasoningTextStep); // Capture `questionId` and send `text`
+            updateReasoning(questionId, text);
         } 
     );
-    reasoningText += reasoningTextStep;
 
-    if (reasoningText != "") {
+    if (output != "") {
         updateStepsStatus(currentStep, STATUS_DONE);
     } else {
         updateStepsStatus(currentStep, STATUS_FAILED);
@@ -106,11 +105,10 @@ async function qa_control() {
 
     //get sparklis results from the commands
     let place = sparklis.currentPlace();
-
     //wait for evaluation of the place
     await waitForEvaluation(place);
-
     console.log("Place evaluated");
+
     let sparql = place.sparql();
     console.log("sparql",sparql);
     let results;
@@ -158,7 +156,7 @@ async function qa_control() {
         switch (next_action) {
             case "done":
                 break;
-            case "process": //todo
+            case "process":
                 [sparql, resultText, reasoningText] = await refine_query(questionId, input_question, sparql, truncated_results_text, reasoningText);
                 //sparklis can't take into account the new query, so we are done
                 next_action = "done";
@@ -181,17 +179,24 @@ async function qa_control() {
 }
 
 //todo tester et ameliorer
+/**
+ * Use the LLM to improve the query and get the new results (should only be used at the end of the process)
+ * @param {*} questionId 
+ * @param {*} question 
+ * @param {*} sparql 
+ * @param {*} results 
+ * @param {*} reasoningText 
+ * @returns 
+ */
 async function refine_query(questionId, question, sparql, results, reasoningText) { //todo catch error
-    let reasoningTextStep = "";
+    reasoningText += "- Refine query - ";
     let output_refine = await sendPrompt(
         usualPrompt(refine_query_system_prompt(), refine_query_input_prompt(question, sparql, results)), 
         true, 
         (text) => { 
-            reasoningTextStep = text;
-            updateReasoning(questionId, reasoningTextStep); // Capture `questionId` and send `text`
+            updateReasoning(questionId, reasoningText + text);
         } 
     );
-    reasoningText += reasoningTextStep;
     //get the new query
     let matchQuery = output.match(/<command>(.*?)<\/command>/s);
     let newQuery = matchQuery ? matchQuery[1].trim() : "";
@@ -210,18 +215,25 @@ async function refine_query(questionId, question, sparql, results, reasoningText
     return  [new_query, new_results, reasoningText];
 }
 
-//todo tester et ameliorer
+/**
+ * Add a single command to the QA extension field and execute it
+ * @param {*} questionId 
+ * @param {*} question 
+ * @param {*} sparql 
+ * @param {*} results 
+ * @param {*} reasoningText 
+ * @param {*} qa_field 
+ * @returns 
+ */
 async function add_command(questionId, question, sparql, results, reasoningText, qa_field) {
-    let reasoningTextStep = "";
+    reasoningText += "- Add command - ";
     let output_add_command = await sendPrompt(
         usualPrompt(following_command_system_prompt(), following_command_input_prompt(question, sparql, results)), 
         true, 
         (text) => { 
-            reasoningTextStep = text;
-            updateReasoning(questionId, reasoningTextStep); // Capture `questionId` and send `text`
+            updateReasoning(questionId, reasoningText + text);
         } 
     );
-    reasoningText += reasoningTextStep;
     //get the new command
     let matchCommand = output_add_command.match(/<command>(.*?)<\/command>/s);
     let newCommand = matchCommand ? matchCommand[1].trim() : "";
@@ -230,8 +242,11 @@ async function add_command(questionId, question, sparql, results, reasoningText,
     qa_field.value = newCommand;
 
     //execute the new command
-    await process_question(qa_field);
-    
+    await process_question(qa_field).catch(async error => {
+        console.error("add_command failed", error);
+        //todo gerer erreur
+        [sparql, results, reasoningText] = await failed_command(questionId, newCommand, question, sparql, results, reasoningText);
+    });
     //wait for evaluation of the place
     let newPlace = sparklis.currentPlace();
     await waitForEvaluation(newPlace);
@@ -244,10 +259,40 @@ async function add_command(questionId, question, sparql, results, reasoningText,
         newResults = await getResultsWithLabels(newSparql);
     } catch (e) {
         //catch error thrown by wikidata endpoint
-        console.error("add_command failed", e);
+        console.error("add_command sparql evaluation failed", e);
         //If the new command fails, we keep the old results
         newSparql = sparql;
         newResults = results; 
     }
     return [newSparql, newResults, reasoningText];
+}
+
+async function failed_command(questionId, command, question, sparql, results, reasoningText) {
+    reasoningText += "- Failed command " + command + " - ";
+    return [sparql, results, reasoningText];
+}
+
+/**
+ * Use the LLM to choose the next action to take
+ * @param {string} input_question 
+ * @param {string} sparql 
+ * @param {string} resultText 
+ * @param {string} reasoningText 
+ * @returns 
+ */
+async function choose_next_action(input_question, sparql, resultText, reasoningText) {
+    reasoningText += "- Choose action - ";
+    let systemMessage = choose_action_system_prompt();
+    let input = choose_action_input_prompt(input_question, sparql, resultText);
+    let output = await sendPrompt(
+        usualPrompt(systemMessage, input), 
+        true, 
+        (text) => { 
+            updateReasoning(questionId, reasoningText + text);
+        } 
+    );
+    // Get the action
+    let actionMatch = output.match(/<action>(.*?)<\/action>/s);
+    let action = actionMatch ? actionMatch[1].trim() : "unknown";
+    return [action, reasoningText];
 }

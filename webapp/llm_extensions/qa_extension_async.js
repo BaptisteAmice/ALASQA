@@ -16,7 +16,12 @@ window.addEventListener(
 
 /* processing a question, i.e. a sequence of steps */
 
-// process user question, available in qa HTML element
+/**
+ * Process user question, available in qa HTML element.
+ * Errors can be thrown by this function and should be handled by the caller.
+ * @param {*} qa 
+ * @returns 
+ */
 async function process_question(qa) {
     let question = qa.value;
     console.log("Question: " + question);

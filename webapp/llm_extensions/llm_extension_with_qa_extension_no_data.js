@@ -44,20 +44,18 @@ async function qa_control() {
     questionId = addLLMQuestion(input_question); //  Add a div in the interface to display the question and the answer
    
     let reasoningText = ""; //to keep reasoning text and be able to update it
-    let reasoningTextStep = "";
     currentStep++;
+    reasoningText = "- Generation 1 - ";
     updateStepsStatus(currentStep, STATUS_ONGOING);
     let output = await sendPrompt(
         usualPrompt(systemMessage, input_question), 
         true, 
         (text) => { 
-            reasoningTextStep = "- Generation 1 - " + text;
-            updateReasoning(questionId, reasoningTextStep); // Capture `questionId` and send `text`
+            updateReasoning(questionId, reasoningText + text);
         } 
     );
-    reasoningText += reasoningTextStep;
 
-    if (reasoningText != "") {
+    if (output != "") {
         updateStepsStatus(currentStep, STATUS_DONE);
     } else {
         updateStepsStatus(currentStep, STATUS_FAILED);
@@ -173,17 +171,14 @@ async function qa_control() {
     //     <result>${resultText_verifier}</result>
     //     Let's think step by step.
     //     `;
+    //     reasoningText += "- Query alteration - ";
     //     let output_alter = await sendPrompt(
     //         usualPrompt(system_message_alter, input_alter), 
     //         true, 
     //         (text) => { 
-    //             reasoningTextStep = "- Query alteration - " + text;
-    //             updateReasoning(questionId, reasoningText 
-    //                 + reasoningTextStep); // Capture `questionId` and send `text`
-                    
+    //             updateReasoning(questionId, reasoningText + text);
     //         } 
     //     );
-    //     reasoningText += reasoningTextStep;
     //     //get the new request SPARQL from the response
     //     let matchCorrect = output_alter.match(/<correction>(.*?)<\/correction>/s);
     //     let correct = matchCorrect ? matchCorrect[1].trim() : "";

@@ -5,9 +5,7 @@ todo
 await sparklis.currentPlace().getConceptSuggestions(false,sparklis.conceptConstr())
 -add prompt version in final log
 
-//todo add text output
-//todo patcher reasoning s'efface
-//todo manque catch error
+//todo add text output sparklis nl
 
 //todo separer les commandes 
 -> les executer individuelement et regarder résultat
