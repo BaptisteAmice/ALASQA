@@ -1,6 +1,22 @@
-// Basic prompts
-function q_a_input_prompt(input) {
-    return "Q: " + input + "\nA: ";
+///// Generic prompts
+/**
+ * Put the data from the dict between the tags named as the keys.
+ * If include_think_step is true, add "Let's think step by step." at the end.
+ * Returns the prompt as a string.
+ * @param {*} data 
+ * @param {boolean} include_think_step 
+ * @returns 
+ */
+function data_input_prompt(data, include_think_step = false) {
+    let prompt = Object.entries(data)
+        .map(([key, value]) => `<${key}>${value}</${key}>`)
+        .join("\n");
+
+    if (include_think_step) {
+        prompt += "\nLet's think step by step.";
+    }
+
+    return prompt;
 }
 
 ///// Commands chain
@@ -41,33 +57,13 @@ function commands_chain_system_prompt() {
 }
 
 ///// Verifier
-
 function verifier_system_prompt() {
     return `For a given question, a given request SPARQL and a given result, do you think the result of the query answers the question?
     Think step by step, then finish your response by either <answer>correct</answer> or <answer>incorrect</answer> (but nothing else).`;
 }
 
-function verifier_input_prompt(input_question, sparql, resultText) {
-    return `<question>${input_question}</question>
-    <sparql>${sparql}</sparql>
-    <result>${resultText}</result>
-    Let's think step by step.
-    `;
-}
-
-///// Patch
-
-//todo
-
-
-///// Direct question to SPARQL
-function direct_qa_system_prompt(endpoint) {
-    return `For a given question, generate a SPARQL query to retrieve the relevant information from the knowledge graph (the endpoint to use is ${endpoint}).
-    Think step by step, then finish your response by the generated SPARQL query wrapped in <sparql>...</sparql>.`;
-}
-
 ///// Commands step by step
-function first_command_system_prompt() {
+function first_command_system_prompt() { //toimprove
     return `
     To generate a query that retrieves relevant entities from a knowledge base, follow these steps:
 
@@ -115,31 +111,16 @@ function choose_action_system_prompt() {
     `;
 }
 
-function choose_action_input_prompt(input_question, sparql, resultText) {
-    return `<question>${input_question}</question>
-    <sparql>${sparql}</sparql>
-    <result>${resultText}</result>
-    Let's think step by step.
-    `;
-}
-
-function refine_query_system_prompt() {
+function refine_query_system_prompt() { //toimprove
     return `You will be given a question, a SPARQL query and its result.
     You have to think step by step and refine the query in order for its output to respond exactly to the question.
     For example, the question can expect a boolean response, if the query doesn't return a boolean but contains the necessary data to induce the boolean, you will have to adapt it in order to return the expected value.
+    If the query and its result are totally irrelevant to the question, you will have to write a new query from scratch.
     Conclude your reasoning by wrapping the new query (without comments in it) in the balises <query>...</query>.
     `;
 }
 
-function refine_query_input_prompt(question, sparql, results) {
-    return `<question>${question}</question>
-    <sparql>${sparql}</sparql>
-    <result>${results}</result>
-    Let's think step by step.
-    `;
-}
-
-function following_command_system_prompt() { //todo
+function following_command_system_prompt() { //toimprove
     return `
     To continue building your query, follow these steps:
 
@@ -168,10 +149,9 @@ function following_command_system_prompt() { //todo
     - **Query:** \`<command>forwardProperty release date;</command>\`
     `;
 }
-function following_command_input_prompt(input_question, sparql, resultText) {
-    return `<question>${input_question}</question>
-    <sparql>${sparql}</sparql>
-    <result>${resultText}</result>
-    Let's think step by step.
-    `;
+
+///// Direct question to SPARQL
+function direct_qa_system_prompt(endpoint) {
+    return `For a given question, generate a SPARQL query to retrieve the relevant information from the knowledge graph (the endpoint to use is ${endpoint}).
+    Think step by step, then finish your response by the generated SPARQL query wrapped in <sparql>...</sparql>.`;
 }

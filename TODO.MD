@@ -5,6 +5,13 @@ todo
 await sparklis.currentPlace().getConceptSuggestions(false,sparklis.conceptConstr())
 -add prompt version in final log
 
+//todo nouvelles idées 
+    - prendre en compte NL : avec/sans
+    - prendre en compte le focus : avec/sans
+    - prompt command list -> pour chaque commande
+        - filtrer pour voir si entité/propriété existe
+            - agir en fonction  
+
 //todo add text output sparklis nl
 
 //todo separer les commandes 

@@ -157,7 +157,7 @@ function truncateResults(results_text, res_number_to_keep) {
     return truncated_results_text;
 }
 
-/** //todo enlever le truncate d'ici?
+/**
  * Verify the result. Does the llm think the answer is correct?
  * @param {string} input_question 
  * @param {string} sparql 
@@ -167,7 +167,7 @@ function truncateResults(results_text, res_number_to_keep) {
  */
 async function verify_incorrect_result(input_question, sparql, resultText, reasoningText) {
     let systemMessage_verifier = verifier_system_prompt();
-    let input_verifier = verifier_input_prompt(input_question, sparql, resultText);
+    let input_verifier = data_input_prompt({ "question": input_question, "sparql": sparql, "result" : resultText }, true);
     reasoningText += "- Results verification - ";
     let output_verifier = await sendPrompt(
         usualPrompt(systemMessage_verifier, input_verifier), 
@@ -186,17 +186,18 @@ async function verify_incorrect_result(input_question, sparql, resultText, reaso
 //todo tester et ameliorer
 /**
  * Use the LLM to improve the query and get the new results (should only be used at the end of the process)
- * @param {*} questionId 
- * @param {*} question 
- * @param {*} sparql 
- * @param {*} results 
- * @param {*} reasoningText 
+ * @param {string} questionId 
+ * @param {string} question 
+ * @param {string} sparql 
+ * @param {string} results 
+ * @param {string} reasoningText 
  * @returns 
  */
 async function refine_query(questionId, question, sparql, results, reasoningText) { //todo catch error
     reasoningText += "- Refine query - ";
+    let input = data_input_prompt({ "question": question, "sparql": sparql, "results": results }, true);
     let output_refine = await sendPrompt(
-        usualPrompt(refine_query_system_prompt(), refine_query_input_prompt(question, sparql, results)), 
+        usualPrompt(refine_query_system_prompt(), input), 
         true, 
         (text) => { 
             updateReasoning(questionId, reasoningText + text);
@@ -222,18 +223,19 @@ async function refine_query(questionId, question, sparql, results, reasoningText
 
 /**
  * Add a single command to the QA extension field and execute it
- * @param {*} questionId 
- * @param {*} question 
- * @param {*} sparql 
- * @param {*} results 
- * @param {*} reasoningText 
+ * @param {string} questionId 
+ * @param {string} question 
+ * @param {string} sparql 
+ * @param {string} results 
+ * @param {string} reasoningText 
  * @param {*} qa_field 
  * @returns 
  */
 async function add_command(questionId, question, sparql, results, reasoningText, qa_field) {
     reasoningText += "- Add command - ";
+    let input = data_input_prompt({ "question": question, "sparql": sparql, "results": results }, true);
     let output_add_command = await sendPrompt(
-        usualPrompt(following_command_system_prompt(), following_command_input_prompt(question, sparql, results)), 
+        usualPrompt(following_command_system_prompt(), input), 
         true, 
         (text) => { 
             updateReasoning(questionId, reasoningText + text);
@@ -272,13 +274,25 @@ async function add_command(questionId, question, sparql, results, reasoningText,
     return [newSparql, newResults, reasoningText];
 }
 
+/**
+ * 
+ * @param {string} questionId 
+ * @param {string} commands 
+ * @param {*} error 
+ * @param {string} input_question 
+ * @param {string} reasoningText 
+ * @returns 
+ */
 async function failed_command(questionId, commands, error, input_question, reasoningText) {
     // Find the failed command (the first one still in the qa field)
     let qa_remaining_commands = document.getElementById("qa").value;
     let failed_command = qa_remaining_commands.split(";")[0].trim();
     reasoningText += "- Failed command " + failed_command + " (error: " + error + ") - ";
-    //todo
-    return [reasoningText];
+    //todo on fait quoi!?
+    //for a question, a selected command list, a command failed, error
+    //question, commands, command failed, error, command syntax
+    
+    return reasoningText;
 }
 
 
@@ -293,7 +307,7 @@ async function failed_command(questionId, commands, error, input_question, reaso
 async function choose_next_action(input_question, sparql, resultText, reasoningText) {
     reasoningText += "- Choose action - ";
     let systemMessage = choose_action_system_prompt();
-    let input = choose_action_input_prompt(input_question, sparql, resultText);
+    let input = data_input_prompt({ "question": input_question, "sparql": sparql, "results": resultText }, true);
     let output = await sendPrompt(
         usualPrompt(systemMessage, input), 
         true, 

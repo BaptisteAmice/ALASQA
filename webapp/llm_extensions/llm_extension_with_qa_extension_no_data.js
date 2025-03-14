@@ -3,8 +3,8 @@ console.log("LLM with QA extension active");
 
 // Enable or not extensions to the base flow
 const HANDLE_FAILED_COMMANDS = true;
-const CHECK_INCORRECT_RESULT = false;
-const ALTER_CONSIDERED_INCORRECT = CHECK_INCORRECT_RESULT && false;
+const CHECK_INCORRECT_RESULT = true;
+const ALTER_CONSIDERED_INCORRECT = CHECK_INCORRECT_RESULT && true;
 
 /////// Steps status ////////
 var steps_status = {
@@ -17,6 +17,9 @@ var steps_status = {
 };
 if (CHECK_INCORRECT_RESULT) {
     steps_status["6"] = { "Name" : "Result verification", "Status" : STATUS_NOT_STARTED };
+}
+if (ALTER_CONSIDERED_INCORRECT) {
+    steps_status["7"] = { "Name" : "Query alteration", "Status" : STATUS_NOT_STARTED };
 }
 
 // If updated, also update the post-processing script
@@ -43,7 +46,7 @@ async function qa_control() {
 
     let systemMessage = commands_chain_system_prompt();
     let input_field = document.getElementById("user-input");
-    let input_question = q_a_input_prompt(input_field.value);
+    let input_question = input_field.value;
     let qa = document.getElementById("qa"); // input field of the qa extension
 
     /////////// Extraction ///////////
@@ -61,6 +64,7 @@ async function qa_control() {
             updateReasoning(questionId, reasoningText + text);
         } 
     );
+    reasoningText += output;
 
     if (output != "") {
         updateStepsStatus(currentStep, STATUS_DONE);
@@ -99,22 +103,23 @@ async function qa_control() {
             updateStepsStatus(currentStep, STATUS_DONE);
             }
         )
-        .catch(error => {
+        .catch(async error => {
             let message = error_messages[1] + error;
             console.log(message);
             errors += message;
             updateStepsStatus(currentStep, STATUS_FAILED);
             if (HANDLE_FAILED_COMMANDS){ //todo tester
-                [reasoningText] = failed_command(questionId, commands, error, input_question, reasoningText);
+                console.log("commands (failed)",commands);
+                reasoningText = await failed_command(questionId, commands, error, input_question, reasoningText);
             }
         }
     );
 
     //get remaining commands count
-    let remainingCommands = qa.value;
-    let remainingCommandsCount = countCommands(remainingCommands);
-    console.log("Remaining commands:", remainingCommandsCount);
-    let executedCommmandsCount = commandsCount - remainingCommandsCount;
+    // let remainingCommands = qa.value;
+    // let remainingCommandsCount = countCommands(remainingCommands);
+    // console.log("Remaining commands:", remainingCommandsCount);
+    // let executedCommmandsCount = commandsCount - remainingCommandsCount;
 
     //get sparklis results from the commands
     let place = sparklis.currentPlace();
@@ -159,11 +164,7 @@ async function qa_control() {
         updateStepsStatus(currentStep, STATUS_FAILED);
     }
 
-    //set the result in the answer field
-    updateAnswer(questionId, resultText, "???", sparql, errors); //todo sparklis_request 
-
     //verify the result, does the llm think the answer is correct
-
     if (CHECK_INCORRECT_RESULT) { //todo re test
         currentStep++;
         updateStepsStatus(currentStep, STATUS_ONGOING);
@@ -171,46 +172,51 @@ async function qa_control() {
         let result_considered_invalid;
         [result_considered_invalid, reasoningText] = await verify_incorrect_result(input_question, sparql, truncated_results_text, reasoningText);
         updateStepsStatus(currentStep, STATUS_DONE);
+
+        if (ALTER_CONSIDERED_INCORRECT) {
+            currentStep++;
+            updateStepsStatus(currentStep, STATUS_ONGOING);
+            //if the answer is incorrect, let the llm alter the query
+            if (result_considered_invalid) { //todo finish and test
+                console.log("The LLM considers the answer incorrect");
+                let system_message_alter = refine_query_system_prompt();
+                let input_alter = data_input_prompt({
+                    "question": input_question,
+                    "sparql": sparql,
+                    "result": truncated_results_text
+                }, true);
+                reasoningText += "- Query alteration - ";
+                let output_alter = await sendPrompt(
+                    usualPrompt(system_message_alter, input_alter), 
+                    true, 
+                    (text) => { 
+                        updateReasoning(questionId, reasoningText + text);
+                    } 
+                );
+                //get the new request SPARQL from the response
+                let matchCorrect = output_alter.match(/<query>(.*?)<\/query>/s);
+                let correct = matchCorrect ? matchCorrect[1].trim() : "";
+
+                //todo better tests and error handling
+                if (correct != "") {
+                    //update the sparql with the new request
+                    sparql = correct; //todo tester avant
+                    try {
+                        //evaluate the new request
+                        results = await getResultsWithLabels(sparql);
+                        resultText = JSON.stringify(results.rows);
+                    } catch (e) {
+                        console.log("error results correction:", e);
+                    }
+                }
+                updateStepsStatus(currentStep, STATUS_DONE);
+            }
+        }
     }
 
-    // //if the answer is incorrect, let the llm alter the query
-    // while (answer_is_incorrect) {
-    //     //todo step pp
-    //     //todo if not correct -> let the llm alter the query (not in no data version)
-    //     console.log("The LLM considers the answer incorrect");
-    //     let system_message_alter = "For the given question, an incorrect SPARQL query and its result are provided. Analyze them step by step, identify the mistake, and then provide a corrected SPARQL query inside <correction>...</correction>.";
-    //     let input_alter = `
-    //     <question>${input_question}</question>
-    //     <sparql>${sparql}</sparql>
-    //     <result>${resultText_verifier}</result>
-    //     Let's think step by step.
-    //     `;
-    //     reasoningText += "- Query alteration - ";
-    //     let output_alter = await sendPrompt(
-    //         usualPrompt(system_message_alter, input_alter), 
-    //         true, 
-    //         (text) => { 
-    //             updateReasoning(questionId, reasoningText + text);
-    //         } 
-    //     );
-    //     //get the new request SPARQL from the response
-    //     let matchCorrect = output_alter.match(/<correction>(.*?)<\/correction>/s);
-    //     let correct = matchCorrect ? matchCorrect[1].trim() : "";
-    //     console.log("correct", correct);
-    //     if (correct != "") {
-    //         //update the sparql with the new request
-    //         sparql = correct; //todo tester avant
-    //         try {
-    //             results = await getResultsWithLabels(sparql);
-    //         } catch (e) {
-
-    //         }
-    //         //todo test it and more
-    //         //update the result in the answer field
-    //         //updateAnswer(questionId, resultText, "???", sparql, errors); //todo sparklis_request 
-    //     }
-    //     answer_is_incorrect = false;
-    // }
+    
+    //set the result in the answer field
+    updateAnswer(questionId, resultText, "???", sparql, errors); //todo sparklis_request 
 
     //re-enable interactions (used as the condition to end the wait from tests)
     enableInputs(); 

@@ -33,7 +33,7 @@ async function qa_control() {
     let used_endpoint = sparklis.endpoint();
     let systemMessage = direct_qa_system_prompt(used_endpoint);
     let input_field = document.getElementById("user-input");
-    let input_question = q_a_input_prompt(input_field.value);
+    let input_question = input_field.value;
     let qa = document.getElementById("qa"); // input field of the qa extension
 
     /////////// Extraction ///////////
