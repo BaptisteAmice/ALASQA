@@ -151,9 +151,9 @@ async function qa_control() {
     let next_action;
     do {
         let truncated_results_text = truncateResults(resultText, 3);
-        reasoningText += "- Choosing action -"
+        reasoningText += "- Choosing action -";
         [next_action, reasoningText] = await choose_next_action(input_question, sparql, truncated_results_text, reasoningText);
-        reasoningText += "- Starting action " + next_action + " - " 
+        reasoningText += "- Starting action " + next_action + " - "; 
         console.log("Action:", next_action);
         switch (next_action) {
             case "done":
@@ -164,7 +164,7 @@ async function qa_control() {
                 next_action = "done";
                 break;
             case "add command": //todo
-                [sparql, resultText, reasoningText]  = await add_command(questionId, input_question, sparql, truncated_results_text, reasoningText, qa_field);
+                [sparql, resultText, reasoningText] = await add_command(questionId, input_question, sparql, truncated_results_text, reasoningText, qa_field);
                 break;
             default:
                 console.error("Invalid next action " + next_action);
@@ -181,7 +181,7 @@ async function qa_control() {
 }
 
 //todo tester et ameliorer
-async function refine_query(questionId, question, sparql, results, reasoningText) {
+async function refine_query(questionId, question, sparql, results, reasoningText) { //todo catch error
     let reasoningTextStep = "";
     let output_refine = await sendPrompt(
         usualPrompt(refine_query_system_prompt(), refine_query_input_prompt(question, sparql, results)), 
@@ -223,7 +223,7 @@ async function add_command(questionId, question, sparql, results, reasoningText,
     );
     reasoningText += reasoningTextStep;
     //get the new command
-    let matchCommand = output.match(/<command>(.*?)<\/command>/s);
+    let matchCommand = output_add_command.match(/<command>(.*?)<\/command>/s);
     let newCommand = matchCommand ? matchCommand[1].trim() : "";
 
     //set the new command in the qa field
