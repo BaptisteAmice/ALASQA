@@ -13,7 +13,7 @@ var steps_status = {
 
 // If updated, also update the post-processing script
 var error_messages = [
-    "Error: No match found for <command>...</command>;",
+    "Error: No match found for <commands>...</commands>;",
     "Warning: Commands failed to finish due to: ",
     "Error: error while evaluating SPARQL query",
     "Error: error while parsing SPARQL results",
@@ -31,7 +31,7 @@ async function qa_control() {
     //disable interactions with the llm input field (used as the condition to wait for the end of the process in tests)
     disableInputs();
 
-    let systemMessage = first_command_system_prompt();
+    let systemMessage = commands_chain_system_prompt();
     let input_field = document.getElementById("user-input");
     let input_question = input_field.value;
     let qa_field = document.getElementById("qa"); // input field of the qa extension
@@ -52,6 +52,7 @@ async function qa_control() {
             updateReasoning(questionId, text);
         } 
     );
+    reasoningText += output;
 
     if (output != "") {
         updateStepsStatus(currentStep, STATUS_DONE);
@@ -62,10 +63,9 @@ async function qa_control() {
     //get commands from regular expression <commands>...</commands>
     currentStep++;
     updateStepsStatus(currentStep, STATUS_ONGOING);
-    let matchCommands = output.match(/<command>(.*?)<\/command>/s);
+    let matchCommands = output.match(/<commands>(.*?)<\/commands>/s);
 
     let commands = matchCommands ? matchCommands[1].trim() : ""; // Safe access since we checked if matchCommands is not null
-    
     if (commands) {
         qa_field.value = commands;  // Safe access since we checked if commands is not null
         updateStepsStatus(currentStep, STATUS_DONE);
@@ -75,6 +75,9 @@ async function qa_control() {
         errors += message;
         updateStepsStatus(currentStep, STATUS_FAILED);
     }
+
+    //We only want the first command (the whole command list was asked to have a good reasoning from the llm)
+    commands = commands.split(";")[0];
 
     //count commands
     let commandsCount = countCommands(commands);

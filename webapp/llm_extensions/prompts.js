@@ -22,11 +22,11 @@ function data_input_prompt(data, include_think_step = false) {
 ///// Commands chain
 function commands_chain_system_prompt() {
     return `
-    ## Task: Generate knowledge graph query commands for Sparklis.
+    ## Task: Generate knowledge graph query commands for Sparklis (SPARQL-based tool).
 
-    ## Format:  
-    1. Think step by step about what entities and relationships are needed 
-    2. Then finish your response by a list of commands, separated by semicolons (;), and wrapped in <commands>...</commands>.  
+    ## Format:
+    1. Think step by step about what entities and relationships are needed.
+    2. Finish your response with a sequence of commands, separated by semicolons (;), and wrapped in <commands>...</commands>.
 
     ### Available Commands:
     - a [concept] → Retrieve entities of a given concept (e.g., "a book" to find books).
@@ -39,86 +39,47 @@ function commands_chain_system_prompt() {
 
     ## Examples:
     Q: At which school went Yayoi Kusama?
-    A: To answer this question, we need to identify the entity for "Yayoi Kusama" and the property "educated at" that connects her to the schools she attended. Using the forwardProperty educated at command will allow us to filter the institutions where she received her education.
-    <commands>Yayoi Kusama ; forwardProperty educated at</commands> 
+    A: To answer this question, I need to identify the entity for "Yayoi Kusama" and the property "educated at" that connects her to the schools she attended. Using the forwardProperty educated at command will allow us to filter the institutions where she received her education.
+    <commands>Yayoi Kusama; forwardProperty educated at</commands>
 
     Q: What is the boiling point of water?
-    A: The core of the request is WATER. From this entity I will probably be able to get a property such as its BOILING POINT.  
-    <commands>water; forwardProperty boiling point</commands>  
+    A: The core of the request is WATER. From this entity, I will be able to retrieve the property BOILING POINT.  
+    <commands>water; forwardProperty boiling point</commands>
 
     Q: Movies by Spielberg or Tim Burton after 1980?
     A: I need to find FILMS by Spielberg or Burton released after 1980. I can start by listing FILMS and then filter by DIRECTOR and RELEASE DATE. 
-    <commands>a film; forwardProperty director; Tim Burton; or; Spielberg; forwardProperty release date; after 1980</commands>  
+    <commands>a film; forwardProperty director; Tim Burton; or; Spielberg; forwardProperty release date; after 1980</commands>
 
     Q: among the founders of tencent company, who has been member of national people' congress?"
-    A: I can start by finding FOUNDERS of something called TENCENT. Then, I can filter by people who have been members of the NATIONAL PEOPLE'S CONGRESS.
-    <commands>backwardProperty founder of; Tencent ; forwardProperty position ; National People's Congress</commands>
+    A: I can start by finding the FOUNDERS of something called TENCENT. Then, I can filter by people who have been members of the NATIONAL PEOPLE'S CONGRESS.
+    <commands>backwardProperty founder of; Tencent; forwardProperty position; National People's Congress</commands>
     `;
 }
 
 ///// Verifier
 function verifier_system_prompt() {
-    return `For a given question, a given request SPARQL and a given result, do you think the result of the query answers the question?
-    Think step by step, then finish your response by either <answer>correct</answer> or <answer>incorrect</answer> (but nothing else).`;
+    return `For a given question, a given SPARQL query, and its result, evaluate whether the result of the query answers the question.
+    Think step by step, then finish your response by replying with either <answer>correct</answer> or <answer>incorrect</answer> (but nothing else).`;
 }
 
 ///// Commands step by step
-function first_command_system_prompt() { //toimprove
-    return `
-    To generate a query that retrieves relevant entities from a knowledge base, follow these steps:
-
-    1. **Identify the key entity or concept** in the question.
-    - If the question asks about a specific entity (e.g., Tim Burton, water), retrieve that entity using its name.
-    - If the question is broad and requires a list of entities (e.g., a animal, a country), start with a concept command (e.g., "a film").
-
-    2. **Determine the relevant properties** if there isn't a direct entity in the question.
-    - If the question requires filtering by a known attribute (e.g., directors of a film, the school someone attended), use \`forwardProperty\`.
-    - If the question requires reversing a known relation (e.g., finding who founded a company), use \`backwardProperty\`.
-
-    3. **Justify the command choice** based on the nature of the question.
-
-    ### Examples:
-
-    **Q: At which school did Yayoi Kusama study?**  
-    - Yayoi Kusama is a specific entity. To retrieve her data, we first get her entity.  
-    - To find the school, we need to look for an educational institution related to her.  
-    - **Query:** \`<command>Yayoi Kusama</command>\`  
-
-    **Q: What is the boiling point of water?**  
-    - The question is about a property of "water," so we start by retrieving the entity "water."  
-    - **Query:** \`<command>water</command>\`  
-
-    **Q: Movies by Spielberg or Tim Burton after 1980?**  
-    - The question asks for movies (a category of entities).  
-    - We retrieve films first, then filter by director and release year.  
-    - **Query:** \`<command>a film</command>\`  
-
-    **Q: Among the founders of Tencent, who has been a member of the National People's Congress?**  
-    - The question involves finding individuals related to Tencent as founders.  
-    - To retrieve them, we reverse the "founder of" relationship from Tencent.  
-    - **Query:** \`<command>backwardProperty founder of</command>\`  
-
-    By following these steps, you ensure that the query starts from the right point and leads to relevant results.
-    `;
-}
 
 function choose_action_system_prompt() {
-    return `Based on the question we are trying to answer, the current query and its results, choose the next action to refine the query.
-    Think step by step, then finish your response by one of the following actions:
-    - <action>done</action>: If you think the query is complete and the results exactly answer the question.
-    - <action>process</action>: If you think the results of the query are sufficient to answer the question but need further processing (e.g., filtering, counting).
-    - <action>add command</action>: If you think the query needs additional commands to retrieve the desired information.
-    `;
+    return `Given a question, a SPARQL query, and the result of executing that query, determine the next action to refine the query.
+    Think step by step, then conclude with one of the following actions:
+    - <action>done</action>: If the query is complete and the results exactly answer the question.
+    - <action>process</action>: If the results of the query contain the necessary information but require further processing (e.g., filtering, counting, aggregating).
+    - <action>add command</action>: If additional commands are needed to retrieve the desired information.`;
 }
 
 function refine_query_system_prompt() { //toimprove
-    return `You will be given a question, a SPARQL query and its result.
-    You have to think step by step and refine the query in order for its output to respond exactly to the question.
-    For example, the question can expect a boolean response, if the query doesn't return a boolean but contains the necessary data to induce the boolean, you will have to adapt it in order to return the expected value.
-    If the query and its result are totally irrelevant to the question, you will have to write a new query from scratch.
-    Conclude your reasoning by wrapping the new query (without comments in it) in the balises <query>...</query>.
-    `;
+    return `You will be given a question, a SPARQL query, and the result of executing that query.
+    Your task is to refine the query step by step so that its output exactly answers the question.
+    For example, if the expected answer is a boolean but the query does not return one, yet contains the necessary data to determine it, you must modify it to return the correct boolean value.
+    If the query does not retrieve relevant data for answering the question, you must write a new query from scratch.
+    Conclude your reasoning by wrapping the new query (without comments) in the <query>...</query> tags.`;
 }
+
 
 function following_command_system_prompt() { //toimprove
     return `
@@ -146,12 +107,19 @@ function following_command_system_prompt() { //toimprove
     **Q: Movies by Spielberg or Tim Burton after 1980?**
     - We already retrieved films and filtered by director.
     - To further narrow down the results, we need to filter by release date.
+    - We can get the property "release date" using the forwardProperty command.
     - **Query:** \`<command>forwardProperty release date;</command>\`
+    - The next command should filter the release date to be after 1980.
     `;
 }
 
 ///// Direct question to SPARQL
 function direct_qa_system_prompt(endpoint) {
-    return `For a given question, generate a SPARQL query to retrieve the relevant information from the knowledge graph (the endpoint to use is ${endpoint}).
-    Think step by step, then finish your response by the generated SPARQL query wrapped in <sparql>...</sparql>.`;
+    return `Given a natural language question, generate an appropriate SPARQL query to retrieve the relevant information from the knowledge graph. Use the SPARQL endpoint: ${endpoint}.
+
+    Follow these steps:
+    1. Identify the key entities and relationships in the question.
+    2. Determine the relevant classes, properties, or constraints in the knowledge graph.
+    3. Construct a SPARQL query that retrieves precise information while being efficient.
+    4. Output only the final SPARQL query, wrapped in <sparql>...</sparql>, without additional explanation.`;
 }

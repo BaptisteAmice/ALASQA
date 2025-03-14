@@ -32,6 +32,7 @@ launch a local llm accessible through an api
 
 launch the api (or you can just open the html if you want to just use it manually)
 fastapi dev api.py
+(if virtual env not activated : source .venv/bin/activate)
 
 
 ## License

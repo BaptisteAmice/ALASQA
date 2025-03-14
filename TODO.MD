@@ -1,9 +1,12 @@
 todo
+- LE GROS TRUC QUI MANQUE C LE REToUR EN LANGUE NATUREL ET SON utiLISATION APRES CHAQUE COMMANDE
 - cf todo diapo
 - ajouter commande filter (trouver comment gérer par colonne)
 //comment traduire suggestions d'objet vers texte affichage (il y a un hook pour?)
 await sparklis.currentPlace().getConceptSuggestions(false,sparklis.conceptConstr())
 -add prompt version in final log
+
+-todo save les schemas qq part
 
 //todo nouvelles idées 
     - prendre en compte NL : avec/sans
