@@ -180,37 +180,7 @@ async function qa_control() {
             //if the answer is incorrect, let the llm alter the query
             if (result_considered_invalid) { //todo finish and test
                 console.log("The LLM considers the answer incorrect");
-                let system_message_alter = refine_query_system_prompt();
-                let input_alter = data_input_prompt({
-                    "question": input_question,
-                    "sparql": sparql,
-                    "result": truncated_results_text
-                }, true);
-                reasoningText += "- Query alteration - ";
-                let output_alter = await sendPrompt(
-                    usualPrompt(system_message_alter, input_alter), 
-                    true, 
-                    (text) => { 
-                        updateReasoning(questionId, reasoningText + text);
-                    } 
-                );
-                reasoningText += output_alter;
-                //get the new request SPARQL from the response
-                let matchCorrect = output_alter.match(/<query>(.*?)<\/query>/s);
-                let correct = matchCorrect ? matchCorrect[1].trim() : "";
-
-                //todo better tests and error handling
-                if (correct != "") {
-                    //update the sparql with the new request
-                    sparql = correct; //todo tester avant
-                    try {
-                        //evaluate the new request
-                        results = await getResultsWithLabels(sparql);
-                        resultText = JSON.stringify(results.rows);
-                    } catch (e) {
-                        console.log("error results correction:", e);
-                    }
-                }
+                [sparql, resultText, reasoningText] = await refine_query(questionId, input_question, sparql, truncated_results_text, reasoningText);
                 updateStepsStatus(currentStep, STATUS_DONE);
             }
         }

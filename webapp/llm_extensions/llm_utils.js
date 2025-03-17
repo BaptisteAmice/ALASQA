@@ -205,7 +205,7 @@ async function refine_query(questionId, question, sparql, results, reasoningText
         } 
     );
     //get the new query
-    let matchQuery = output.match(/<command>(.*?)<\/command>/s);
+    let matchQuery = output.match(/<query>(.*?)<\/query>/s);
     let newQuery = matchQuery ? matchQuery[1].trim() : "";
     let newResults;
     //try the new query and get its results
