@@ -193,6 +193,7 @@ async function qa_control() {
                         updateReasoning(questionId, reasoningText + text);
                     } 
                 );
+                reasoningText += output_alter;
                 //get the new request SPARQL from the response
                 let matchCorrect = output_alter.match(/<query>(.*?)<\/query>/s);
                 let correct = matchCorrect ? matchCorrect[1].trim() : "";

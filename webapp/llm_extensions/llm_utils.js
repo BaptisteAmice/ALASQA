@@ -176,6 +176,7 @@ async function verify_incorrect_result(input_question, sparql, resultText, reaso
             updateReasoning(questionId, reasoningText + text);
         } 
     );
+    reasoningText += output_verifier;
     // get the answer
     let answer = output_verifier.match(/<answer>(.*?)<\/answer>/s);
     let answer_considered_incorrect = answer && answer[1].toLowerCase() == "incorrect";
@@ -218,7 +219,7 @@ async function refine_query(questionId, question, sparql, results, reasoningText
         newQuery = sparql;
         newResults = results;
     }
-    return  [new_query, new_results, reasoningText];
+    return  [newQuery, newResults, reasoningText];
 }
 
 /**
@@ -241,6 +242,7 @@ async function add_command(questionId, question, sparql, results, reasoningText,
             updateReasoning(questionId, reasoningText + text);
         } 
     );
+    reasoningText += output_add_command;
     //get the new command
     let matchCommand = output_add_command.match(/<command>(.*?)<\/command>/s);
     let newCommand = matchCommand ? matchCommand[1].trim() : "";
@@ -315,6 +317,7 @@ async function choose_next_action(input_question, sparql, resultText, reasoningT
             updateReasoning(questionId, reasoningText + text);
         } 
     );
+    reasoningText += output;
     // Get the action
     let actionMatch = output.match(/<action>(.*?)<\/action>/s);
     let action = actionMatch ? actionMatch[1].trim() : "unknown";
