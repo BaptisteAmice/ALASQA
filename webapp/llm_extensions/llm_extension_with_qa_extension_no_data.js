@@ -2,7 +2,7 @@
 console.log("LLM with QA extension active");
 
 // Enable or not extensions to the base flow
-const HANDLE_FAILED_COMMANDS = true;
+const HANDLE_FAILED_COMMANDS = false;
 const CHECK_INCORRECT_RESULT = true;
 const ALTER_CONSIDERED_INCORRECT = CHECK_INCORRECT_RESULT && true;
 
@@ -55,7 +55,7 @@ async function qa_control() {
    
     let reasoningText = ""; //to keep reasoning text and be able to update it
     currentStep++;
-    reasoningText = "- Generation 1 - ";
+    reasoningText += "- GENERATION 1 - system prompt: " + systemMessage + " - user input: " + input_question + " - ";
     updateStepsStatus(currentStep, STATUS_ONGOING);
     let output = await sendPrompt(
         usualPrompt(systemMessage, input_question), 
@@ -164,11 +164,12 @@ async function qa_control() {
         updateStepsStatus(currentStep, STATUS_FAILED);
     }
 
+    let truncated_results_text = truncateResults(resultText, 5);
+
     //verify the result, does the llm think the answer is correct
     if (CHECK_INCORRECT_RESULT) { //todo re test
         currentStep++;
         updateStepsStatus(currentStep, STATUS_ONGOING);
-        let truncated_results_text = truncateResults(resultText, 5);
         let result_considered_invalid;
         [result_considered_invalid, reasoningText] = await verify_incorrect_result(input_question, sparql, truncated_results_text, reasoningText);
         updateStepsStatus(currentStep, STATUS_DONE);
@@ -215,7 +216,8 @@ async function qa_control() {
         }
     }
 
-    
+    //update reasoning one last time in case of for
+    updateReasoning(questionId, reasoningText);
     //set the result in the answer field
     updateAnswer(questionId, resultText, "???", sparql, errors); //todo sparklis_request 
 

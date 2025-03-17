@@ -810,7 +810,7 @@ def all_prints(file_name: str, core_files_names: list[str]):
     constraints_verifier_tp = { # True positive
         "BenchmarkResult": lambda x : x not in [None, []],
         "F1Score": lambda x: x > 0,
-        "Reasoning": lambda x: x is not None and "<answer>correct</answer>" in x
+        "Reasoning": lambda x: x is not None and "<answer>correct</answer>" in x #todo 2 times in it
     }
     constraints_verifier_fp = { # False positive
         "BenchmarkResult": lambda x : x not in [None, []],
@@ -850,7 +850,7 @@ def all_prints(file_name: str, core_files_names: list[str]):
     table_headers_verifier.append("Failed")
     filtered_verifier_failed_data = load_and_filter_data(file_name, constraint_verifier_failed)
     table_data_verifier.append([len(filtered_verifier_failed_data)])
-    plot_table(table_headers_verifier, table_data_verifier, all_data, "verifier fidelity")
+    plot_table(table_headers_verifier, table_data_verifier, all_data, "verifier performances")
 
     pp.close() # Close the pdf file
 

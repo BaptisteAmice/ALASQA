@@ -44,7 +44,7 @@ async function qa_control() {
     currentStep++;
     updateStepsStatus(currentStep, STATUS_ONGOING);
 
-    reasoningText += "- Generation 1 - ";
+    reasoningText += "- GENERATION 1 - system prompt: " + systemMessage + " - user input: " + input_question + " - ";
     let output = await sendPrompt(
         usualPrompt(systemMessage, input_question), 
         true, 
@@ -78,6 +78,7 @@ async function qa_control() {
 
     //We only want the first command (the whole command list was asked to have a good reasoning from the llm)
     commands = commands.split(";")[0];
+    reasoningText += "- We only keep the first command: " + commands + " - ";
 
     //count commands
     let commandsCount = countCommands(commands);
