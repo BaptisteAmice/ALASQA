@@ -253,7 +253,7 @@ async function boolean_conversion_by_llm(questionId, question, sparql, results, 
     );
     reasoningText += output_bool;
     //get the new query
-    let matchQuery = output.match(/<query>(.*?)<\/query>/s);
+    let matchQuery = output_bool.match(/<query>(.*?)<\/query>/s);
     let newQuery = matchQuery ? matchQuery[1].trim() : "";
     let newResults;
     //try the new query and get its results
