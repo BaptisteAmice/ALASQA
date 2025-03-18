@@ -66,6 +66,11 @@ async function qa_control() {
     let matchCommands = output.match(/<commands>(.*?)<\/commands>/s);
 
     let commands = matchCommands ? matchCommands[1].trim() : ""; // Safe access since we checked if matchCommands is not null
+
+    //We only want the first command (the whole command list was asked to have a good reasoning from the llm)
+    commands = commands.split(";")[0];
+    reasoningText += "- We only keep the first command: " + commands + " - ";
+
     if (commands) {
         qa_field.value = commands;  // Safe access since we checked if commands is not null
         updateStepsStatus(currentStep, STATUS_DONE);
@@ -75,10 +80,6 @@ async function qa_control() {
         errors += message;
         updateStepsStatus(currentStep, STATUS_FAILED);
     }
-
-    //We only want the first command (the whole command list was asked to have a good reasoning from the llm)
-    commands = commands.split(";")[0];
-    reasoningText += "- We only keep the first command: " + commands + " - ";
 
     //count commands
     let commandsCount = countCommands(commands);
@@ -151,6 +152,7 @@ async function qa_control() {
 
     //todo step
     let next_action;
+    let last_used_command = commands; 
     do {
         let truncated_results_text = truncateResults(resultText, 3);
         reasoningText += "- Choosing action -";
@@ -166,7 +168,7 @@ async function qa_control() {
                 next_action = "done";
                 break;
             case "add command": //todo
-                [sparql, resultText, reasoningText] = await add_command(questionId, input_question, sparql, truncated_results_text, reasoningText, qa_field);
+                [sparql, resultText, last_used_command, reasoningText] = await add_command(questionId, input_question, sparql, truncated_results_text, last_used_command, reasoningText, qa_field);
                 break;
             default:
                 console.error("Invalid next action " + next_action);

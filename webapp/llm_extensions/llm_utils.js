@@ -232,8 +232,8 @@ async function refine_query(questionId, question, sparql, results, reasoningText
  * @param {*} qa_field 
  * @returns 
  */
-async function add_command(questionId, question, sparql, results, reasoningText, qa_field) {
-    let input = data_input_prompt({ "question": question, "sparql": sparql, "results": results }, true);
+async function add_command(questionId, question, sparql, results, last_command, reasoningText, qa_field) {
+    let input = data_input_prompt({ "question": question, "sparql": sparql, "results": results, "last_command":  last_command}, true);
     reasoningText += "- ADD COMMAND - system message: " + following_command_system_prompt() + " - user input: " + input + " - ";
     let output_add_command = await sendPrompt(
         usualPrompt(following_command_system_prompt(), input), 
@@ -273,7 +273,7 @@ async function add_command(questionId, question, sparql, results, reasoningText,
         newSparql = sparql;
         newResults = results; 
     }
-    return [newSparql, newResults, reasoningText];
+    return [newSparql, newResults, newCommand, reasoningText];
 }
 
 /**

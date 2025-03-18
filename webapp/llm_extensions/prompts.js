@@ -83,6 +83,7 @@ function refine_query_system_prompt() { //toimprove
 
 function following_command_system_prompt() { //toimprove
     return `
+    You will be given a question, a SPARQL query, the result of executing that query, and the last command you used to achieve that result.
     To continue building your query, follow these steps:
 
     1. **Add one command at a time** to refine the query.
@@ -94,7 +95,10 @@ function following_command_system_prompt() { //toimprove
         - backwardProperty [property] → Reverse relation (e.g., "backwardProperty director" to find directors of films).
         - higherThan [number], lowerThan [number] → Value constraints.
         - after [date], before [date] → Time constraints (e.g., "after 2000").
-        - and, or → Logical operators (e.g., "Tim Burton; or; Steven Spielberg").
+        - and, or → Logical operators (e.g., if the previous command was "Tim Burton", you can add "or", and the next command could be "Steven Spielberg", to find films by either director).
+        - goback → Undo the last command.
+
+    Don't try to use ids such as Q513, instead just use the names of the entities.
     
     2. **Explain the reasoning** behind each command choice.
     - Justify why each command is necessary to answer the question.

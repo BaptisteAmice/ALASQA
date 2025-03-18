@@ -126,6 +126,18 @@ function process_step(place, step) {
 		))
 	})	
 
+	} else if (step === "goback") { //todo marche pas 2 fois d'affilées
+		return new Promise((resolve, reject) => {
+			try {
+				sparklis.back();
+				waitForEvaluation(sparklis.currentPlace()).then(() => {
+					resolve(sparklis.currentPlace());
+				});
+			} catch (error) {
+				reject(error);
+			}
+		});
+
 	} else if ((match = /^filter\s+(.+)$/.exec(step))) {
 		let constr = { type: "MatchesAll", kwds: match[1].split(/\s+/) };
 		sparklis.setConceptConstr(constr);
