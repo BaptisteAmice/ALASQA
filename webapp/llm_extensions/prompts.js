@@ -127,3 +127,9 @@ function direct_qa_system_prompt(endpoint) {
     3. Construct a SPARQL query that retrieves precise information while being efficient.
     4. Output only the final SPARQL query, wrapped in <sparql>...</sparql>, without additional explanation.`;
 }
+
+///// BOOLEAN HANDLING
+
+function boolean_system_prompt_simple() {
+    return "Given this query, i want a new query responding to the question. Wrap the new query in <query>...</query>.";
+}

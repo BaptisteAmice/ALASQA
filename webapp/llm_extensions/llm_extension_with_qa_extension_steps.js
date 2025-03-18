@@ -31,7 +31,6 @@ async function qa_control() {
     //disable interactions with the llm input field (used as the condition to wait for the end of the process in tests)
     disableInputs();
 
-    let systemMessage = commands_chain_system_prompt();
     let input_field = document.getElementById("user-input");
     let input_question = input_field.value;
     let qa_field = document.getElementById("qa"); // input field of the qa extension
@@ -44,6 +43,7 @@ async function qa_control() {
     currentStep++;
     updateStepsStatus(currentStep, STATUS_ONGOING);
 
+    let systemMessage = commands_chain_system_prompt();
     reasoningText += "- GENERATION 1 - system prompt: " + "commands_chain_system_prompt()" + " - user input: " + input_question + " - ";
     let output = await sendPrompt(
         usualPrompt(systemMessage, input_question), 
@@ -177,6 +177,7 @@ async function qa_control() {
         }
     } while (next_action != "done")
 
+    /////////// ENDING ///////////
     //set the result in the answer field
     updateAnswer(questionId, resultText, "???", sparql, errors); //todo sparklis_request 
 

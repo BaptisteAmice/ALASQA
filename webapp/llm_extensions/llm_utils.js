@@ -134,6 +134,24 @@ async function getWikidataLabel(wikidataURI, language = "en") {
 }
 
 /**
+ * Give the question currently in the input field.
+ * @returns 
+ */
+function getInputQuestion() {
+    let input_field = document.getElementById("user-input");
+    let input_question = input_field.value;
+    return input_question;
+}
+
+/**
+ * Get the input field (of the QA extension) where the commands are set and read to be executed.
+ * @returns 
+ */
+function getQAInputField() {
+    return document.getElementById("qa");
+}
+
+/**
  * Only keep the first n results (to avoid too long prompts)
  * @param {*} results_text 
  * @param {*} res_number_to_keep 
@@ -204,6 +222,36 @@ async function refine_query(questionId, question, sparql, results, reasoningText
             updateReasoning(questionId, reasoningText + text);
         } 
     );
+    reasoningText += output_refine;
+    //get the new query
+    let matchQuery = output.match(/<query>(.*?)<\/query>/s);
+    let newQuery = matchQuery ? matchQuery[1].trim() : "";
+    let newResults;
+    //try the new query and get its results
+    try { 
+        newQuery = removePrefixes(newQuery);
+        newResults = await getResultsWithLabels(newQuery);
+    } catch (e) {
+        //catch error thrown by wikidata endpoint
+        console.error("refine_query failed", e);
+        //If the new query fails, we keep the old one
+        newQuery = sparql;
+        newResults = results;
+    }
+    return  [newQuery, newResults, reasoningText];
+}
+
+async function boolean_conversion_by_llm(questionId, question, sparql, results, reasoningText) { //todo catch error
+    let input = data_input_prompt({ "question": question, "sparql": sparql }, true);
+    reasoningText += "- BOOLEAN CONVERSION BY LLM - system message: " + "boolean_system_prompt_simple()" + " - user input: " + input + " - ";
+    let output_bool = await sendPrompt(
+        usualPrompt(boolean_system_prompt_simple(), input), 
+        true, 
+        (text) => { 
+            updateReasoning(questionId, reasoningText + text);
+        } 
+    );
+    reasoningText += output_bool;
     //get the new query
     let matchQuery = output.match(/<query>(.*?)<\/query>/s);
     let newQuery = matchQuery ? matchQuery[1].trim() : "";

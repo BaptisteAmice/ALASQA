@@ -5,6 +5,9 @@ import json
 MINTAKA1K = 'Mintaka1k_final'
 QALD10 = 'QALD-10'
 
+# to extract only boolean questions
+ONLY_BOOLEANS = True 
+
 class Extractor:
     """
     Abstract class for extracting data from a benchmark file.
@@ -58,19 +61,19 @@ class ExtractorQald:
         questions = []
         sparql_requests = [] 
         for item in data["questions"]:
-            ids.append(item['id'])
-            # Find the English question
-            english_question = None
-            for q in item["question"]:
-                if q["language"] == "en":
-                    english_question = q["string"]
-                    break  # Stop searching once found
-            questions.append(english_question)
-            request = item['query']['sparql']
-            request_trimmed = trim_request(request)
-            sparql_requests.append(request_trimmed)
-                    
-        return [ids, questions, sparql_requests] 
+            if (not ONLY_BOOLEANS) or ("boolean" in item['answers'][0]):
+                ids.append(item['id'])
+                # Find the English question
+                english_question = None
+                for q in item["question"]:
+                    if q["language"] == "en":
+                        english_question = q["string"]
+                        break  # Stop searching once found
+                questions.append(english_question)
+                request = item['query']['sparql']
+                request_trimmed = trim_request(request)
+                sparql_requests.append(request_trimmed)
+        return [ids, questions, sparql_requests]
 
 
 

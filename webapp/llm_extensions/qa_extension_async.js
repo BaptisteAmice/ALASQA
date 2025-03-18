@@ -245,7 +245,7 @@ function get_constr(kind, query) {
 }
 
 // selecting the most frequent suggestion satisfying pred
-function select_sugg(kind, query, forest, pred, lexicon) {
+function select_sugg(kind, query, forest, pred, lexicon) { //todo llm ici
     var best_item = null;
     var best_score = null;
     forest.forEach(function(tree) {

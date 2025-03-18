@@ -2,9 +2,10 @@
 console.log("LLM with QA extension active");
 
 // Enable or not extensions to the base flow
+const BOOLEAN_RESULT_EXPECTED = true;
 const HANDLE_FAILED_COMMANDS = false;
-const CHECK_INCORRECT_RESULT = true;
-const ALTER_CONSIDERED_INCORRECT = CHECK_INCORRECT_RESULT && true;
+const CHECK_INCORRECT_RESULT = false;
+const ALTER_CONSIDERED_INCORRECT = CHECK_INCORRECT_RESULT && false;
 
 /////// Steps status ////////
 var steps_status = {
@@ -37,17 +38,14 @@ async function qa_control() {
     /////////// Initialization ///////////
     resetStepsStatus(); // Reset steps for each new question
     clearAlerts(); // Clear alerts for each new question
-    currentStep = 0;
-    updateStepsStatus(currentStep, STATUS_DONE);
     sparklis.home(); //reset sparklis
-    let errors = "";
     //disable interactions with the llm input field (used as the condition to wait for the end of the process in tests)
     disableInputs();
+    currentStep = 0;
+    updateStepsStatus(currentStep, STATUS_DONE);
+    let errors = "";
 
-    let systemMessage = commands_chain_system_prompt();
-    let input_field = document.getElementById("user-input");
-    let input_question = input_field.value;
-    let qa = document.getElementById("qa"); // input field of the qa extension
+    let input_question = getInputQuestion();
 
     /////////// Extraction ///////////
 
@@ -55,6 +53,7 @@ async function qa_control() {
    
     let reasoningText = ""; //to keep reasoning text and be able to update it
     currentStep++;
+    let systemMessage = commands_chain_system_prompt();
     reasoningText += "- GENERATION 1 - system prompt: " + "commands_chain_system_prompt()" + " - user input: " + input_question + " - ";
     updateStepsStatus(currentStep, STATUS_ONGOING);
     let output = await sendPrompt(
@@ -71,17 +70,15 @@ async function qa_control() {
     } else {
         updateStepsStatus(currentStep, STATUS_FAILED);
     }
-    //let output = 'blablabla<commands>a animal ; has family ; camelini;</commands>dsfsd';
 
     //get commands from regular expression <commands>...</commands>
     currentStep++;
     updateStepsStatus(currentStep, STATUS_ONGOING);
     let matchCommands = output.match(/<commands>(.*?)<\/commands>/s);
-
     let commands = matchCommands ? matchCommands[1].trim() : ""; // Safe access since we checked if matchCommands is not null
     
     if (commands) {
-        qa.value = commands;  // Safe access since we checked if commands is not null
+        getQAInputField().value = commands;  // Safe access since we checked if commands is not null
         updateStepsStatus(currentStep, STATUS_DONE);
     } else {
         let message = error_messages[0];
@@ -97,7 +94,7 @@ async function qa_control() {
     //Execute commands and wait for them to finish or to halt
     currentStep++;
     updateStepsStatus(currentStep, STATUS_ONGOING);
-    await process_question(qa)
+    await process_question(getQAInputField())
         .then(() => { 
             console.log("All steps completed");
             updateStepsStatus(currentStep, STATUS_DONE);
@@ -114,12 +111,6 @@ async function qa_control() {
             }
         }
     );
-
-    //get remaining commands count
-    // let remainingCommands = qa.value;
-    // let remainingCommandsCount = countCommands(remainingCommands);
-    // console.log("Remaining commands:", remainingCommandsCount);
-    // let executedCommmandsCount = commandsCount - remainingCommandsCount;
 
     //get sparklis results from the commands
     let place = sparklis.currentPlace();
@@ -186,6 +177,17 @@ async function qa_control() {
         }
     }
 
+    if (BOOLEAN_RESULT_EXPECTED) {
+        //todo tester si resultText est booleen
+        console.log(resultText);
+        //test if the result isn't already a boolean, if it's not, we want to convert it
+        if  (!resultText.includes("true") && !resultText.includes("false")) {
+            console.log("The result is not a boolean");
+            [sparql, resultText, reasoningText] = await boolean_conversion_by_llm(questionId, input_question, sparql, truncated_results_text, reasoningText);
+        }
+    }
+
+    /////////// ENDING ///////////
     //update reasoning one last time in case of for
     updateReasoning(questionId, reasoningText);
     //set the result in the answer field
