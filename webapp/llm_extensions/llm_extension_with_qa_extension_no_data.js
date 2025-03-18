@@ -55,7 +55,7 @@ async function qa_control() {
    
     let reasoningText = ""; //to keep reasoning text and be able to update it
     currentStep++;
-    reasoningText += "- GENERATION 1 - system prompt: " + systemMessage + " - user input: " + input_question + " - ";
+    reasoningText += "- GENERATION 1 - system prompt: " + "commands_chain_system_prompt()" + " - user input: " + input_question + " - ";
     updateStepsStatus(currentStep, STATUS_ONGOING);
     let output = await sendPrompt(
         usualPrompt(systemMessage, input_question), 

@@ -168,7 +168,7 @@ function truncateResults(results_text, res_number_to_keep) {
 async function verify_incorrect_result(input_question, sparql, resultText, reasoningText) {
     let systemMessage_verifier = verifier_system_prompt();
     let input_verifier = data_input_prompt({ "question": input_question, "sparql": sparql, "result" : resultText }, true);
-    reasoningText += "- RESULTS VERIFICATION - system message: " + systemMessage_verifier + " - user input: " + input_verifier + " - ";
+    reasoningText += "- RESULTS VERIFICATION - system message: " + "verifier_system_prompt()" + " - user input: " + input_verifier + " - ";
     let output_verifier = await sendPrompt(
         usualPrompt(systemMessage_verifier, input_verifier), 
         true, 
@@ -196,7 +196,7 @@ async function verify_incorrect_result(input_question, sparql, resultText, reaso
  */
 async function refine_query(questionId, question, sparql, results, reasoningText) { //todo catch error
     let input = data_input_prompt({ "question": question, "sparql": sparql, "results": results }, true);
-    reasoningText += "- REFINE QUERY - system message: " + refine_query_system_prompt() + " - user input: " + input + " - ";
+    reasoningText += "- REFINE QUERY - system message: " + "refine_query_system_prompt()" + " - user input: " + input + " - ";
     let output_refine = await sendPrompt(
         usualPrompt(refine_query_system_prompt(), input), 
         true, 
@@ -234,7 +234,7 @@ async function refine_query(questionId, question, sparql, results, reasoningText
  */
 async function add_command(questionId, question, sparql, results, last_command, reasoningText, qa_field) {
     let input = data_input_prompt({ "question": question, "sparql": sparql, "results": results, "last_command":  last_command}, true);
-    reasoningText += "- ADD COMMAND - system message: " + following_command_system_prompt() + " - user input: " + input + " - ";
+    reasoningText += "- ADD COMMAND - system message: " + "following_command_system_prompt()" + " - user input: " + input + " - ";
     let output_add_command = await sendPrompt(
         usualPrompt(following_command_system_prompt(), input), 
         true, 
@@ -309,7 +309,7 @@ async function failed_command(questionId, commands, error, input_question, reaso
 async function choose_next_action(input_question, sparql, resultText, reasoningText) {
     let systemMessage = choose_action_system_prompt();
     let input = data_input_prompt({ "question": input_question, "sparql": sparql, "results": resultText }, true);
-    reasoningText += "- CHOOSE NEXT ACTION - system message: " + systemMessage + " user input: " + input + " - ";
+    reasoningText += "- CHOOSE NEXT ACTION - system message: " + "choose_action_system_prompt()" + " user input: " + input + " - ";
     let output = await sendPrompt(
         usualPrompt(systemMessage, input), 
         true, 
