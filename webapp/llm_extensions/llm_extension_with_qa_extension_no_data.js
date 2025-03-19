@@ -182,7 +182,7 @@ async function qa_control() {
         console.log(resultText);
         //test if the result isn't already a boolean, if it's not, we want to convert it
         if  (!resultText.includes("true") && !resultText.includes("false")) {
-            console.log("The result is not a boolean");
+            console.log("The result should probably be a boolean, we will try to convert it.");
             [sparql, resultText, reasoningText] = await boolean_conversion_by_llm(questionId, input_question, sparql, truncated_results_text, reasoningText);
         }
     }
