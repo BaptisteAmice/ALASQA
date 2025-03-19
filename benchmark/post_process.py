@@ -548,6 +548,122 @@ def make_good_core(file_names: list, exclusive_core: bool = True):
 
     return final_keys, core_precisions, core_recalls, core_f1s
 
+import matplotlib.pyplot as plt
+import numpy as np
+import matplotlib.lines as mlines
+
+def plot_scores_relative_to_core_responses_multiple_criteria(core_files: list[str], new_files: list[str], evaluated_criteria: str, max_keys=10):
+    """
+    Plots the comparison of multiple new datasets' Precision, Recall, and F1Score against core datasets
+    based on a specific evaluated criteria (min, max, mean).
+    
+    Args:
+        core_files (list[str]): List of core dataset file paths.
+        new_files (list[str]): List of new dataset file paths.
+        evaluated_criteria (str): The criteria for evaluation ("min", "max", "mean").
+        max_keys (int): Maximum number of x-axis labels to display.
+        show (bool): Whether to display the plots.
+    """
+    metrics = ["Precision", "Recall", "F1Score"]
+
+    # Load all core datasets and index them by key
+    core_data_list = [load_and_filter_data(core_file, {}) for core_file in core_files]
+
+    # Load the new datasets
+    new_data_list = [load_and_filter_data(new_file, {}) for new_file in new_files]
+
+    # Find the common keys in all datasets
+    common_keys = set(core_data_list[0].keys())
+    for core_data in core_data_list[1:]:
+        common_keys.intersection_update(core_data.keys())
+    for new_data in new_data_list:
+        common_keys.intersection_update(new_data.keys())
+
+    if not common_keys:
+        print("No common keys found across datasets. Exiting.")
+        return
+
+    # Sort keys numerically if possible
+    try:
+        sorted_keys = sorted(common_keys, key=int)
+    except ValueError:
+        print("Warning: Some keys are not numeric. Sorting lexicographically instead.")
+        sorted_keys = sorted(common_keys)
+
+    # Prepare x-axis labels (limit to max_keys)
+    if len(sorted_keys) > max_keys:
+        selected_indices = np.linspace(0, len(sorted_keys) - 1, max_keys, dtype=int)
+        selected_labels = {sorted_keys[i] for i in selected_indices}  # Use a set for quick lookup
+    else:
+        selected_labels = set(sorted_keys)
+
+    # Criteria evaluation function
+    def evaluate_criteria(core_scores, criterion):
+        if criterion == "min":
+            return min(core_scores)
+        elif criterion == "max":
+            return max(core_scores)
+        elif criterion == "mean":
+            return np.mean(core_scores)
+        else:
+            raise ValueError(f"Unsupported criterion: {criterion}")
+
+    # Iterate through metrics
+    for metric in metrics:
+        plt.figure(figsize=(14, 6))
+
+        # Initialize counters for the legend
+        nbre_improvements = 0
+        nbre_degradations = 0
+        nbre_no_change = 0
+
+        # Extract and plot all data points
+        for key in sorted_keys:
+            core_scores = [core_data[key].get(metric, 0.0) or 0.0 for core_data in core_data_list]
+            core_evaluated_score = evaluate_criteria(core_scores, evaluated_criteria)
+
+            # Calculate the aggregated value (max, mean, etc.) across all new datasets for the current key
+            new_scores = [new_data[key].get(metric, 0.0) or 0.0 for new_data in new_data_list]
+            new_evaluated_score = evaluate_criteria(new_scores, evaluated_criteria)
+
+            if new_evaluated_score < core_evaluated_score:
+                color = 'red'
+                nbre_degradations += 1
+            elif new_evaluated_score > core_evaluated_score:
+                color = 'green'
+                nbre_improvements += 1
+            else:
+                color = 'blue'
+                nbre_no_change += 1
+
+            # Plot the core score in black (under the new score if overlapping)
+            plt.scatter(int(key), core_evaluated_score, color='black', label="Core Score" if key == sorted_keys[0] else "")  
+            plt.scatter(int(key), new_evaluated_score, color=color)  # Plot using int key
+
+        # Define legend handles
+        worse_handle = mlines.Line2D([], [], color='red', marker='o', linestyle='None', markersize=8, label=f'Worse ({nbre_degradations})')
+        better_handle = mlines.Line2D([], [], color='green', marker='o', linestyle='None', markersize=8, label=f'Better ({nbre_improvements})')
+        in_range_handle = mlines.Line2D([], [], color='blue', marker='o', linestyle='None', markersize=8, label=f'In core range ({nbre_no_change})')
+
+        plt.legend(handles=[worse_handle, better_handle, in_range_handle])
+        plt.xlabel("Response Key (Numerically Ordered)")
+        plt.ylabel(metric)
+        plt.title(f"Comparison of {metric} scores using {evaluated_criteria} criteria")
+
+        # Show only selected x-axis labels
+        plt.xticks(
+            ticks=[int(k) for k in sorted_keys if k in selected_labels], 
+            labels=[k for k in sorted_keys if k in selected_labels], 
+            rotation=45, ha="right", fontsize=8
+        )
+
+        plt.grid(True)
+        pp.savefig()
+        if show:
+            plt.show()
+        plt.close()
+
+
 def plot_comparison_to_core_good_responses(core_files: list, new_file: str, exclusive_core: bool = True):
     """
     Plots boxplots of core responses and compares new responses against them.
@@ -729,14 +845,14 @@ def plot_table(table_headers, table_data, all_data, table_name):
     plt.close()
 
 
-def all_prints(file_name: str, core_files_names: list[str]):
+def all_prints(files_names: list[str], core_files_names: list[str]):
     # Data to be displayed in a table
     table_headers = []
     table_data = []
     tree_data = {}
 
     # First input file, used for figures necessitating only one file
-    file_name = input_files[0]
+    file_name = files_names[0]
 
     # All data
     table_headers.append("Question Count")
@@ -763,6 +879,7 @@ def all_prints(file_name: str, core_files_names: list[str]):
 
     precisions, recalls, f1_scores = extract_scores(filtered_valid_data)
     precision_recall_f1_plot(precisions, recalls, f1_scores)
+    plot_scores_relative_to_core_responses_multiple_criteria(core_files_names, files_names, "max")
     plot_scores_relative_to_core_responses(core_files_names, file_name)
     plot_comparison_to_core_good_responses(core_files_names, file_name, exclusive_core=True)
     plot_hist_scores_per_thresholds(filtered_valid_data)
@@ -945,6 +1062,8 @@ if __name__ == "__main__":
     ]
 
     input_files = [
+        script_dir + "/BestOutputs/QALD-10_sparklisllm_20250318_181029.json",
+        script_dir + "/BestOutputs/QALD-10_sparklisllm_20250318_192832.json",
         script_dir + "/BestOutputs/QALD-10_sparklisllm_20250318_203757.json"
     ]
 
