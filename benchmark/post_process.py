@@ -91,60 +91,92 @@ def precision_recall_f1_plot(precision, recall, f1_scores):
         plt.show() 
     plt.close()
 
-def plot_scores_relative_to_core_responses(core_files: list[str], new_file: str):
+def plot_scores_relative_to_core_responses(core_files: list[str], new_file: str, max_keys=10):
     """
-    Red is worse than the core, green is better, blue is in the core range.
+    Plots the comparison of Precision, Recall, and F1Score between a new dataset and core datasets.
+    
+    Args:
+        core_files (list[str]): List of core dataset file paths.
+        new_file (str): Path to the new dataset file.
+        output_pdf (str): Path to save the output PDF.
+        show (bool): Whether to display the plots.
+        max_keys (int): Maximum number of x-axis labels to display.
     """
-    for metric in ["Precision", "Recall", "F1Score"]:
-        plt.figure(figsize=(12, 6))
+    metrics = ["Precision", "Recall", "F1Score"]
 
-        nbre_improvments = 0
+    # Load the new dataset
+    new_data = load_and_filter_data(new_file, {})
+    
+    # Load all core datasets and index them by key
+    core_data_list = [load_and_filter_data(core_file, {}) for core_file in core_files]
+
+    # Find the common keys in all datasets
+    common_keys = set(new_data.keys())
+    for core_data in core_data_list:
+        common_keys.intersection_update(core_data.keys())
+
+    if not common_keys:
+        print("No common keys found across datasets. Exiting.")
+        return
+
+    # Sort keys numerically if possible
+    try:
+        sorted_keys = sorted(common_keys, key=int)
+    except ValueError:
+        print("Warning: Some keys are not numeric. Sorting lexicographically instead.")
+        sorted_keys = sorted(common_keys)
+
+    # Prepare x-axis labels (limit to max_keys)
+    if len(sorted_keys) > max_keys:
+        selected_indices = np.linspace(0, len(sorted_keys) - 1, max_keys, dtype=int)
+        selected_labels = {sorted_keys[i] for i in selected_indices}  # Use a set for quick lookup
+    else:
+        selected_labels = set(sorted_keys)
+
+    for metric in metrics:
+        plt.figure(figsize=(14, 6))
+
+        nbre_improvements = 0
         nbre_degradations = 0
         nbre_no_change = 0
-        
-        # Load data from the new file
-        new_data = load_and_filter_data(new_file, {})
-        new_scores = [entry.get(metric, 0.0) for entry in new_data]
-        
-        # Load data from the core files
-        core_scores_per_file = []
-        for core_file in core_files:
-            core_data = load_and_filter_data(core_file, {})
-            core_scores_per_file.append([entry.get(metric, 0.0) for entry in core_data])
 
-        # Transpose core_scores to group values per response index
-        core_scores = list(zip(*core_scores_per_file))  # Now core_scores[i] corresponds to response i across all files
+        # Extract and plot all data points
+        for key in sorted_keys:
+            new_score = new_data[key].get(metric, 0.0) or 0.0
+            core_scores = [core_data[key].get(metric, 0.0) or 0.0 for core_data in core_data_list]
 
-        # Plot the new scores
-        for i, new_score in enumerate(new_scores):
-            if i >= len(core_scores):  # Safety check in case of mismatched lengths
-                continue
-
-            # replace 'NoneType' by 0
-            core_scores[i] = [0 if x is None else x for x in core_scores[i]]
-            new_score = 0 if new_score is None else new_score
-
-            min_core = min(core_scores[i])
-            max_core = max(core_scores[i])
+            min_core = min(core_scores)
+            max_core = max(core_scores)
 
             if new_score < min_core:
                 color = 'red'
                 nbre_degradations += 1
             elif new_score > max_core:
                 color = 'green'
-                nbre_improvments += 1
+                nbre_improvements += 1
             else:
                 color = 'blue'
-                nbre_no_change += 1            
-            plt.scatter(i, new_score, color=color)
+                nbre_no_change += 1
+
+            plt.scatter(int(key), new_score, color=color)  # Plot using int key
+
         # Define legend handles
-        worse_handle = mlines.Line2D([], [], color='red', marker='o', linestyle='None', markersize=8, label='Worse (' + str(nbre_degradations) + ')')
-        better_handle = mlines.Line2D([], [], color='green', marker='o', linestyle='None', markersize=8, label='Better (' + str(nbre_improvments) + ')')
-        in_range_handle = mlines.Line2D([], [], color='blue', marker='o', linestyle='None', markersize=8, label='In core range (' + str(nbre_no_change) + ')')
+        worse_handle = mlines.Line2D([], [], color='red', marker='o', linestyle='None', markersize=8, label=f'Worse ({nbre_degradations})')
+        better_handle = mlines.Line2D([], [], color='green', marker='o', linestyle='None', markersize=8, label=f'Better ({nbre_improvements})')
+        in_range_handle = mlines.Line2D([], [], color='blue', marker='o', linestyle='None', markersize=8, label=f'In core range ({nbre_no_change})')
+
         plt.legend(handles=[worse_handle, better_handle, in_range_handle])
-        plt.xlabel("Response Index")
+        plt.xlabel("Response Key (Numerically Ordered)")
         plt.ylabel(metric)
         plt.title(f"Comparison of {metric} scores to all core responses")
+
+        # Show only selected x-axis labels
+        plt.xticks(
+            ticks=[int(k) for k in sorted_keys if k in selected_labels], 
+            labels=[k for k in sorted_keys if k in selected_labels], 
+            rotation=45, ha="right", fontsize=8
+        )
+
         plt.grid(True)
         pp.savefig()
         if show:
@@ -178,7 +210,6 @@ def boxplot_scores(precision, recall, f1_scores, title_end: str):
         plt.show()
     plt.close()
 
-
 def load_and_filter_data(json_file, constraints=None):
     """
     Loads a JSON file and filters its data based on given constraints.
@@ -189,16 +220,16 @@ def load_and_filter_data(json_file, constraints=None):
                             that return True if the entry is valid.
     
     Returns:
-        list: Filtered list of data entries.
+        dict: Dictionary of filtered data entries with keys from the JSON.
     """
     with open(json_file, "r", encoding="utf-8") as f:
         data = json.load(f)
     
-    filtered_data = []
-    for entry in data.get("Data", {}).values():
-        if constraints and not all(func(entry.get(key)) for key, func in constraints.items()):
+    filtered_data = {}
+    for key, entry in data.get("Data", {}).items():
+        if constraints and not all(func(entry.get(field)) for field, func in constraints.items()):
             continue
-        filtered_data.append(entry)
+        filtered_data[key] = entry
     
     return filtered_data
 
@@ -212,9 +243,9 @@ def extract_scores(filtered_data):
     Returns:
         tuple: A tuple containing precision, recall, and F1 scores.
     """
-    precisions = [entry.get("Precision") or 0.0 for entry in filtered_data]
-    recalls = [entry.get("Recall") or 0.0 for entry in filtered_data]
-    f1_scores = [entry.get("F1Score") or 0.0 for entry in filtered_data]
+    precisions = [entry.get("Precision") or 0.0 for entry in filtered_data.values()]
+    recalls = [entry.get("Recall") or 0.0 for entry in filtered_data.values()]
+    f1_scores = [entry.get("F1Score") or 0.0 for entry in filtered_data.values()]
     
     return precisions, recalls, f1_scores
 
@@ -233,7 +264,7 @@ def count_metric_values(filtered_data):
     recall_counts = defaultdict(int)
     f1_counts = defaultdict(int)
     
-    for entry in filtered_data:
+    for entry in filtered_data.values():
         precision_counts[entry.get("Precision")] += 1
         recall_counts[entry.get("Recall")] += 1
         f1_counts[entry.get("F1Score")] += 1
@@ -289,7 +320,7 @@ def find_first_non_done_step(filtered_data):
         int or None: The first step number with a status not equal to 'DONE', or None if all are DONE.
     """
     non_done_steps = []
-    for entry in filtered_data:
+    for entry in filtered_data.values():
         steps_status = entry.get("StepsStatus")
 
         if not steps_status:
@@ -313,7 +344,7 @@ def plot_box_system_time(filtered_data):
     """
     Plot the boxplot of the SystemTime.
     """
-    system_times = [entry.get("SystemTime") for entry in filtered_data]
+    system_times = [entry.get("SystemTime") for entry in filtered_data.values()]
     plt.figure()
     plt.boxplot(system_times)
     plt.ylabel("System Time")
@@ -369,7 +400,7 @@ def get_commands_list(filtered_data):
         list: List of commands extracted from the reasoning field.
     """
     commands_list = []
-    for entry in filtered_data:
+    for entry in filtered_data.values():
         reasoning = entry.get("Reasoning")
         if not reasoning:
             logging.warning("Reasoning field is missing in the entry.")
@@ -406,7 +437,7 @@ def get_system_errors(filtered_data):
         list: List of system errors extracted from the SystemResult field.
     """
     system_errors = []
-    for entry in filtered_data:
+    for entry in filtered_data.values():
         error_field = entry.get("Error")
         if error_field:
             question_errors = []
@@ -475,77 +506,125 @@ def generate_boxplot(list_of_lists, values, x_label: str, y_label: str, label_ro
         plt.show()
     plt.close()
 
-def make_core(file_names: list, exclusive_core: bool = True):
+def make_good_core(file_names: list, exclusive_core: bool = True):
     """
-    todo???
+    Builds a 'core' set of responses where F1-score > 0 across multiple datasets.
+    
+    Args:
+        file_names (list[str]): List of dataset filenames.
+        exclusive_core (bool): If True, only responses that are good in all files are kept.
+    
+    Returns:
+        tuple: (core_keys, core_precisions, core_recalls, core_f1s) with keys sorted numerically.
     """
-    # get scores for several files
-    precisions_lists = []
-    recalls_lists = []
-    f1_scores_lists = []
-    for file_name in file_names:
-        data = load_and_filter_data(file_name, {})
-        precisions, recalls, f1_scores = extract_scores(data)
-        precisions_lists.append(precisions)
-        recalls_lists.append(recalls)
-        f1_scores_lists.append(f1_scores)
-    # Only keep scores for questions that have a f1-score > 0 in all files
-    core_good_responses_ids = []
-    core_good_responses_precisions = []
-    core_good_responses_recalls = []
-    core_good_responses_f1 = []
+    # Load and extract scores
+    core_data_list = [load_and_filter_data(file, {}) for file in file_names]
+    
+    # Get common keys across all files
+    common_keys = set(core_data_list[0].keys())
+    for core_data in core_data_list[1:]:
+        common_keys.intersection_update(core_data.keys())
 
-    for i in range(len(f1_scores_lists[0])):
-        if ((exclusive_core and all((f1_scores[i] > 0) for f1_scores in f1_scores_lists))
-            or (not exclusive_core and any((f1_scores[i] > 0) for f1_scores in f1_scores_lists))):
-            core_good_responses_ids.append(i)
-            core_good_responses_precisions.append([precisions[i] for precisions in precisions_lists])
-            core_good_responses_recalls.append([recalls[i] for recalls in recalls_lists])
-            core_good_responses_f1.append([f1_scores[i] for f1_scores in f1_scores_lists])
+    # Sort keys numerically
+    try:
+        sorted_keys = sorted(common_keys, key=int)
+    except ValueError:
+        sorted_keys = sorted(common_keys)
+
+    core_precisions, core_recalls, core_f1s = [], [], []
+    final_keys = []
+
+    for key in sorted_keys:
+        # Extract scores per key
+        f1_scores_per_file = [core_data[key].get("F1Score", 0.0) or 0.0 for core_data in core_data_list]
+        
+        if ((exclusive_core and all(f1 > 0 for f1 in f1_scores_per_file)) or 
+            (not exclusive_core and any(f1 > 0 for f1 in f1_scores_per_file))):
             
-    return core_good_responses_ids, core_good_responses_precisions, core_good_responses_recalls, core_good_responses_f1
+            final_keys.append(key)
+            core_precisions.append([core_data[key].get("Precision", 0.0) or 0.0 for core_data in core_data_list])
+            core_recalls.append([core_data[key].get("Recall", 0.0) or 0.0 for core_data in core_data_list])
+            core_f1s.append(f1_scores_per_file)
 
+    return final_keys, core_precisions, core_recalls, core_f1s
 
 def plot_comparison_to_core_good_responses(core_files: list, new_file: str, exclusive_core: bool = True):
-    core_ids, core_precisions, core_recalls, core_f1s = make_core(core_files, exclusive_core)
+    """
+    Plots boxplots of core responses and compares new responses against them.
+    
+    Args:
+        core_files (list): List of core dataset files.
+        new_file (str): Path to the new dataset file.
+        exclusive_core (bool): If True, only responses with F1 > 0 in all files are kept.
+        max_keys (int): Maximum number of x-axis labels shown.
+    """
+    core_keys, core_precisions, core_recalls, core_f1s = make_good_core(core_files, exclusive_core)
     new_data = load_and_filter_data(new_file, {})
     
+    # Extract new scores
     new_precisions, new_recalls, new_f1s = extract_scores(new_data)
-    # Handle cases where the new file has fewer responses than the core (unfinished runs)
-    valid_core_ids = [i for i in core_ids if i < len(new_precisions)]
-    #warn if there are less responses in the new file than in the core
-    if len(valid_core_ids) < len(core_ids):
-        logging.warning(f"Less responses in the new file ({len(valid_core_ids)}) than in the core ({len(core_ids)}).")
-    new_precisions = [new_precisions[i] for i in valid_core_ids]
-    new_recalls = [new_recalls[i] for i in valid_core_ids]
-    new_f1s = [new_f1s[i] for i in valid_core_ids]
 
+    # Validate keys present in the new data
+    valid_core_keys = [key for key in core_keys if key in new_data]
+    if len(valid_core_keys) < len(core_keys):
+        logging.warning(f"Less responses in the new file ({len(valid_core_keys)}) than in the core ({len(core_keys)}).")
+    
+    # Ensure we use the same valid core keys for new data
+    new_precisions = [new_data[key].get("Precision", 0.0) for key in valid_core_keys]
+    new_recalls = [new_data[key].get("Recall", 0.0) for key in valid_core_keys]
+    new_f1s = [new_data[key].get("F1Score", 0.0) for key in valid_core_keys]
+
+    selected_labels = set(valid_core_keys)
+
+    # Metrics to plot
     metrics = [("Precision", core_precisions, new_precisions),
                ("Recall", core_recalls, new_recalls),
                ("F1-score", core_f1s, new_f1s)]
 
     for metric, core_values, new_values in metrics:
-        plt.figure(figsize=(10, 6))
-        plt.boxplot(core_values, tick_labels=core_ids)
-        #if lower than the lowest value of the core values, plot it in red
+        plt.figure(figsize=(12, 6))
+
+        # Make sure positions and core_values match in length
+        positions = list(range(len(valid_core_keys)))
+
+        # Check if the core_values match the length of positions
+        if len(core_values) != len(positions):
+            logging.warning(f"Core values and positions do not match in length. Adjusting...")
+            core_values = core_values[:len(positions)]  # Adjust to match positions length
+
+        # Boxplot
+        plt.boxplot(core_values, positions=positions, widths=0.6)
+
+        # Scatter new values based on comparison to core values
         for i, new_value in enumerate(new_values):
             if new_value < min(core_values[i]):
-                plt.scatter(i + 1, new_value, color='red')
+                plt.scatter(i, new_value, color='red')
             elif new_value > max(core_values[i]):
-                plt.scatter(i + 1, new_value, color='green')
+                plt.scatter(i, new_value, color='green')
             else:
-                plt.scatter(i + 1, new_value, color='blue')
-        plt.xlabel("Questions")
+                plt.scatter(i, new_value, color='blue')
+
+        # Customize x-axis labels
+        plt.xlabel("Response Keys (Numerically Ordered)")
         plt.ylabel(metric)
-        core_type = "exclusive" if exclusive_core else "inclusive"
-        plt.title(f"Comparison to the ({core_type}) core good responses for {metric}")
-        # Define legend handles
+        core_type = "Exclusive" if exclusive_core else "Inclusive"
+        plt.title(f"Comparison to the ({core_type}) Core Good Responses for {metric}")
+
+        # Show limited x-axis labels
+        plt.xticks(
+            ticks=[i for i, key in enumerate(valid_core_keys) if key in selected_labels],
+            labels=[key for key in valid_core_keys if key in selected_labels],
+            rotation=45, ha="right", fontsize=8
+        )
+
+        # Define legend
         worse_handle = mlines.Line2D([], [], color='red', marker='o', linestyle='None', markersize=8, label='New response worse than core')
         better_handle = mlines.Line2D([], [], color='green', marker='o', linestyle='None', markersize=8, label='New response better than core')
         in_range_handle = mlines.Line2D([], [], color='blue', marker='o', linestyle='None', markersize=8, label='New response within core range')
-        plt.legend(handles=[worse_handle, better_handle, in_range_handle])
 
+        plt.legend(handles=[worse_handle, better_handle, in_range_handle])
         plt.grid(True)
+
         pp.savefig()
         if show:
             plt.show()
@@ -866,7 +945,7 @@ if __name__ == "__main__":
     ]
 
     input_files = [
-        script_dir + "/BestOutputs/QALD-10_sparklisllm_20250312_003603.json"
+        script_dir + "/BestOutputs/QALD-10_sparklisllm_20250318_203757.json"
     ]
 
     all_prints(input_files, core_files)
