@@ -325,9 +325,21 @@ class LLMFrameworkOneShotWithBooleanConv extends LLMFramework {
     }
 }
 
+class LLMFrameworkReact extends LLMFramework {
+    //todo
+}
+class LLMFrameworkDirect extends LLMFramework {
+    //todo
+}
+class LLMFrameworkSteps extends LLMFramework {
+    //todo
+}
+
+
 class LLMFrameworkBooleanOnly extends LLMFramework {
     async answerQuestionLogic() {
         //determine nombre sous requetes necessaires et les donnes
+        //prompt_get_subqueries() -> retourne string with n <subquery>...</subquery>
 
         //si une seule sous requete
             //commands pour la sous requete

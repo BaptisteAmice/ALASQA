@@ -137,3 +137,34 @@ function prompt_convert_query_to_boolean_query() { //todo recu bon prompt sur au
 function prompt_is_boolean_expected() {
     return "Given the following question, determine if the expected answer is boolean (true/false). Reply with <answer>yes</answer> or <answer>no</answer>.";
 }
+
+function prompt_get_subqueries() {
+    return `
+    Your task is to decompose a given question into a set of necessary subqueries that will provide the data needed to answer it. Follow these principles:
+
+    1. Identify key data points required to resolve the question.  
+    2. Formulate each subquery as a direct factual lookup.  
+    3. Ensure minimal yet complete coverage—only include subqueries that are strictly necessary.  
+    4. If the question itself is already a factual lookup, return it as the sole subquery.
+
+    ### Output Format:  
+    Return each subquery between <subquery> tags.
+
+    ### Examples:
+
+    - **Q:** "Do more than 100,000,000 people speak Japanese?"  
+    **Response:**  
+    <subquery>How many people speak Japanese?</subquery>
+
+    - **Q:** "Were Angela Merkel and Tony Blair born in the same year?"  
+    **Response:**  
+    <subquery>Which year was Angela Merkel born?</subquery>  
+    <subquery>Which year was Tony Blair born?</subquery>
+
+    - **Q:** "Was Google founded by Bill Gates?"  
+    **Response:**  
+    <subquery>Was Google founded by Bill Gates?</subquery>
+
+    Ensure the response only contains subqueries within <subquery> tags with no additional explanation.
+    `;
+}
