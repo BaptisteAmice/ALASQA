@@ -2,18 +2,6 @@ const CHATBOT_WIDTH = 500;
 const CHATBOT_MAX_HEIGHT = 600;
 const CHATBOT_RESPONSE_MAX_HEIGHT = CHATBOT_MAX_HEIGHT / 2;
 
-// upon window load... create text field and ENTER handler
-window.addEventListener(
-    'load',
-    function(ev) {
-    let input_field = document.getElementById("user-input");
-    input_field.addEventListener("keyup", function(event) {
-        if (event.keyCode == 13) { // ENTER
-            qa_control();
-        }
-	})
-});
-
 document.addEventListener("DOMContentLoaded", function () {
     let style = document.createElement("style");
     style.textContent = `
@@ -265,6 +253,15 @@ function addLLMQuestion(question) {
     return questionId;
 }
 
+function adaptReasoningText(reasoningText) {
+    //remove balises, aside from <br>
+    reasoningText = reasoningText
+        .replace(/</g, "&lt;")   // Escape all `<`
+        .replace(/>/g, "&gt;")   // Escape all `>`
+        .replace(/&lt;br&gt;/g, "<br>"); // Convert escaped `<br>` back to real `<br>`
+    return reasoningText;
+}
+
 function loadQuestionsFromSession() {
     let questionNumber = 0;
     questionsData.forEach(data => {
@@ -281,7 +278,7 @@ function loadQuestionsFromSession() {
         
         let reasoningDiv = document.createElement("div");
         reasoningDiv.classList.add("chatbot-reasoning");
-        reasoningDiv.textContent = data.reasoning;
+        reasoningDiv.innerHTML = adaptReasoningText(data.reasoning);
         let reasoningHeader = document.createElement("h4");
         reasoningHeader.textContent = "Reasoning";
 
@@ -328,10 +325,15 @@ function loadQuestionsFromSession() {
 
 document.addEventListener("DOMContentLoaded", loadQuestionsFromSession);
 
+/**
+ * Update the reasoning in the interface based on the given reasoning text
+ * @param {*} questionId 
+ * @param {string} reasoning 
+ */
 function updateReasoning(questionId, reasoning) {
     let qa = document.querySelector(`.chatbot-qa[data-id='${questionId}']`);
     if (qa) {
-        qa.querySelector(".chatbot-reasoning").textContent = reasoning;
+        qa.querySelector(".chatbot-reasoning").innerHTML = adaptReasoningText(reasoning);
         let questionData = questionsData.find(q => q.id === questionId);
         if (questionData) {
             questionData.reasoning = reasoning;

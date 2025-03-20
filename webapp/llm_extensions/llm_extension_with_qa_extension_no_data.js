@@ -1,6 +1,11 @@
 //Dependencies: qa_extension.js, llm_add_interface_extension.js, llm_utils.js, prompts.js
 console.log("LLM with QA extension active");
 
+const STATUS_NOT_STARTED = "Not started";
+const STATUS_ONGOING = "ONGOING";
+const STATUS_DONE = "DONE";
+const STATUS_FAILED = "FAILED";
+
 // Enable or not extensions to the base flow
 const BOOLEAN_RESULT_EXPECTED = true;
 const HANDLE_FAILED_COMMANDS = false;
@@ -178,12 +183,15 @@ async function qa_control() {
     }
 
     if (BOOLEAN_RESULT_EXPECTED) {
-        //todo tester si resultText est booleen
         console.log(resultText);
-        //test if the result isn't already a boolean, if it's not, we want to convert it
+        //test if the result isn't already a boolean, if it's not, we may want to convert it
         if  (!resultText.includes("true") && !resultText.includes("false")) {
-            console.log("The result should probably be a boolean, we will try to convert it.");
-            [sparql, resultText, reasoningText] = await boolean_conversion_by_llm(questionId, input_question, sparql, truncated_results_text, reasoningText);
+            //test if the result should be a boolean
+            [boolean_expected, reasoningText] = await is_boolean_expected(questionId, input_question, reasoningText);
+            if (boolean_expected) {
+                console.log("The result should probably be a boolean, we will try to convert it.");
+                [sparql, resultText, reasoningText] = await boolean_conversion_by_llm(questionId, input_question, sparql, truncated_results_text, reasoningText);
+            }
         }
     }
 

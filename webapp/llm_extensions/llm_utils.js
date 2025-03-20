@@ -108,6 +108,7 @@ function countCommands(commands) {
 function waitForEvaluation(place) {
     return new Promise((resolve) => {
         place.onEvaluated(() => {
+            console.log("Place evaluated");
             resolve();
         });
     });
@@ -165,11 +166,6 @@ function getSentenceFromDiv() {
     // Return the cleaned-up text
     return text.trim();
 }
-
-// Example usage
-const sentence = getSentenceFromDiv();
-console.log(sentence);
-
 
 /**
  * Only keep the first n results (to avoid too long prompts)
@@ -261,35 +257,6 @@ async function refine_query(questionId, question, sparql, results, reasoningText
     return  [newQuery, newResults, reasoningText];
 }
 
-async function boolean_conversion_by_llm(questionId, question, sparql, results, reasoningText) { //todo catch error
-    let input = data_input_prompt({ "question": question, "sparql": sparql }, true);
-    reasoningText += "- BOOLEAN CONVERSION BY LLM - system message: " + "prompt_convert_query_to_boolean_query()" + " - user input: " + input + " - ";
-    let output_bool = await sendPrompt(
-        usualPrompt(prompt_convert_query_to_boolean_query(), input), 
-        true, 
-        (text) => { 
-            updateReasoning(questionId, reasoningText + text);
-        } 
-    );
-    reasoningText += output_bool;
-    //get the new query
-    let matchQuery = output_bool.match(/<query>(.*?)<\/query>/s);
-    let newQuery = matchQuery ? matchQuery[1].trim() : "";
-    let newResults;
-    //try the new query and get its results
-    try { 
-        newQuery = removePrefixes(newQuery);
-        newResults = await getResultsWithLabels(newQuery);
-    } catch (e) {
-        //catch error thrown by wikidata endpoint
-        console.error("refine_query failed", e);
-        //If the new query fails, we keep the old one
-        newQuery = sparql;
-        newResults = results;
-    }
-    return  [newQuery, newResults, reasoningText];
-}
-
 /**
  * Add a single command to the QA extension field and execute it
  * @param {string} questionId 
@@ -345,28 +312,6 @@ async function add_command(questionId, question, sparql, results, last_command, 
 }
 
 /**
- * 
- * @param {string} questionId 
- * @param {string} commands 
- * @param {*} error 
- * @param {string} input_question 
- * @param {string} reasoningText 
- * @returns 
- */
-async function failed_command(questionId, commands, error, input_question, reasoningText) {
-    // Find the failed command (the first one still in the qa field)
-    let qa_remaining_commands = document.getElementById("qa").value;
-    let failed_command = qa_remaining_commands.split(";")[0].trim();
-    reasoningText += "- FAILED COMMAND " + failed_command + " (error: " + error + ") - ";
-    //todo on fait quoi!?
-    //for a question, a selected command list, a command failed, error
-    //question, commands, command failed, error, command syntax
-    
-    return reasoningText;
-}
-
-
-/**
  * Use the LLM to choose the next action to take
  * @param {string} input_question 
  * @param {string} sparql 
@@ -390,32 +335,6 @@ async function choose_next_action(input_question, sparql, resultText, reasoningT
     let actionMatch = output.match(/<action>(.*?)<\/action>/s);
     let action = actionMatch ? actionMatch[1].trim() : "unknown";
     return [action, reasoningText];
-}
-
-////////// STEPS STATUS //////////
-
-const STATUS_NOT_STARTED = "Not started";
-const STATUS_ONGOING = "ONGOING";
-const STATUS_DONE = "DONE";
-const STATUS_FAILED = "FAILED";
-
-/**
- * Reset all steps of the global variable steps_status, to STATUS_NOT_STARTED.
- */
-function resetStepsStatus() {
-    for (let step in steps_status) {
-        steps_status[step]["Status"] = STATUS_NOT_STARTED;
-    }
-}
-
-/**
- * Given a step index and a status, update on of the steps from the global variable steps_status.
- * @param {number} step 
- * @param {string} status 
- */
-function updateStepsStatus(step, status) {
-    steps_status[step.toString()]["Status"] = status;
-    localStorage.setItem("steps_status", JSON.stringify(steps_status));
 }
 
 ////////// COMMANDS //////////
@@ -512,31 +431,3 @@ function queryWrapping(query, type, options = {}) {
             return query;
     }
 }
-
-// ## Requete SPARQL conversion type
-// ne pas oublier de déplacer les prefixes
-
-// Boolean //celui là n'est pas assez générique
-// ASK WHERE {
-//   {
-//     SELECT (COUNT(?ville) AS ?count) WHERE {
-//       ?ville a ex:Ville .
-//     }
-//   }
-//   FILTER(?count = 13)
-// }
-
-// Count
-// SELECT (COUNT(*) AS ?count) WHERE {
-//   {
-//     SELECT ?ville WHERE {
-//       ?ville a ex:Ville .
-//     }
-//   }
-// }
-
-/////// MODULES ////////
-
-//find best suggestion
-
-//choose between reasoners

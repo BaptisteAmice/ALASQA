@@ -6,6 +6,8 @@ todo
 await sparklis.currentPlace().getConceptSuggestions(false,sparklis.conceptConstr())
 -add prompt version in final log
 
+TODO RESTEST TO LES SYSTEMES
+
 -todo save les schemas qq part
 
 //todo nouvelles idées 

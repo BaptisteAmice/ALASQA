@@ -131,9 +131,9 @@ function direct_qa_system_prompt(endpoint) {
 ///// BOOLEAN HANDLING
 
 function prompt_convert_query_to_boolean_query() { //todo recu bon prompt sur autre pc
-    return "Given this query, i want a new query responding to the question. Wrap the new query in <query>...</query>.";
+    return "Given this query, i want a new query responding to the question by returning a boolean value (so, you will preferably use a ASK if possible). Wrap the new query in <query>...</query>.";
 }
 
 function prompt_is_boolean_expected() {
-    return "Given this query, i want a new query responding to the question by returning a boolean value (so, you will preferably use a ASK if possible). Wrap the new query in <query>...</query>.";
+    return "Given the following question, determine if the expected answer is boolean (true/false). Reply with <answer>yes</answer> or <answer>no</answer>.";
 }
