@@ -152,6 +152,26 @@ function getQAInputField() {
 }
 
 /**
+ * Get the Sparklis NL query from the interface.
+ * @returns
+ */
+function getSentenceFromDiv() {
+    // Select the #query-body div
+    const queryBody = document.getElementById('query-body');
+    
+    // Get the text content of the div, excluding the inner span tags
+    let text = queryBody.innerText || queryBody.textContent;
+
+    // Return the cleaned-up text
+    return text.trim();
+}
+
+// Example usage
+const sentence = getSentenceFromDiv();
+console.log(sentence);
+
+
+/**
  * Only keep the first n results (to avoid too long prompts)
  * @param {*} results_text 
  * @param {*} res_number_to_keep 
@@ -243,9 +263,9 @@ async function refine_query(questionId, question, sparql, results, reasoningText
 
 async function boolean_conversion_by_llm(questionId, question, sparql, results, reasoningText) { //todo catch error
     let input = data_input_prompt({ "question": question, "sparql": sparql }, true);
-    reasoningText += "- BOOLEAN CONVERSION BY LLM - system message: " + "boolean_system_prompt_simple()" + " - user input: " + input + " - ";
+    reasoningText += "- BOOLEAN CONVERSION BY LLM - system message: " + "prompt_convert_query_to_boolean_query()" + " - user input: " + input + " - ";
     let output_bool = await sendPrompt(
-        usualPrompt(boolean_system_prompt_simple(), input), 
+        usualPrompt(prompt_convert_query_to_boolean_query(), input), 
         true, 
         (text) => { 
             updateReasoning(questionId, reasoningText + text);

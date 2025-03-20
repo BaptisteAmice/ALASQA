@@ -880,8 +880,10 @@ def all_prints(files_names: list[str], core_files_names: list[str]):
     precisions, recalls, f1_scores = extract_scores(filtered_valid_data)
     precision_recall_f1_plot(precisions, recalls, f1_scores)
     plot_scores_relative_to_core_responses_multiple_criteria(core_files_names, files_names, "max")
-    plot_scores_relative_to_core_responses(core_files_names, file_name)
-    plot_comparison_to_core_good_responses(core_files_names, file_name, exclusive_core=True)
+    plot_scores_relative_to_core_responses_multiple_criteria(core_files_names, files_names, "mean")
+    plot_scores_relative_to_core_responses_multiple_criteria(core_files_names, files_names, "min")
+    # plot_scores_relative_to_core_responses(core_files_names, file_name)
+    # plot_comparison_to_core_good_responses(core_files_names, file_name, exclusive_core=True)
     plot_hist_scores_per_thresholds(filtered_valid_data)
     boxplot_scores(precisions, recalls, f1_scores, "valid benchmark results")
 
@@ -1062,6 +1064,7 @@ if __name__ == "__main__":
     ]
 
     input_files = [
+        # script_dir + "/BestOutputs/QALD-10_sparklisllm_20250312_003603.json",
         script_dir + "/BestOutputs/QALD-10_sparklisllm_20250318_181029.json",
         script_dir + "/BestOutputs/QALD-10_sparklisllm_20250318_192832.json",
         script_dir + "/BestOutputs/QALD-10_sparklisllm_20250318_203757.json"
