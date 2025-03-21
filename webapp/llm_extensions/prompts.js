@@ -135,7 +135,16 @@ function prompt_convert_query_to_boolean_query() { //todo recu bon prompt sur au
 }
 
 function prompt_is_boolean_expected() {
-    return "Given the following question, determine if the expected answer is boolean (true/false). Reply with <answer>yes</answer> or <answer>no</answer>.";
+    return `
+    Determine whether the expected answer to the given question is a boolean (i.e., "true" or "false"). 
+    Respond strictly with <answer>boolean</answer> if the answer is a boolean value. Otherwise, respond with <answer>non-boolean</answer>.
+
+    Examples:
+    - What is the boiling point of water? → <answer>non-boolean</answer>
+    - Did Tom Brady win a Super Bowl before 2005? → <answer>boolean</answer>
+
+    Now, analyze the following question accordingly:
+    `;
 }
 
 function prompt_get_subqueries() {
@@ -145,10 +154,11 @@ function prompt_get_subqueries() {
     1. Identify key data points required to resolve the question.  
     2. Formulate each subquery as a direct factual lookup.  
     3. Ensure minimal yet complete coverage—only include subqueries that are strictly necessary.  
-    4. If the question itself is already a factual lookup, return it as the sole subquery.
+    4. If the question itself is already a factual lookup, return it as is, without additional subqueries.  
+    5. If no subqueries are needed, return nothing.
 
     ### Output Format:  
-    Return each subquery between <subquery> tags.
+    Return each subquery between <subquery> tags. If no subqueries are required, return an empty response.
 
     ### Examples:
 
@@ -165,6 +175,84 @@ function prompt_get_subqueries() {
     **Response:**  
     <subquery>Was Google founded by Bill Gates?</subquery>
 
-    Ensure the response only contains subqueries within <subquery> tags with no additional explanation.
+    - **Q:** "What is the capital of France?"  
+    **Response:** *(empty output, as the question itself is already a factual lookup)*
+
+    Ensure the response only contains subqueries within <subquery> tags, or nothing if no subqueries are needed.
+    `;
+}
+
+function prompt_use_subqueries() {
+    return `
+    You are an AI system that processes a question by analyzing the responses to its subqueries.
+    
+    ### Instructions:
+    1. Extract relevant numerical or textual data from the JSON responses provided in <subanswer> tags.
+    2. Perform logical or arithmetic operations based on the extracted data to determine the correct answer.
+    3. Return only the final answer enclosed in <answer> tags.
+    
+    ### Examples:
+    
+    #### Example 1:
+    **Input:**
+    <question>Do more than 100,000,000 people speak Japanese?</question>
+    <subquestion1>How many people speak Japanese?</subquestion1>
+    <subanswer1>{
+        "columns": [
+            "P1098_7"
+        ],
+        "rows": [
+            [
+                {
+                    "type": "number",
+                    "number": 128000000,
+                    "str": "128000000",
+                    "datatype": "http://www.w3.org/2001/XMLSchema#decimal"
+                }
+            ]
+        ]
+    }</subanswer1>
+    
+    **Output:**
+    <answer>true</answer>
+    
+    #### Example 2:
+    **Input:**
+    <question>Were Angela Merkel and Tony Blair born in the same year?</question>
+    <subquestion1>Which year was Angela Merkel born in?</subquestion1>
+    <subanswer1>{
+        "head" : {
+          "vars" : [ "P569_133" ]
+        },
+        "results" : {
+          "bindings" : [ {
+            "P569_133" : {
+              "datatype" : "http://www.w3.org/2001/XMLSchema#dateTime",
+              "type" : "literal",
+              "value" : "1932-01-01T00:00:00Z"
+            }
+          } ]
+        }
+      }</subanswer1>
+    <subquestion2>Which year was Tony Blair born in?</subquestion2>
+    <subanswer2>{
+        "head" : {
+          "vars" : [ "P569_7" ]
+        },
+        "results" : {
+          "bindings" : [ {
+            "P569_7" : {
+              "datatype" : "http://www.w3.org/2001/XMLSchema#dateTime",
+              "type" : "literal",
+              "value" : "1953-05-06T00:00:00Z"
+            }
+          } ]
+        }
+      }</subanswer2>
+    
+    **Output:**
+    <answer>false</answer>
+    
+    Now, given a new input, extract relevant information, process it logically, and return the final answer in <answer> tags.
     `;
 }

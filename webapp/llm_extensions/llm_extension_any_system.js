@@ -8,6 +8,7 @@ var error_messages = [ //todo update pp
     "Warning: Commands failed to finish commands: ",
     "Error: error while evaluating SPARQL query",
     "Error: error while parsing SPARQL results",
+    "Error: condition shouldn't have matched"
 ];
 //todo update pp et implementation steps
 
@@ -115,9 +116,9 @@ class LLMFramework {
  */
 async function qa_control() {
     /////////// Initialization ///////////
-    clearAlerts(); // Clear alerts for each new question
-    sparklis.home(); //reset sparklis
-    //disable interactions with the llm input field (used as the condition to wait for the end of the process in tests)
+    clearAlerts(); // Clear alerts in the storage for each new question
+    sparklis.home(); // we want to reset sparklis between different queries
+    // disable interactions with the llm input field (used as the condition to wait for the end of the process in tests)
     disableInputs();
 
     let question = getInputQuestion();
@@ -133,7 +134,7 @@ async function qa_control() {
     //update reasoning one last time in case of for
     updateReasoning(framework.question_id, framework.reasoning_text);
     //set the result in the answer field
-    updateAnswer(framework.question_id, framework.result_text, "???",framework.sparql, framework.errors); //todo sparklis_request 
+    updateAnswer(framework.question_id, framework.result_text, framework.sparklis_nl, framework.sparql, framework.errors); //todo sparklis_request 
     //re-enable interactions (used as the condition to end the wait from tests)
     enableInputs(); 
 }
@@ -176,7 +177,7 @@ async function step_generation(framework, system_input, system_input_name, user_
         let message = error_messages[0] + system_input_name;
         console.log(message);
         framework.errors += message;
-        setCurrentStepStatus(STATUS_FAILED);
+        framework.setCurrentStepStatus(STATUS_FAILED);
     }
     framework.reasoning_text += output;
     return output;                        
@@ -191,14 +192,16 @@ async function step_generation(framework, system_input, system_input_name, user_
  */
 async function step_extract_tags(framework, llm_output, tag) {
     framework.reasoning_text += "-<br>" + framework.getCurrentStep()["Name"] + " - tag: " + tag + "<br>-";
-    let match = llm_output.match(new RegExp(`<${tag}>(.*?)<\/${tag}>`, "s"));
-    let match_output = match ? match[1].trim() : ""; // Safe access since we checked if match is not null
-    if (!match_output || match_output == "") {
+    
+    let matches = Array.from(llm_output.matchAll(new RegExp(`<${tag}>(.*?)<\/${tag}>`, "gs")));
+    let match_output = matches.map(match => match[1].trim()).filter(text => text !== ""); // Remove empty strings
+
+    if (match_output.length === 0) {
         let message = error_messages[1];
         console.log(message);
         framework.errors += message;
-        //step failed
-        setCurrentStepStatus(STATUS_FAILED);
+        // Step failed
+        framework.setCurrentStepStatus(STATUS_FAILED);
     }
     return match_output;
 }
@@ -249,7 +252,7 @@ async function step_get_results(framework, place) {
         console.log(message, e);
         framework.errors += message;
         //step failed
-        setCurrentStepStatus(STATUS_FAILED);
+        framework.setCurrentStepStatus(STATUS_FAILED);
     }
 
     let result_text = "";
@@ -265,11 +268,14 @@ async function step_get_results(framework, place) {
         }
     } else {
         //step failed
-        setCurrentStepStatus(STATUS_FAILED);
+        framework.setCurrentStepStatus(STATUS_FAILED);
     }
     //update the attributes of the framework to retrieve them later
     framework.sparql = sparql;
     framework.result_text = result_text;
+
+    //because getSentenceFromDiv() get the text in the interface, we have no guarantee it has been updated yet
+    framework.sparklis_nl = getSentenceFromDiv(); //todo only a temporary solution
     return;
 }
 
@@ -282,7 +288,8 @@ class LLMFrameworkOneShot extends LLMFramework {
         let output_llm = await this.executeStep(step_generation, "LLM generation", 
             [this, commands_chain_system_prompt(),"commands_chain_system_prompt", this.question]
         )
-        let extracted_commands = await this.executeStep(step_extract_tags, "Extracted commands", [this, output_llm, "commands"]);
+        let extracted_commands_list = await this.executeStep(step_extract_tags, "Extracted commands", [this, output_llm, "commands"]);
+        let extracted_commands = extracted_commands_list.at(-1) || "";
         await this.executeStep(step_execute_commands, "Commands execution", [this, extracted_commands]);
         let place = sparklis.currentPlace();
         await this.executeStep(step_get_results, "Get results", [this, place]);
@@ -299,7 +306,8 @@ class LLMFrameworkOneShotWithBooleanConv extends LLMFramework {
         let output_llm = await this.executeStep(step_generation, "LLM generation 1", 
             [this, commands_chain_system_prompt(),"commands_chain_system_prompt", this.question]
         )
-        let extracted_commands = await this.executeStep(step_extract_tags, "Extracted commands", [this, output_llm, "commands"]);
+        let extracted_commands_list = await this.executeStep(step_extract_tags, "Extracted commands", [this, output_llm, "commands"]);
+        let extracted_commands = extracted_commands_list.at(-1) || "";
         await this.executeStep(step_execute_commands, "Commands execution", [this, extracted_commands]);
         let place = sparklis.currentPlace();
         await this.executeStep(step_get_results, "Get results", [this, place]);
@@ -309,8 +317,9 @@ class LLMFrameworkOneShotWithBooleanConv extends LLMFramework {
             let output_llm_boolean_expected = await this.executeStep(step_generation, "LLM generation 2", 
                 [this, prompt_is_boolean_expected(),"prompt_is_boolean_expected", this.question]
             );
-            let extracted_boolean_expected = await this.executeStep(step_extract_tags, "Extracted boolean expected", [this, output_llm_boolean_expected, "answer"]);
-            let boolean_expected = extracted_boolean_expected == "yes" ? true : false;
+            let extracted_boolean_expected_list = await this.executeStep(step_extract_tags, "Extracted boolean expected", [this, output_llm_boolean_expected, "answer"]);
+            let extracted_boolean_expected = extracted_boolean_expected_list.at(-1) || "";
+            let boolean_expected = extracted_boolean_expected == "boolean" ? true : false;
 
             //if a boolean is expected, convert the query to a boolean query
             if (boolean_expected){
@@ -318,7 +327,8 @@ class LLMFrameworkOneShotWithBooleanConv extends LLMFramework {
                 let output_llm_boolean_conv = await this.executeStep(step_generation, "LLM generation 3", 
                     [this, prompt_convert_query_to_boolean_query(),"prompt_convert_query_to_boolean_query", input]
                 )
-                let extracted_boolean_conv = await this.executeStep(step_extract_tags, "Extracted boolean conversion", [this, output_llm_boolean_conv, "query"]);
+                let extracted_boolean_conv_list = await this.executeStep(step_extract_tags, "Extracted boolean conversion", [this, output_llm_boolean_conv, "query"]);
+                let extracted_boolean_conv = extracted_boolean_conv_list.at(-1) || "";
                 this.sparql = extracted_boolean_conv;
             }
         }
@@ -336,19 +346,71 @@ class LLMFrameworkSteps extends LLMFramework {
 }
 
 
-class LLMFrameworkBooleanOnly extends LLMFramework {
+class LLMFrameworkBooleanBySubqueries extends LLMFramework {
     async answerQuestionLogic() {
-        //determine nombre sous requetes necessaires et les donnes
-        //prompt_get_subqueries() -> retourne string with n <subquery>...</subquery>
+        // Get a list of necessary subqueries to reach the answer
+        let outputed_subqueries = await this.executeStep(step_generation, "LLM generation 1", 
+            [this, prompt_get_subqueries(),"prompt_get_subqueries", this.question]
+        )
+        let extracted_subqueries = await this.executeStep(step_extract_tags, "Extract subqueries", [this, outputed_subqueries, "subquery"]);
 
-        //si une seule sous requete
-            //commands pour la sous requete
-            //utilise résultat pour déterminer le résultat booléen
+        if (extracted_subqueries.length == 0) {
+            //if we don't have a subquery we will execute the commands as is
+            //for questions such as "What is the capital of France?"
+            sparklis.home(); // we want to reset sparklis between different queries
+            this.reasoning_text += "<br>No subqueries needed, executing the commands directly<br>";
+            let output_commands_query = await this.executeStep(step_generation, "LLM generation", 
+                [this, commands_chain_system_prompt(),"commands_chain_system_prompt", this.question]
+            );
+            let extracted_commands_list = await this.executeStep(step_extract_tags, "Extracted commands", [this, output_commands_query, "commands"]);
+            let extracted_commands = extracted_commands_list.at(-1) || "";
+            await this.executeStep(step_execute_commands, "Commands execution", [this, extracted_commands]);
+            let place = sparklis.currentPlace();
+            await this.executeStep(step_get_results, "Get results", [this, place]);
+        } else if (extracted_subqueries.length > 0) {
+            //if we have multiple subqueries we will execute them 
+            // for questions such as "Were Angela Merkel and Tony Blair born in the same year?"
+            this.reasoning_text += "<br>Subqueries needed, executing the subqueries first<br>";
+            let subqueries_results = [];
+            for (let subquery_question of extracted_subqueries) {
+                sparklis.home(); // we want to reset sparklis between different queries
+                this.reasoning_text += "<br>Subquery:<br>";
+                let output_commands_subquery = await this.executeStep(step_generation, "LLM generation", 
+                    [this, commands_chain_system_prompt(),"commands_chain_system_prompt", subquery_question]
+                );
+                let extracted_commands_list = await this.executeStep(step_extract_tags, "Extracted commands", [this, output_commands_subquery, "commands"]);
+                let extracted_commands = extracted_commands_list.at(-1) || "";
+                await this.executeStep(step_execute_commands, "Commands execution", [this, extracted_commands]);
+                let place = sparklis.currentPlace();
+                await this.executeStep(step_get_results, "Get results", [this, place]);
+                subqueries_results.push(this.result_text);
+            }
+            //and then compare the results to answer the original question
+            sparklis.home(); // we want to reset sparklis between different queries
+            this.reasoning_text += "<br>Comparing the results of the subqueries<br>";
 
-        //si plusieurs sous requetes (une comparaison)
-            //pour chaque sous requete
-                //commandes 
-            //comparaison des résultats pour déterminer le résultat booléen
-    
+            //make the input
+            let input_data_dict = { "question": this.question};
+            for (let i = 0; i < subqueries_results.length; i++) {
+                input_data_dict["subquery" + i.toString()] = subqueries_results[i];
+            }
+            let input_comparison = data_input_prompt(input_data_dict, true);
+
+            let output_commands_query = await this.executeStep(step_generation, "LLM generation", 
+                [this, prompt_use_subqueries(),"prompt_use_subqueries", input_comparison]
+            );
+            let extracted_commands_list = await this.executeStep(step_extract_tags, "Extracted commands", [this, output_commands_query, "commands"]);
+            let extracted_commands = extracted_commands_list.at(-1) || "";
+            await this.executeStep(step_execute_commands, "Commands execution", [this, extracted_commands]);
+            let place = sparklis.currentPlace();
+            await this.executeStep(step_get_results, "Get results", [this, place]);
+        } else {
+            //error
+            let message = error_messages[5];
+            console.log(message);
+            this.errors += message;
+            // Step failed
+            this.setCurrentStepStatus(STATUS_FAILED)
+        }
     }
 }

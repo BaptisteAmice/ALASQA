@@ -360,7 +360,9 @@ function updateAnswer(questionId, answer = "", sparklis_request = "", sparql_req
     }
 }
 
-
+/**
+ * Disable interactions with the llm input field (used as the condition to wait for the end of the process in tests)
+ */
 function disableInputs() {
     let inputs = document.querySelectorAll(".disabled-during-request");
     inputs.forEach(input => input.disabled = true);
