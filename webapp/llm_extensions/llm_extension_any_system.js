@@ -127,7 +127,7 @@ async function qa_control() {
     /////////// PROCESSING ///////////
 
     //the used framework type can be changed here
-    let framework = new LLMFrameworkOneShotWithBooleanConv(question, question_id);
+    let framework = new LLMFrameworkBooleanBySubquestions(question, question_id);
     await framework.answerQuestion();
 
     /////////// ENDING ///////////
@@ -162,8 +162,8 @@ window.addEventListener(
 async function step_generation(framework, system_input, system_input_name, user_input) {
     console.log(framework)
     console.log(framework.getCurrentStep())
-    framework.reasoning_text += "<br>-" + framework.getCurrentStep()["Name"] + " - system prompt: " 
-                                + system_input_name + " - user input: " + user_input + "-<br>";
+    framework.reasoning_text += "<br>" + framework.getCurrentStep()["Name"] + " - system prompt: " 
+                                + system_input_name + " - user input: " + user_input + "<br>";
 
      let output = await sendPrompt(
         usualPrompt(system_input, user_input), 
@@ -191,7 +191,7 @@ async function step_generation(framework, system_input, system_input_name, user_
  * @returns 
  */
 async function step_extract_tags(framework, llm_output, tag) {
-    framework.reasoning_text += "-<br>" + framework.getCurrentStep()["Name"] + " - tag: " + tag + "<br>-";
+    framework.reasoning_text += "<br>" + framework.getCurrentStep()["Name"] + " - tag: " + tag + "<br>";
     
     let matches = Array.from(llm_output.matchAll(new RegExp(`<${tag}>(.*?)<\/${tag}>`, "gs")));
     let match_output = matches.map(match => match[1].trim()).filter(text => text !== ""); // Remove empty strings
@@ -213,7 +213,7 @@ async function step_extract_tags(framework, llm_output, tag) {
  * @returns 
  */
 async function step_execute_commands(framework, commands) {
-    framework.reasoning_text += "<br>-" + framework.getCurrentStep()["Name"] + " - commands: " + commands + "-<br>";
+    framework.reasoning_text += "<br>" + framework.getCurrentStep()["Name"] + " - commands: " + commands + "<br>";
     getQAInputField().value = commands;
     await process_question(getQAInputField())
         .then(() => { 
@@ -240,7 +240,7 @@ async function step_execute_commands(framework, commands) {
  * @returns 
  */
 async function step_get_results(framework, place) {
-    framework.reasoning_text += "<br>-" + framework.getCurrentStep()["Name"] + "-<br>";
+    framework.reasoning_text += "<br>" + framework.getCurrentStep()["Name"] + "<br>";
     let sparql = place.sparql();
     let results;
     try { 
@@ -285,10 +285,15 @@ async function step_get_results(framework, place) {
  */
 class LLMFrameworkOneShot extends LLMFramework {
     async answerQuestionLogic() {
+        // Call llm generation
         let output_llm = await this.executeStep(step_generation, "LLM generation", 
             [this, commands_chain_system_prompt(),"commands_chain_system_prompt", this.question]
         )
-        let extracted_commands_list = await this.executeStep(step_extract_tags, "Extracted commands", [this, output_llm, "commands"]);
+        // Extract the commands from the LLM output
+        let extracted_commands_list = await this.executeStep(step_extract_tags, "Extracted commands",
+             [this, output_llm, "commands"]
+        );
+        // Execute the commands, wait for place evaluation and get the results
         let extracted_commands = extracted_commands_list.at(-1) || "";
         await this.executeStep(step_execute_commands, "Commands execution", [this, extracted_commands]);
         let place = sparklis.currentPlace();
@@ -346,19 +351,21 @@ class LLMFrameworkSteps extends LLMFramework {
 }
 
 
-class LLMFrameworkBooleanBySubqueries extends LLMFramework {
+class LLMFrameworkBooleanBySubquestions extends LLMFramework {
     async answerQuestionLogic() {
-        // Get a list of necessary subqueries to reach the answer
-        let outputed_subqueries = await this.executeStep(step_generation, "LLM generation 1", 
-            [this, prompt_get_subqueries(),"prompt_get_subqueries", this.question]
-        )
-        let extracted_subqueries = await this.executeStep(step_extract_tags, "Extract subqueries", [this, outputed_subqueries, "subquery"]);
-
-        if (extracted_subqueries.length == 0) {
+        // Get a list of necessary subquestions to reach the answer
+        //Generation of the subquestions by the LLML
+        let outputed_subquestions = await this.executeStep(step_generation, "LLM generation 1", 
+            [this, prompt_get_subquestions(),"prompt_get_subquestions", this.question]
+        );
+        // Extract the subquestions from the LLM output
+        let extracted_subquestions = await this.executeStep(step_extract_tags, "Extract subquestions", [this, outputed_subquestions, "subquestion"]);
+        //Adapt the bahavior depending on the number of subquestions
+        if (extracted_subquestions.length == 0) {
             //if we don't have a subquery we will execute the commands as is
             //for questions such as "What is the capital of France?"
             sparklis.home(); // we want to reset sparklis between different queries
-            this.reasoning_text += "<br>No subqueries needed, executing the commands directly<br>";
+            this.reasoning_text += "<br>No subquestion needed, executing the commands directly<br>";
             let output_commands_query = await this.executeStep(step_generation, "LLM generation", 
                 [this, commands_chain_system_prompt(),"commands_chain_system_prompt", this.question]
             );
@@ -367,50 +374,56 @@ class LLMFrameworkBooleanBySubqueries extends LLMFramework {
             await this.executeStep(step_execute_commands, "Commands execution", [this, extracted_commands]);
             let place = sparklis.currentPlace();
             await this.executeStep(step_get_results, "Get results", [this, place]);
-        } else if (extracted_subqueries.length > 0) {
-            //if we have multiple subqueries we will execute them 
+        } else if (extracted_subquestions.length > 0) {
+            //if we have multiple subquestions we will execute them 
             // for questions such as "Were Angela Merkel and Tony Blair born in the same year?"
-            this.reasoning_text += "<br>Subqueries needed, executing the subqueries first<br>";
-            let subqueries_results = [];
-            for (let subquery_question of extracted_subqueries) {
+            this.reasoning_text += "<br>Subquestions needed, answering them first<br>";
+            let subqueries = [];
+            let subanswers = [];
+            for (let subquestion of extracted_subquestions) {
                 sparklis.home(); // we want to reset sparklis between different queries
-                this.reasoning_text += "<br>Subquery:<br>";
-                let output_commands_subquery = await this.executeStep(step_generation, "LLM generation", 
-                    [this, commands_chain_system_prompt(),"commands_chain_system_prompt", subquery_question]
+                this.reasoning_text += "<br>Subquestion:<br>";
+                let output_commands_subquestion = await this.executeStep(step_generation, "LLM generation", 
+                    [this, commands_chain_system_prompt(),"commands_chain_system_prompt", subquestion]
                 );
-                let extracted_commands_list = await this.executeStep(step_extract_tags, "Extracted commands", [this, output_commands_subquery, "commands"]);
+                let extracted_commands_list = await this.executeStep(step_extract_tags, "Extracted commands", [this, output_commands_subquestion, "commands"]);
                 let extracted_commands = extracted_commands_list.at(-1) || "";
                 await this.executeStep(step_execute_commands, "Commands execution", [this, extracted_commands]);
                 let place = sparklis.currentPlace();
                 await this.executeStep(step_get_results, "Get results", [this, place]);
-                subqueries_results.push(this.result_text);
+                subqueries.push(this.sparql);
+                subanswers.push(this.result_text);
+                this.reasoning_text += "<br>Subquestion query:<br>" + this.sparql;
+                this.reasoning_text += "<br>Subquestion result:<br>" + this.result_text;
             }
-            //and then compare the results to answer the original question
+            //and then combine the results to generate a query answering the original question
             sparklis.home(); // we want to reset sparklis between different queries
-            this.reasoning_text += "<br>Comparing the results of the subqueries<br>";
+            this.reasoning_text += "<br>Combining the results of the subquestions<br>";
 
-            //make the input
+            //make the input data for the comparison prompt
             let input_data_dict = { "question": this.question};
-            for (let i = 0; i < subqueries_results.length; i++) {
-                input_data_dict["subquery" + i.toString()] = subqueries_results[i];
+            for (let i = 0; i < subanswers.length; i++) {
+                input_data_dict["subquery" + (i-1).toString()] = subqueries[i];
+            }
+            for (let i = 0; i < subanswers.length; i++) {
+                input_data_dict["subanswer" + (i-1).toString()] = subanswers[i];
             }
             let input_comparison = data_input_prompt(input_data_dict, true);
 
-            let output_commands_query = await this.executeStep(step_generation, "LLM generation", 
-                [this, prompt_use_subqueries(),"prompt_use_subqueries", input_comparison]
+            let output_combined = await this.executeStep(step_generation, "LLM generation", 
+                [this, prompt_use_subquestions(),"prompt_use_subquestions", input_comparison]
             );
-            let extracted_commands_list = await this.executeStep(step_extract_tags, "Extracted commands", [this, output_commands_query, "commands"]);
-            let extracted_commands = extracted_commands_list.at(-1) || "";
-            await this.executeStep(step_execute_commands, "Commands execution", [this, extracted_commands]);
-            let place = sparklis.currentPlace();
-            await this.executeStep(step_get_results, "Get results", [this, place]);
+            let extracted_query_list = await this.executeStep(step_extract_tags, "Extracted commands", [this, output_combined, "query"]);
+            let extracted_query = extracted_query_list.at(-1) || "";
+            this.sparql = extracted_query;
+            //todo to redo t'as get l'answer au lieu de la query....
         } else {
             //error
             let message = error_messages[5];
             console.log(message);
             this.errors += message;
             // Step failed
-            this.setCurrentStepStatus(STATUS_FAILED)
+            this.setCurrentStepStatus(STATUS_FAILED);
         }
     }
 }

@@ -147,49 +147,49 @@ function prompt_is_boolean_expected() {
     `;
 }
 
-function prompt_get_subqueries() {
+function prompt_get_subquestions() {
     return `
-    Your task is to decompose a given question into a set of necessary subqueries that will provide the data needed to answer it. Follow these principles:
+    Your task is to decompose a given question into a set of necessary subquestions that will provide the data needed to answer it. Follow these principles:
 
     1. Identify key data points required to resolve the question.  
-    2. Formulate each subquery as a direct factual lookup.  
-    3. Ensure minimal yet complete coverage—only include subqueries that are strictly necessary.  
-    4. If the question itself is already a factual lookup, return it as is, without additional subqueries.  
-    5. If no subqueries are needed, return nothing.
+    2. Formulate each subquestion as a direct factual inquiry.  
+    3. Ensure minimal yet complete coverage—only include subquestions that are strictly necessary.  
+    4. If the question itself is already a factual inquiry, return it as is, without additional subquestions.  
+    5. If no subquestions are needed, return nothing.
 
     ### Output Format:  
-    Return each subquery between <subquery> tags. If no subqueries are required, return an empty response.
+    Return each subquestion between <subquestion> tags. If no subquestions are required, return an empty response.
 
     ### Examples:
 
     - **Q:** "Do more than 100,000,000 people speak Japanese?"  
     **Response:**  
-    <subquery>How many people speak Japanese?</subquery>
+    <subquestion>How many people speak Japanese?</subquestion>
 
     - **Q:** "Were Angela Merkel and Tony Blair born in the same year?"  
     **Response:**  
-    <subquery>Which year was Angela Merkel born?</subquery>  
-    <subquery>Which year was Tony Blair born?</subquery>
+    <subquestion>Which year was Angela Merkel born?</subquestion>  
+    <subquestion>Which year was Tony Blair born?</subquestion>
 
     - **Q:** "Was Google founded by Bill Gates?"  
     **Response:**  
-    <subquery>Was Google founded by Bill Gates?</subquery>
+    <subquestion>Was Google founded by Bill Gates?</subquestion>
 
     - **Q:** "What is the capital of France?"  
-    **Response:** *(empty output, as the question itself is already a factual lookup)*
+    **Response:** *(empty output, as the question itself is already a factual inquiry)*
 
-    Ensure the response only contains subqueries within <subquery> tags, or nothing if no subqueries are needed.
+    Ensure the response only contains subquestions within <subquestion> tags, or nothing if no subquestions are needed.
     `;
 }
 
-function prompt_use_subqueries() {
+function prompt_use_subquestions() {
     return `
-    You are an AI system that processes a question by analyzing the responses to its subqueries.
+    You are an AI system that processes a question by analyzing the responses to its subqueries and generating a new query that provides the final answer.
     
     ### Instructions:
     1. Extract relevant numerical or textual data from the JSON responses provided in <subanswer> tags.
-    2. Perform logical or arithmetic operations based on the extracted data to determine the correct answer.
-    3. Return only the final answer enclosed in <answer> tags.
+    2. Construct a new SPARQL query that directly retrieves the answer to the original question.
+    3. Return the new query enclosed in <query> tags.
     
     ### Examples:
     
@@ -197,6 +197,11 @@ function prompt_use_subqueries() {
     **Input:**
     <question>Do more than 100,000,000 people speak Japanese?</question>
     <subquestion1>How many people speak Japanese?</subquestion1>
+    <subquery1>
+    SELECT DISTINCT ?P1098_7
+    WHERE { wd:Q5287 p:P1098 [ ps:P1098 ?P1098_7 ] . }
+    LIMIT 200
+    </subquery1> 
     <subanswer1>{
         "columns": [
             "P1098_7"
@@ -214,12 +219,22 @@ function prompt_use_subqueries() {
     }</subanswer1>
     
     **Output:**
-    <answer>true</answer>
+    <query>
+    ASK WHERE {
+      wd:Q5287 p:P1098 [ ps:P1098 ?count ] .
+      FILTER(?count > 100000000)
+    }
+    </query>
     
     #### Example 2:
     **Input:**
     <question>Were Angela Merkel and Tony Blair born in the same year?</question>
     <subquestion1>Which year was Angela Merkel born in?</subquestion1>
+    <subquery1>
+        SELECT DISTINCT ?P569_7
+        WHERE { wd:Q94746073 p:P569 [ ps:P569 ?P569_7 ] . }
+        LIMIT 200
+    </subquery1>
     <subanswer1>{
         "head" : {
           "vars" : [ "P569_133" ]
@@ -235,6 +250,11 @@ function prompt_use_subqueries() {
         }
       }</subanswer1>
     <subquestion2>Which year was Tony Blair born in?</subquestion2>
+    <subquery2>
+        SELECT DISTINCT ?P569_7
+        WHERE { wd:Q9545 p:P569 [ ps:P569 ?P569_7 ] . }
+        LIMIT 200
+    </subquery2>
     <subanswer2>{
         "head" : {
           "vars" : [ "P569_7" ]
@@ -251,8 +271,14 @@ function prompt_use_subqueries() {
       }</subanswer2>
     
     **Output:**
-    <answer>false</answer>
+    <query>
+    ASK WHERE {
+      wd:Q94746073 p:P569 [ ps:P569 ?year1 ] .
+      wd:Q9545 p:P569 [ ps:P569 ?year2 ] .
+      FILTER(YEAR(?year1) = YEAR(?year2))
+    }
+    </query>
     
-    Now, given a new input, extract relevant information, process it logically, and return the final answer in <answer> tags.
+    Now, given a new input, extract relevant information, construct a new query that retrieves the answer, and return it in <query> tags.
     `;
 }
