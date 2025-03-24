@@ -411,7 +411,7 @@ class LLMFrameworkBooleanBySubquestions extends LLMFramework {
                 await this.executeStep(step_get_results, "Get results", [this, place]);
                 subqueries.push(this.sparql);
                 this.result_text = truncateResults(this.result_text, 6); //truncate results to avoid surpassing the token limit
-                subanswers.push(shorter_result_text);
+                subanswers.push(this.result_text);
                 this.reasoning_text += "<br>Subquestion query:<br>" + this.sparql;
                 this.reasoning_text += "<br>Subquestion result (truncated):<br>" + this.result_text;
             }
