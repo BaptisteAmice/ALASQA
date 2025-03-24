@@ -185,7 +185,7 @@ function truncateResults(results_text, res_number_to_keep) {
         resultsArray = resultsArray.slice(0, res_number_to_keep);
         truncated_results_text = JSON.stringify(resultsArray);
         //add ... to indicate that there are more results
-        truncated_results_text = truncated_results_text.slice(0, -1) + ", ...]";
+        truncated_results_text = truncated_results_text.slice(0, -1) + ", and more truncated results...]";
         console.log("truncated_results_text", truncated_results_text);
     }
     return truncated_results_text;

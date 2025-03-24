@@ -410,9 +410,10 @@ class LLMFrameworkBooleanBySubquestions extends LLMFramework {
                 let place = sparklis.currentPlace();
                 await this.executeStep(step_get_results, "Get results", [this, place]);
                 subqueries.push(this.sparql);
-                subanswers.push(this.result_text);
+                this.result_text = truncateResults(this.result_text, 6); //truncate results to avoid surpassing the token limit
+                subanswers.push(shorter_result_text);
                 this.reasoning_text += "<br>Subquestion query:<br>" + this.sparql;
-                this.reasoning_text += "<br>Subquestion result:<br>" + this.result_text;
+                this.reasoning_text += "<br>Subquestion result (truncated):<br>" + this.result_text;
             }
             //and then combine the results to generate a query answering the original question
             sparklis.home(); // we want to reset sparklis between different queries

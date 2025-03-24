@@ -844,6 +844,51 @@ def plot_table(table_headers, table_data, all_data, table_name):
         plt.show()
     plt.close()
 
+def compute_confusion_matrix_bool(filtered_data):
+    """
+    Compute the confusion matrix of the system relative to the boolean results of the benchmark
+    """
+    TP, FP, TN, FN, Invalid_not_true, Invalid_not_false = 0, 0, 0, 0, 0, 0
+    for entry in filtered_data.values():
+        system_result = entry.get("SystemResult")
+        benchmark_result = entry.get("BenchmarkResult")
+
+        if isinstance(benchmark_result, bool):
+            if not isinstance(system_result, bool) and benchmark_result is True:
+                Invalid_not_true += 1
+            elif not isinstance(system_result, bool) and benchmark_result is False:
+                Invalid_not_false += 1
+            elif system_result is True and benchmark_result is True:
+                TP += 1
+            elif system_result is True and benchmark_result is False:
+                FP += 1
+            elif system_result is False and benchmark_result is False:
+                TN += 1
+            elif system_result is False and benchmark_result is True:
+                FN += 1
+    return {"TP": TP, "FP": FP, "TN": TN, "FN": FN, "Invalid_not_true": Invalid_not_true, "Invalid_not_false": Invalid_not_false}
+
+def plot_confusion_matrix_bool(filtered_data):
+    matrix_data = compute_confusion_matrix_bool(filtered_data)
+        # Create confusion matrix including Invalid count
+    matrix = np.array(
+        [
+            [ matrix_data["TP"], matrix_data["FN"],  matrix_data["Invalid_not_true"]],
+            [ matrix_data["FP"], matrix_data["TN"], matrix_data["Invalid_not_false"]]
+        ]
+    )
+
+    # Plotting
+    plt.figure(figsize=(6, 4))
+    sns.heatmap(matrix, annot=True, fmt="d", cmap="Blues", xticklabels=["True","False", "Other"], yticklabels=["True","False"], cbar=False)
+    plt.title("Confusion Matrix for boolean results")
+    plt.ylabel("Benchmark Class")
+    plt.xlabel("Predicted Class")
+    pp.savefig()
+    if show:
+        plt.show()
+    plt.close()
+
 
 def all_prints(files_names: list[str], core_files_names: list[str]):
     # Data to be displayed in a table
@@ -889,6 +934,8 @@ def all_prints(files_names: list[str], core_files_names: list[str]):
 
     precisions, recalls, f1_scores = extract_scores(filtered_valid_data)
     plot_box_system_time(filtered_valid_data)
+
+    plot_confusion_matrix_bool(filtered_valid_data)
 
     # Commands
     commands_list = get_commands_list(filtered_valid_data)
@@ -1058,9 +1105,9 @@ def all_prints(files_names: list[str], core_files_names: list[str]):
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.realpath(__file__))
     core_files = [
-        script_dir + "/BestOutputs/olds/QALD-10_sparklisllm_20250307_183805.json",
-        script_dir + "/BestOutputs/olds/QALD-10_sparklisllm_20250307_211841.json",
-        script_dir + "/BestOutputs/olds/QALD-10_sparklisllm_20250307_234947.json"
+        script_dir + "/BestOutputs/olds/QALD-10_sparklisllm_20250318_181029.json",
+        script_dir + "/BestOutputs/olds/QALD-10_sparklisllm_20250318_192832.json",
+        script_dir + "/BestOutputs/olds/QALD-10_sparklisllm_20250318_203757.json"
     ]
 
     input_files = [
