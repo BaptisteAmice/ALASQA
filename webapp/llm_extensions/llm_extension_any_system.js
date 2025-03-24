@@ -126,9 +126,22 @@ async function qa_control() {
 
     /////////// PROCESSING ///////////
 
-    //the used framework type can be changed here
-    let framework = new LLMFrameworkBooleanBySubquestions(question, question_id);
-    await framework.answerQuestion();
+    //the used framework type is inferred by the dropdown value (could also force a specific class here)
+    // Get the selected value
+    let dropdown = document.getElementById("system-dropdown");
+    let selectedClassName = dropdown.value; // Example: "LLMFrameworkBooleanBySubquestions"
+
+    let framework = null;
+    // Select the class corresponding to the selected value (only if available)
+    if (window[selectedClassName]) {
+        framework = new window[selectedClassName](question, question_id);
+        // Execute the logic of the extension
+        await framework.answerQuestion();
+    } else {
+        console.error(selectedClassName + " is not a valid system class, using LLMFrameworkOneShotby default");
+        framework = new LLMFrameworkOneShot(question, question_id);
+        framework.errors += selectedClassName + " is not a valid system class";
+    }
 
     /////////// ENDING ///////////
     //update reasoning one last time in case of for
@@ -300,6 +313,7 @@ class LLMFrameworkOneShot extends LLMFramework {
         await this.executeStep(step_get_results, "Get results", [this, place]);
     }
 }
+window.LLMFrameworkOneShot = LLMFrameworkOneShot; //to be able to access it in qa_control
 
 /**
  * Same as LLMFrameworkOneShot, but also checks if a boolean is expected for a result.
@@ -339,16 +353,20 @@ class LLMFrameworkOneShotWithBooleanConv extends LLMFramework {
         }
     }
 }
+window.LLMFrameworkOneShotWithBooleanConv = LLMFrameworkOneShotWithBooleanConv; //to be able to access it in qa_control
 
 class LLMFrameworkReact extends LLMFramework {
     //todo
 }
+window.LLMFrameworkReact = LLMFrameworkReact; //to be able to access it in qa_control
 class LLMFrameworkDirect extends LLMFramework {
     //todo
 }
+window.LLMFrameworkDirect = LLMFrameworkDirect; //to be able to access it in qa_control
 class LLMFrameworkSteps extends LLMFramework {
     //todo
 }
+window.LLMFrameworkSteps = LLMFrameworkSteps; //to be able to access it in qa_control
 
 
 class LLMFrameworkBooleanBySubquestions extends LLMFramework {
@@ -427,3 +445,4 @@ class LLMFrameworkBooleanBySubquestions extends LLMFramework {
         }
     }
 }
+window.LLMFrameworkBooleanBySubquestions = LLMFrameworkBooleanBySubquestions; //to be able to access it in qa_control

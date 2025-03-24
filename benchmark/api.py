@@ -34,13 +34,13 @@ async def get_answer(question: str, dataset: str):
     }
 
 @app.get("/fetch")
-def fetch_local_page(question: str, endpoint_sparql: str = config.SPARQL_ENDPOINT):
+def fetch_local_page(question: str, endpoint_sparql: str = config.SPARQL_ENDPOINT, system_name: str = "sparklisllm-LLMFrameworkOneShot") -> str:
     """
     Draft of the "/" endpoint. #todo
     """
     response, error, steps_status, reasoning, driver = interactions.simulated_user(
         config.SPARKLIS_FILE,
-        lambda driver: interactions.sparklisllm_question(driver, question, endpoint_sparql)
+        lambda driver: interactions.sparklisllm_question(driver, question, endpoint_sparql, system_name)
     )
     driver.close() # should close the page after the api request
     return response

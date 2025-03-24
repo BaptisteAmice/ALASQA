@@ -3,6 +3,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import UnexpectedAlertPresentException, TimeoutException
+from selenium.webdriver.support.ui import Select
 import logging
 import config
 
@@ -76,7 +77,7 @@ def getStepsStatus(driver):
         logging.error(f"Error while getting the steps status: {e}")
         return "Failed to get steps status"
 
-def sparklisllm_question(driver, question, endpoint_sparql) -> tuple[str, str, str, str]:
+def sparklisllm_question(driver, question, endpoint_sparql, system_name) -> tuple[str, str, str, str]:
     """
     Interaction with the SparklisLLM system to ask a question
     """
@@ -107,6 +108,20 @@ def sparklisllm_question(driver, question, endpoint_sparql) -> tuple[str, str, s
     # clear all previous messages 
     clear_button = driver.find_element(by=By.ID, value="chatbot-clear-button")
     clear_button.click()
+
+    #select the system
+    #get the system name after "sparklisllm-" in id=system-dropdown
+    specific_system_name = system_name.split("sparklisllm-")[1]    
+    # Find the select dropdown element
+    dropdown = Select(driver.find_element("id", "system-dropdown"))
+    # Get all available option texts
+    available_options = [option.text for option in dropdown.options]
+
+    # Check if the specific system name exists
+    if specific_system_name in available_options:
+        dropdown.select_by_visible_text(specific_system_name)
+    else:
+        logging.error(f"System {specific_system_name} not found in the dropdown")
 
     # Locate the text box and send the question
     logging.info(f"INPUT: {question}")

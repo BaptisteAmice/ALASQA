@@ -309,7 +309,7 @@ def hist_first_non_done_step(data: list, title_end: str):
         plt.show()
     plt.close()
 
-def find_first_non_done_step(filtered_data):
+def find_first_non_done_step(filtered_data): #todo remake
     """
     Finds the first step number in the StepsStatus field whose status is different from 'DONE'.
     
@@ -1058,16 +1058,16 @@ def all_prints(files_names: list[str], core_files_names: list[str]):
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.realpath(__file__))
     core_files = [
-        script_dir + "/BestOutputs/QALD-10_sparklisllm_20250307_183805.json",
-        script_dir + "/BestOutputs/QALD-10_sparklisllm_20250307_211841.json",
-        script_dir + "/BestOutputs/QALD-10_sparklisllm_20250307_234947.json"
+        script_dir + "/BestOutputs/olds/QALD-10_sparklisllm_20250307_183805.json",
+        script_dir + "/BestOutputs/olds/QALD-10_sparklisllm_20250307_211841.json",
+        script_dir + "/BestOutputs/olds/QALD-10_sparklisllm_20250307_234947.json"
     ]
 
     input_files = [
         # script_dir + "/BestOutputs/QALD-10_sparklisllm_20250312_003603.json",
-        script_dir + "/BestOutputs/QALD-10_sparklisllm_20250318_181029.json",
-        script_dir + "/BestOutputs/QALD-10_sparklisllm_20250318_192832.json",
-        script_dir + "/BestOutputs/QALD-10_sparklisllm_20250318_203757.json"
+        script_dir + "/BestOutputs/OneShotWithBooleanConv/QALD-10_sparklisllm_20250321_135224.json",
+        script_dir + "/BestOutputs/OneShotWithBooleanConv/QALD-10_sparklisllm_20250322_064457.json",
+        script_dir + "/BestOutputs/OneShotWithBooleanConv/QALD-10_sparklisllm_20250323_001140.json"
     ]
 
     all_prints(input_files, core_files)

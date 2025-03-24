@@ -2,6 +2,9 @@ const CHATBOT_WIDTH = 500;
 const CHATBOT_MAX_HEIGHT = 600;
 const CHATBOT_RESPONSE_MAX_HEIGHT = CHATBOT_MAX_HEIGHT / 2;
 
+// This is the list of all available systems. Please only add existing classes (and add them to the window).
+const available_systems = ["LLMFrameworkOneShot", "LLMFrameworkOneShotWithBooleanConv", "LLMFrameworkBooleanBySubquestions"];
+
 document.addEventListener("DOMContentLoaded", function () {
     let style = document.createElement("style");
     style.textContent = `
@@ -104,7 +107,29 @@ document.addEventListener("DOMContentLoaded", function () {
     let menu = document.createElement("div");
     menu.classList.add("chatbot-menu");
     menu.style.display = "none";
-    
+
+    let system_dropdown = document.createElement("select");
+    system_dropdown.id = "system-dropdown";
+    system_dropdown.name = "system-dropdown";
+    system_dropdown.style.width = "100%";
+    system_dropdown.style.marginBottom = "10px";
+    system_dropdown.style.padding = "8px";
+    system_dropdown.style.fontSize = "14px";
+    system_dropdown.style.border = "1px solid #ddd";
+    system_dropdown.style.borderRadius = "5px";
+    system_dropdown.style.cursor = "pointer";
+    system_dropdown.style.backgroundColor = "#f8f9fa";
+    system_dropdown.style.color = "black";
+
+
+    // Add the available systems to the dropdown
+    available_systems.forEach(system => {
+        let option = document.createElement("option");
+        option.value = system;
+        option.text = system;
+        system_dropdown.appendChild(option);
+    });
+
 
     let input_div = document.createElement("div");
 
@@ -159,6 +184,7 @@ document.addEventListener("DOMContentLoaded", function () {
     responseContainer.classList.add("chatbot-responses-container");
     responseContainer.id = "chatbot-responses-container";
     
+    menu.appendChild(system_dropdown);
     menu.appendChild(input_div);
     //menu.appendChild(fileUpload);
     menu.appendChild(buttonsDiv);
