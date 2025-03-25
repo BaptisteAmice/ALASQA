@@ -3,6 +3,7 @@ import logging
 import datetime
 import os
 from SPARQLWrapper import SPARQLWrapper, JSON
+from SPARQLWrapper.SPARQLExceptions import QueryBadFormed
 import requests
 import benchmark_extraction
 from test_system import TestSystem, testSystemFactory
@@ -185,9 +186,15 @@ def execute_query(sparql, query: str, query_index: int, query_type: str) -> tupl
                 logging.error(f"Unexpected response format for query {query_index} ({query_type}): {result}")
                 return None, ERROR_PREFIX + "Unexpected response format."
 
+        except QueryBadFormed as e:
+            logging.error(f"Query {query_index} ({query_type}) is badly formed: {e}")
+            return None, ERROR_PREFIX + query_type + " query is badly formed."
         except Exception as e:
-            if "429" in str(e):  # Detect 429 Too Many Requests
-                retry_after = int(e.headers.get("Retry-After", 5))  # Default to 5 seconds
+            error_message = str(e)
+            if "429" in error_message:  # Detect 429 Too Many Requests
+                retry_after = 5  # Default retry time
+                if hasattr(e, "headers") and "Retry-After" in e.headers:
+                    retry_after = int(e.headers["Retry-After"])
                 logging.warning(f"Query {query_index} ({query_type}) hit 429 Too Many Requests. Retrying after {retry_after} seconds.")
                 datetime.time.sleep(retry_after)
             else:
