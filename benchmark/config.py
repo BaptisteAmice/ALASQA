@@ -40,13 +40,14 @@ OUTPUT_FOLDER = script_dir + '/Outputs/'
 NB_TESTS = 3
 
 # Input json file containing the benchmark
-BENCHMARK_FILE = script_dir + '/Inputs/' + 'qald_10_patched.json'
+#BENCHMARK_FILE = script_dir + '/Inputs/' + 'qald_10_patched.json'
+BENCHMARK_FILE = script_dir + '/Inputs/' + 'qald_9_plus_train_wikidata.json'
 
 # Benchmark name and tested system
 BENCHMARK_NAME = benchmark_extraction.QALD10 #todo
 
 # Name of the tested system
-TESTED_SYSTEM = 'sparklisllm-LLMFrameworkBooleanBySubquestions' # dummy | sparklisllm-[specific_system_name]
+TESTED_SYSTEM = 'sparklisllm-LLMFrameworkOneShot' # dummy | sparklisllm-[specific_system_name]
 
 # SPARQL endpoint, only used in scripts and not by the API
 #SPARQL_ENDPOINT = 'https://dbpedia.org/sparql' #todo

@@ -6,7 +6,7 @@ MINTAKA1K = 'Mintaka1k_final'
 QALD10 = 'QALD-10'
 
 # to extract only boolean questions
-ONLY_BOOLEANS = True 
+ONLY_BOOLEANS = False 
 
 class Extractor:
     """

@@ -182,7 +182,7 @@ function prompt_get_subquestions() {
     `;
 }
 
-function prompt_use_subquestions() {
+function prompt_use_subquestions_boolean_specialized() {
     return `
     You are an AI system that processes a question by analyzing the responses to its subqueries and generating a new query that provides the final answer.
     
