@@ -43,8 +43,8 @@ NB_TESTS = 3
 #BENCHMARK_FILE = script_dir + '/Inputs/' + 'qald_10_patched.json'
 BENCHMARK_FILE = script_dir + '/Inputs/' + 'qald_9_plus_train_wikidata.json'
 
-# Benchmark name and tested system
-BENCHMARK_NAME = benchmark_extraction.QALD10 #todo
+# Name of the tested benchmark (MINTAKA1K | QALD10 | QALD9_PLUS)
+BENCHMARK_NAME = benchmark_extraction.QALD9_PLUS
 
 # Name of the tested system
 TESTED_SYSTEM = 'sparklisllm-LLMFrameworkOneShot' # dummy | sparklisllm-[specific_system_name]

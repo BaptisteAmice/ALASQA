@@ -430,7 +430,7 @@ class LLMFrameworkBooleanBySubquestions extends LLMFramework {
             let input_comparison = data_input_prompt(input_data_dict, true);
 
             let output_combined = await this.executeStep(step_generation, "LLM generation", 
-                [this, prompt_use_subquestions_boolean_specialized(),"prompt_use_subquestions_boolean_specialized",
+                [this, prompt_use_subquestions(),"prompt_use_subquestions",
                      input_comparison]
             );
             let extracted_query_list = await this.executeStep(step_extract_tags, "Extracted commands", [this, output_combined, "query"]);

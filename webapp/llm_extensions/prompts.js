@@ -182,7 +182,7 @@ function prompt_get_subquestions() {
     `;
 }
 
-function prompt_use_subquestions_boolean_specialized() {
+function prompt_use_subquestions() {
     return `
     You are an AI system that processes a question by analyzing the responses to its subqueries and generating a new query that provides the final answer.
     
@@ -277,6 +277,56 @@ function prompt_use_subquestions_boolean_specialized() {
       wd:Q9545 p:P569 [ ps:P569 ?year2 ] .
       FILTER(YEAR(?year1) = YEAR(?year2))
     }
+    </query>
+    
+    #### Example 3:
+    **Input:**
+    <question>Who is the oldest cast member of the Netflix show “Queer Eye”?</question>
+    <subquestion>Who are the actors in Queer Eye and what are their birth dates?</subquestion>
+    <subquery>
+    SELECT DISTINCT ?P161_104 ?P569_141
+    WHERE { wd:Q48817408 p:P161 [ ps:P161 ?P161_104 ] .
+            ?P161_104 p:P569 [ ps:P569 ?P569_141 ] . }
+    LIMIT 200
+    </subquery>
+    <subanswer>
+    [
+        [
+            {
+                "type": "uri",
+                "uri": "http://www.wikidata.org/entity/Q29452671",
+                "label": "Jeremiah Brent"
+            },
+            {
+                "type": "typedLiteral",
+                "str": "1984-11-24T00:00:00Z",
+                "datatype": "http://www.w3.org/2001/XMLSchema#dateTime"
+            }
+        ],
+        [
+            {
+                "type": "uri",
+                "uri": "http://www.wikidata.org/entity/Q44870529",
+                "label": "Karamo Brown"
+            },
+            {
+                "type": "typedLiteral",
+                "str": "1980-11-02T00:00:00Z",
+                "datatype": "http://www.w3.org/2001/XMLSchema#dateTime"
+            }
+        ],
+        and more truncated results...
+    ]
+    </subanswer>
+    
+    **Output:**
+    <query>
+    SELECT ?oldestActor WHERE {
+      wd:Q48817408 p:P161 [ ps:P161 ?oldestActor ] .
+      ?oldestActor p:P569 [ ps:P569 ?birthDate ] .
+    }
+    ORDER BY ASC(?birthDate)
+    LIMIT 1
     </query>
     
     Now, given a new input, extract relevant information, construct a new query that retrieves the answer, and return it in <query> tags.

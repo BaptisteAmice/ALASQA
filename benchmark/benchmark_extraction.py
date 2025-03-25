@@ -4,6 +4,7 @@ import json
 # Names of the benchmarks
 MINTAKA1K = 'Mintaka1k_final'
 QALD10 = 'QALD-10'
+QALD9_PLUS = 'QALD-9-plus'
 
 # to extract only boolean questions
 ONLY_BOOLEANS = False 
@@ -85,7 +86,7 @@ def extractorFactory(benchmark_name: str) -> Extractor:
     """
     if benchmark_name == MINTAKA1K:
         return ExtractorMintaka()
-    elif benchmark_name == QALD10:
+    elif benchmark_name in (QALD10, QALD9_PLUS):
         return ExtractorQald()
     else:
         raise ValueError('Unknown benchmark name')
