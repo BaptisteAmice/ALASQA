@@ -4,6 +4,8 @@ import logging
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.lines as mlines
+import matplotlib.table as tbl
+import matplotlib.patches as mpatches
 import seaborn as sns
 import networkx as nx
 import numpy as np
@@ -548,10 +550,6 @@ def make_good_core(file_names: list, exclusive_core: bool = True):
 
     return final_keys, core_precisions, core_recalls, core_f1s
 
-import matplotlib.pyplot as plt
-import numpy as np
-import matplotlib.lines as mlines
-
 def plot_scores_relative_to_core_responses_multiple_criteria(core_files: list[str], new_files: list[str], evaluated_criteria: str, max_keys=10):
     """
     Plots the comparison of multiple new datasets' Precision, Recall, and F1Score against core datasets
@@ -664,83 +662,92 @@ def plot_scores_relative_to_core_responses_multiple_criteria(core_files: list[st
         plt.close()
 
 
-def plot_comparison_to_core_good_responses(core_files: list, new_file: str, exclusive_core: bool = True):
-    """
-    Plots boxplots of core responses and compares new responses against them.
-    
-    Args:
-        core_files (list): List of core dataset files.
-        new_file (str): Path to the new dataset file.
-        exclusive_core (bool): If True, only responses with F1 > 0 in all files are kept.
-        max_keys (int): Maximum number of x-axis labels shown.
-    """
-    core_keys, core_precisions, core_recalls, core_f1s = make_good_core(core_files, exclusive_core)
-    new_data = load_and_filter_data(new_file, {})
-    
-    # Extract new scores
-    new_precisions, new_recalls, new_f1s = extract_scores(new_data)
+def generate_score_comparison_matrices(core_files: list[str], new_files: list[str], evaluated_criteria: str, max_columns=20):
+    metrics = ["Precision", "Recall", "F1Score"]
+    core_data_list = [load_and_filter_data(core_file, {}) for core_file in core_files]
+    new_data_list = [load_and_filter_data(new_file, {}) for new_file in new_files]
+    common_keys = set(core_data_list[0].keys())
+    for core_data in core_data_list[1:]:
+        common_keys.intersection_update(core_data.keys())
+    for new_data in new_data_list:
+        common_keys.intersection_update(new_data.keys())
 
-    # Validate keys present in the new data
-    valid_core_keys = [key for key in core_keys if key in new_data]
-    if len(valid_core_keys) < len(core_keys):
-        logging.warning(f"Less responses in the new file ({len(valid_core_keys)}) than in the core ({len(core_keys)}).")
-    
-    # Ensure we use the same valid core keys for new data
-    new_precisions = [new_data[key].get("Precision", 0.0) for key in valid_core_keys]
-    new_recalls = [new_data[key].get("Recall", 0.0) for key in valid_core_keys]
-    new_f1s = [new_data[key].get("F1Score", 0.0) for key in valid_core_keys]
+    if not common_keys:
+        print("No common keys found across datasets. Exiting.")
+        return
 
-    selected_labels = set(valid_core_keys)
+    try:
+        sorted_keys = sorted(common_keys, key=int)
+    except ValueError:
+        print("Warning: Some keys are not numeric. Sorting lexicographically instead.")
+        sorted_keys = sorted(common_keys)
 
-    # Metrics to plot
-    metrics = [("Precision", core_precisions, new_precisions),
-               ("Recall", core_recalls, new_recalls),
-               ("F1-score", core_f1s, new_f1s)]
+    def evaluate_criteria(core_scores, criterion):
+        if criterion == "min":
+            return min(core_scores)
+        elif criterion == "max":
+            return max(core_scores)
+        elif criterion == "mean":
+            return np.mean(core_scores)
+        else:
+            raise ValueError(f"Unsupported criterion: {criterion}")
 
-    for metric, core_values, new_values in metrics:
-        plt.figure(figsize=(12, 6))
+    for metric in metrics:
+        plt.figure(figsize=(12, 14))
+        ax = plt.gca()
+        ax.set_frame_on(False)
+        ax.set_xticks([])
+        ax.set_yticks([])
 
-        # Make sure positions and core_values match in length
-        positions = list(range(len(valid_core_keys)))
+        nbre_improvements, nbre_degradations, nbre_no_change = 0, 0, 0
+        table_data = []
+        cell_colors = []
 
-        # Check if the core_values match the length of positions
-        if len(core_values) != len(positions):
-            logging.warning(f"Core values and positions do not match in length. Adjusting...")
-            core_values = core_values[:len(positions)]  # Adjust to match positions length
+        for key in sorted_keys:
+            core_scores = [core_data[key].get(metric, 0.0) or 0.0 for core_data in core_data_list]
+            core_evaluated_score = evaluate_criteria(core_scores, evaluated_criteria)
+            new_scores = [new_data[key].get(metric, 0.0) or 0.0 for new_data in new_data_list]
+            new_evaluated_score = evaluate_criteria(new_scores, evaluated_criteria)
 
-        # Boxplot
-        plt.boxplot(core_values, positions=positions, widths=0.6)
-
-        # Scatter new values based on comparison to core values
-        for i, new_value in enumerate(new_values):
-            if new_value < min(core_values[i]):
-                plt.scatter(i, new_value, color='red')
-            elif new_value > max(core_values[i]):
-                plt.scatter(i, new_value, color='green')
+            if new_evaluated_score < core_evaluated_score:
+                color = 'red'
+                nbre_degradations += 1
+            elif new_evaluated_score > core_evaluated_score:
+                color = 'green'
+                nbre_improvements += 1
             else:
-                plt.scatter(i, new_value, color='blue')
+                color = 'blue'
+                nbre_no_change += 1
 
-        # Customize x-axis labels
-        plt.xlabel("Response Keys (Numerically Ordered)")
-        plt.ylabel(metric)
-        core_type = "Exclusive" if exclusive_core else "Inclusive"
-        plt.title(f"Comparison to the ({core_type}) Core Good Responses for {metric}")
+            table_data.append(f"{key}\n{new_evaluated_score:.3f}")
+            cell_colors.append(color)
 
-        # Show limited x-axis labels
-        plt.xticks(
-            ticks=[i for i, key in enumerate(valid_core_keys) if key in selected_labels],
-            labels=[key for key in valid_core_keys if key in selected_labels],
-            rotation=45, ha="right", fontsize=8
-        )
+        num_rows = (len(sorted_keys) + max_columns - 1) // max_columns
+        table_matrix = np.empty((num_rows, max_columns), dtype=object)
+        color_matrix = np.empty((num_rows, max_columns), dtype=object)
+        table_matrix.fill("")
+        color_matrix.fill("white")
 
-        # Define legend
-        worse_handle = mlines.Line2D([], [], color='red', marker='o', linestyle='None', markersize=8, label='New response worse than core')
-        better_handle = mlines.Line2D([], [], color='green', marker='o', linestyle='None', markersize=8, label='New response better than core')
-        in_range_handle = mlines.Line2D([], [], color='blue', marker='o', linestyle='None', markersize=8, label='New response within core range')
+        for i, (value, color) in enumerate(zip(table_data, cell_colors)):
+            row, col = divmod(i, max_columns)
+            table_matrix[row, col] = value
+            color_matrix[row, col] = color
 
-        plt.legend(handles=[worse_handle, better_handle, in_range_handle])
-        plt.grid(True)
+        table = tbl.Table(ax, bbox=[0, 0, 1, 1])
+        cell_width = 1.0 / max_columns
+        cell_height = 1.0 / num_rows
 
+        for row in range(num_rows):
+            for col in range(max_columns):
+                text = table_matrix[row, col]
+                table.add_cell(row, col, cell_width, cell_height, text=text, facecolor=color_matrix[row, col], edgecolor='black', loc='center')
+
+        ax.add_table(table)
+        worse_patch = mpatches.Patch(color='red', label=f'Worse ({nbre_degradations})')
+        better_patch = mpatches.Patch(color='green', label=f'Better ({nbre_improvements})')
+        same_patch = mpatches.Patch(color='blue', label=f'No Change ({nbre_no_change})')
+        plt.legend(handles=[worse_patch, better_patch, same_patch], loc='upper center', bbox_to_anchor=(0.5, -0.1), ncol=3)
+        plt.title(f"Comparison of {metric} scores using {evaluated_criteria} criteria")
         pp.savefig()
         if show:
             plt.show()
@@ -924,9 +931,13 @@ def all_prints(files_names: list[str], core_files_names: list[str]):
 
     precisions, recalls, f1_scores = extract_scores(filtered_valid_data)
     precision_recall_f1_plot(precisions, recalls, f1_scores)
-    plot_scores_relative_to_core_responses_multiple_criteria(core_files_names, files_names, "max")
-    plot_scores_relative_to_core_responses_multiple_criteria(core_files_names, files_names, "mean")
-    plot_scores_relative_to_core_responses_multiple_criteria(core_files_names, files_names, "min")
+    #plot_scores_relative_to_core_responses_multiple_criteria(core_files_names, files_names, "max")
+    #plot_scores_relative_to_core_responses_multiple_criteria(core_files_names, files_names, "mean")
+    #plot_scores_relative_to_core_responses_multiple_criteria(core_files_names, files_names, "min")
+    generate_score_comparison_matrices(core_files_names, files_names, "max")
+    generate_score_comparison_matrices(core_files_names, files_names, "mean")
+    generate_score_comparison_matrices(core_files_names, files_names, "min")
+
     # plot_scores_relative_to_core_responses(core_files_names, file_name)
     # plot_comparison_to_core_good_responses(core_files_names, file_name, exclusive_core=True)
     plot_hist_scores_per_thresholds(filtered_valid_data)
@@ -1105,16 +1116,16 @@ def all_prints(files_names: list[str], core_files_names: list[str]):
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.realpath(__file__))
     core_files = [
-        script_dir + "/BestOutputs/olds/QALD-10_sparklisllm_20250318_181029.json",
-        script_dir + "/BestOutputs/olds/QALD-10_sparklisllm_20250318_192832.json",
-        script_dir + "/BestOutputs/olds/QALD-10_sparklisllm_20250318_203757.json"
+        script_dir + "/BestOutputs/olds/QALD-10_sparklisllm_20250307_211841.json",
+        script_dir + "/BestOutputs/olds/QALD-10_sparklisllm_20250307_234947.json",
+        script_dir + "/BestOutputs/olds/QALD-10_sparklisllm_20250312_003603.json"
     ]
 
     input_files = [
         # script_dir + "/BestOutputs/QALD-10_sparklisllm_20250312_003603.json",
-        script_dir + "/BestOutputs/OneShotWithBooleanConv/QALD-10_sparklisllm_20250321_135224.json",
-        script_dir + "/BestOutputs/OneShotWithBooleanConv/QALD-10_sparklisllm_20250322_064457.json",
-        script_dir + "/BestOutputs/OneShotWithBooleanConv/QALD-10_sparklisllm_20250323_001140.json"
+        script_dir + "/BestOutputs/LLMFrameworkBooleanBySubquestions/QALD-10_sparklisllm-LLMFrameworkBooleanBySubquestions_20250324_181731.json",
+        script_dir + "/BestOutputs/LLMFrameworkBooleanBySubquestions/QALD-10_sparklisllm-LLMFrameworkBooleanBySubquestions_20250324_201635.json",
+        script_dir + "/BestOutputs/LLMFrameworkBooleanBySubquestions/QALD-10_sparklisllm-LLMFrameworkBooleanBySubquestions_20250324_221601.json"
     ]
 
     all_prints(input_files, core_files)
