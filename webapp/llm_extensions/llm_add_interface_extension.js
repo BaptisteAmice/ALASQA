@@ -3,7 +3,6 @@ const CHATBOT_MAX_HEIGHT = 600;
 const CHATBOT_RESPONSE_MAX_HEIGHT = CHATBOT_MAX_HEIGHT / 2;
 
 // This is the list of all available systems. Please only add existing classes (and add them to the window).
-const available_systems = ["LLMFrameworkOneShot", "LLMFrameworkOneShotWithBooleanConv", "LLMFrameworkBooleanBySubquestions"];
 
 document.addEventListener("DOMContentLoaded", function () {
     let style = document.createElement("style");
@@ -123,7 +122,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
     // Add the available systems to the dropdown
-    available_systems.forEach(system => {
+    window.LLMFrameworks.forEach(system => {
         let option = document.createElement("option");
         option.value = system;
         option.text = system;

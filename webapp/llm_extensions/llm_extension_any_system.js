@@ -17,6 +17,9 @@ const STATUS_ONGOING = "ONGOING";
 const STATUS_DONE = "DONE";
 const STATUS_FAILED = "FAILED";
 
+// List of available LLM frameworks
+window.LLMFrameworks = [];
+
 /**
  * Class to handle the logic of the LLM extension
  */
@@ -30,11 +33,19 @@ class LLMFramework {
     result_text = "";
 
     steps_status = {};
+    select_sugg_logic;
 
-    constructor(question, question_id){
+    /**
+     * 
+     * @param {str} question - question to answer
+     * @param {*} question_id - id of the question div in the interface
+     * @param {str|null} select_sugg_logic - logic to select suggestions in the qa extension
+     */
+    constructor(question, question_id, select_sugg_logic = null){
         this.question = question;
         this.question_id = question_id;
         this.insertNewStepStatus("Start", STATUS_NOT_STARTED);
+        this.select_sugg_logic = select_sugg_logic;
     }
 
     /**
@@ -99,8 +110,14 @@ class LLMFramework {
      * Answer the question by executing the logic of the extension.
      */
     async answerQuestion() {
+        // set the starting step to done
         this.setCurrentStepStatus(STATUS_DONE)
+        // change the logic of the suggestions for the qa extension
+        window.select_sugg_logic = this.select_sugg_logic;
+        // call the system logic to answer the question
         await this.answerQuestionLogic();
+        // reset the logic of the suggestions for the qa extension
+        window.select_sugg_logic = null;
     }
 
     /**
@@ -297,6 +314,9 @@ async function step_get_results(framework, place) {
  * Execute in one time a series of commands to answer the question.
  */
 class LLMFrameworkOneShot extends LLMFramework {
+    constructor(question, question_id, select_sugg_logic = null) {
+        super(question, question_id, select_sugg_logic);
+    }
     async answerQuestionLogic() {
         // Call llm generation
         let output_llm = await this.executeStep(step_generation, "LLM generation", 
@@ -313,7 +333,17 @@ class LLMFrameworkOneShot extends LLMFramework {
         await this.executeStep(step_get_results, "Get results", [this, place]);
     }
 }
-window.LLMFrameworkOneShot = LLMFrameworkOneShot; //to be able to access it in qa_control
+window.LLMFrameworkOneShot = LLMFrameworkOneShot; //to be able to access the class
+window.LLMFrameworks.push(LLMFrameworkOneShot.name); //to be able to access the class name
+
+
+class LLMFrameworkOneShotCustomLogic extends LLMFrameworkOneShot {
+    constructor(question, question_id) {
+        super(question, question_id, "test");
+    }
+}
+window.LLMFrameworkOneShotCustomLogic = LLMFrameworkOneShotCustomLogic; //to be able to use the class through the window object
+window.LLMFrameworks.push(LLMFrameworkOneShotCustomLogic.name); // to be able to access the class name in the interface and choose it in the dropdown
 
 /**
  * Same as LLMFrameworkOneShot, but also checks if a boolean is expected for a result.
@@ -353,21 +383,18 @@ class LLMFrameworkOneShotWithBooleanConv extends LLMFramework {
         }
     }
 }
-window.LLMFrameworkOneShotWithBooleanConv = LLMFrameworkOneShotWithBooleanConv; //to be able to access it in qa_control
+window.LLMFrameworkOneShotWithBooleanConv = LLMFrameworkOneShotWithBooleanConv;
+window.LLMFrameworks.push(LLMFrameworkOneShotWithBooleanConv.name);
 
 class LLMFrameworkReact extends LLMFramework {
     //todo
 }
-window.LLMFrameworkReact = LLMFrameworkReact; //to be able to access it in qa_control
 class LLMFrameworkDirect extends LLMFramework {
     //todo
 }
-window.LLMFrameworkDirect = LLMFrameworkDirect; //to be able to access it in qa_control
 class LLMFrameworkSteps extends LLMFramework {
     //todo
 }
-window.LLMFrameworkSteps = LLMFrameworkSteps; //to be able to access it in qa_control
-
 
 class LLMFrameworkBooleanBySubquestions extends LLMFramework {
     async answerQuestionLogic() {
@@ -447,4 +474,5 @@ class LLMFrameworkBooleanBySubquestions extends LLMFramework {
         }
     }
 }
-window.LLMFrameworkBooleanBySubquestions = LLMFrameworkBooleanBySubquestions; //to be able to access it in qa_control
+window.LLMFrameworkBooleanBySubquestions = LLMFrameworkBooleanBySubquestions;
+window.LLMFrameworks.push(LLMFrameworkBooleanBySubquestions.name);

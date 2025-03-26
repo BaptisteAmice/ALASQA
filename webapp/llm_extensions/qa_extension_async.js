@@ -246,6 +246,20 @@ function get_constr(kind, query) {
 
 // selecting the most frequent suggestion satisfying pred
 function select_sugg(kind, query, forest, pred, lexicon) { //todo llm ici
+	if (window.select_sugg_logic) {
+		// using custom logic
+		console.log("using custom select_sugg_logic", window.select_sugg_logic);
+		if (window.select_sugg_logic == "test") {
+			return forest[0].item.suggestion;
+		}
+	} else {
+		// using basic logic
+		console.log("using basic select_sugg_logic");
+		return basic_select_sugg_logic(kind, query, forest, pred, lexicon);
+	}
+}
+
+function basic_select_sugg_logic(kind, query, forest, pred, lexicon) {
     var best_item = null;
     var best_score = null;
     forest.forEach(function(tree) {
