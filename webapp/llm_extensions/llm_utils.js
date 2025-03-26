@@ -173,7 +173,7 @@ function getSentenceFromDiv() {
  * @param {*} res_number_to_keep 
  * @returns 
  */
-function truncateResults(results_text, res_number_to_keep) {
+function truncateResults(results_text, res_number_to_keep, max_number_of_char = null) {
     let resultsArray;
     let truncated_results_text = results_text;
     try {//todo mieux gérer cas où resulttext est vide
@@ -181,6 +181,8 @@ function truncateResults(results_text, res_number_to_keep) {
     } catch (e) {
         resultsArray = [];
     }
+
+    //truncate the results if there are too many
     if (resultsArray.length > res_number_to_keep) {
         resultsArray = resultsArray.slice(0, res_number_to_keep);
         truncated_results_text = JSON.stringify(resultsArray);
@@ -188,6 +190,12 @@ function truncateResults(results_text, res_number_to_keep) {
         truncated_results_text = truncated_results_text.slice(0, -1) + ", and more truncated results...]";
         console.log("truncated_results_text", truncated_results_text);
     }
+
+    //truncate the results if they are too long
+    if (max_number_of_char != null && truncated_results_text.length > max_number_of_char) {
+        truncated_results_text = truncated_results_text.substring(0, max_number_of_char) + "...and more truncated results...]";
+    }
+
     return truncated_results_text;
 }
 

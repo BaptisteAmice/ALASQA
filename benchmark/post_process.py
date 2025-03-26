@@ -662,7 +662,7 @@ def plot_scores_relative_to_core_responses_multiple_criteria(core_files: list[st
         plt.close()
 
 
-def generate_score_comparison_matrices(core_files: list[str], new_files: list[str], evaluated_criteria: str, max_columns=20):
+def generate_score_comparison_matrices(core_files: list[str], new_files: list[str], evaluated_criteria: str, max_columns=None):
     metrics = ["Precision", "Recall", "F1Score"]
     core_data_list = [load_and_filter_data(core_file, {}) for core_file in core_files]
     new_data_list = [load_and_filter_data(new_file, {}) for new_file in new_files]
@@ -682,6 +682,11 @@ def generate_score_comparison_matrices(core_files: list[str], new_files: list[st
         print("Warning: Some keys are not numeric. Sorting lexicographically instead.")
         sorted_keys = sorted(common_keys)
 
+    # if their isn't a max column number, we want as many columns as rows
+    if max_columns == None:
+        #so we use the rounded square root of the number of keys
+        max_columns = int(np.ceil(np.sqrt(len(sorted_keys))))
+
     def evaluate_criteria(core_scores, criterion):
         if criterion == "min":
             return min(core_scores)
@@ -693,7 +698,7 @@ def generate_score_comparison_matrices(core_files: list[str], new_files: list[st
             raise ValueError(f"Unsupported criterion: {criterion}")
 
     for metric in metrics:
-        plt.figure(figsize=(12, 14))
+        plt.figure(figsize=(12, 12))
         ax = plt.gca()
         ax.set_frame_on(False)
         ax.set_xticks([])
