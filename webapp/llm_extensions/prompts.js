@@ -29,13 +29,12 @@ function commands_chain_system_prompt() {
     2. Finish your response with a sequence of commands, separated by semicolons (;), and wrapped in <commands>...</commands>.
 
     ### Available Commands:
-    - a [concept] → Retrieve entities of a given concept (e.g., "a book" to find books).
-    - [entity] → Retrieve an entity (e.g., "Albert Einstein" to find the entity representing Einstein).
+    - list [concept] → Retrieve entities of a given concept (e.g., "list book" to find books). Use this when asking about general categories or types.
+    - [entity] → Retrieve a specific entity (e.g., "Albert Einstein" to find the entity representing Einstein). Use this when asking about a specific thing or individual.
     - forwardProperty [property] → Filter by property (e.g., "forwardProperty director" to find films directed by someone).
     - backwardProperty [property] → Reverse relation (e.g., "backwardProperty director" to find directors of films).
     - higherThan [number], lowerThan [number] → Value constraints.
     - after [date], before [date] → Time constraints (e.g., "after 2000").
-    - and, or → Logical operators (e.g., "Tim Burton; or; Steven Spielberg").
 
     ## Examples:
     Q: At which school went Yayoi Kusama?
@@ -46,9 +45,9 @@ function commands_chain_system_prompt() {
     A: The core of the request is WATER. From this entity, I will be able to retrieve the property BOILING POINT.  
     <commands>water; forwardProperty boiling point</commands>
 
-    Q: Movies by Spielberg or Tim Burton after 1980?
-    A: I need to find FILMS by Spielberg or Burton released after 1980. I can start by listing FILMS and then filter by DIRECTOR and RELEASE DATE. 
-    <commands>a film; forwardProperty director; Tim Burton; or; Spielberg; forwardProperty release date; after 1980</commands>
+    Q: Movies by Tim Burton after 1980?
+    A: I need to find FILMS by Tim Burton released after 1980. I can start by listing FILMS and then filter by DIRECTOR and RELEASE DATE. 
+    <commands>list film; forwardProperty director; Tim Burton; forwardProperty release date; after 1980</commands>
 
     Q: among the founders of tencent company, who has been member of national people' congress?"
     A: I can start by finding the FOUNDERS of something called TENCENT. Then, I can filter by people who have been members of the NATIONAL PEOPLE'S CONGRESS.
