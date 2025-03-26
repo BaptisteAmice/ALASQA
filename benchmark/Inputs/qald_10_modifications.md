@@ -2,8 +2,7 @@
 
 ## 2
 among the characters in the witcher, who has two unmarried partners, Yennefer of Vengerberg and Triss Merigold?
-the old response was Yennefer of Vengerberg instead of ....
-
+the old response was Yennefer of Vengerberg instead of Geralt de Riv
 
 
 # Corrected obsolete SPARQL query
@@ -20,7 +19,7 @@ How do people from Turkey call the official name of the united states of america
 
 ## 197
 What happened to the dinosaurs ?
-(not working, supposed to be extinction) 
+(not working anymore, supposed to be extinction) 
 too vague
 
 # Not working
