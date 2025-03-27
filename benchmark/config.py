@@ -41,7 +41,7 @@ NB_TESTS = 3
 
 # Input json file containing the benchmark
 #BENCHMARK_FILE = script_dir + '/Inputs/' + 'qald_10_patched.json'
-BENCHMARK_FILE = script_dir + '/Inputs/' + 'qald_9_plus_train_wikidata.json'
+BENCHMARK_FILE = script_dir + '/Inputs/' + 'qald_9_plus_train_wikidata_patched.json'
 
 # Name of the tested benchmark (MINTAKA1K | QALD10 | QALD9_PLUS)
 BENCHMARK_NAME = benchmark_extraction.QALD9_PLUS

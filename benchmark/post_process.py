@@ -662,7 +662,7 @@ def plot_scores_relative_to_core_responses_multiple_criteria(core_files: list[st
         plt.close()
 
 
-def generate_score_comparison_matrices(core_files: list[str], new_files: list[str], evaluated_criteria: str, max_columns=None):
+def generate_score_comparison_matrices_to_core(core_files: list[str], new_files: list[str], evaluated_criteria: str, max_columns=None):
     metrics = ["Precision", "Recall", "F1Score"]
     core_data_list = [load_and_filter_data(core_file, {}) for core_file in core_files]
     new_data_list = [load_and_filter_data(new_file, {}) for new_file in new_files]
@@ -752,7 +752,98 @@ def generate_score_comparison_matrices(core_files: list[str], new_files: list[st
         better_patch = mpatches.Patch(color='green', label=f'Better ({nbre_improvements})')
         same_patch = mpatches.Patch(color='blue', label=f'No Change ({nbre_no_change})')
         plt.legend(handles=[worse_patch, better_patch, same_patch], loc='upper center', bbox_to_anchor=(0.5, -0.1), ncol=3)
-        plt.title(f"Comparison of {metric} scores using {evaluated_criteria} criteria")
+        plt.title(f"Comparison to previous system of {metric} scores using {evaluated_criteria} criteria")
+        pp.savefig()
+        if show:
+            plt.show()
+        plt.close()
+
+def generate_score_comparison_matrices_to_treshold(new_files: list[str], evaluated_criteria: str, threshold: float = 0.5, max_columns=None):
+    metrics = ["Precision", "Recall", "F1Score"]
+    new_data_list = [load_and_filter_data(new_file, {}) for new_file in new_files]
+    common_keys = set(new_data_list[0].keys())
+    for new_data in new_data_list[1:]:
+        common_keys.intersection_update(new_data.keys())
+
+    if not common_keys:
+        print("No common keys found across datasets. Exiting.")
+        return
+
+    try:
+        sorted_keys = sorted(common_keys, key=int)
+    except ValueError:
+        print("Warning: Some keys are not numeric. Sorting lexicographically instead.")
+        sorted_keys = sorted(common_keys)
+
+    # if their isn't a max column number, we want as many columns as rows
+    if max_columns == None:
+        #so we use the rounded square root of the number of keys
+        max_columns = int(np.ceil(np.sqrt(len(sorted_keys))))
+
+    def evaluate_criteria(core_scores, criterion):
+        if criterion == "min":
+            return min(core_scores)
+        elif criterion == "max":
+            return max(core_scores)
+        elif criterion == "mean":
+            return np.mean(core_scores)
+        else:
+            raise ValueError(f"Unsupported criterion: {criterion}")
+
+    for metric in metrics:
+        plt.figure(figsize=(12, 12))
+        ax = plt.gca()
+        ax.set_frame_on(False)
+        ax.set_xticks([])
+        ax.set_yticks([])
+
+        nbre_improvements, nbre_degradations, nbre_no_change = 0, 0, 0
+        table_data = []
+        cell_colors = []
+
+        for key in sorted_keys:
+            new_scores = [new_data[key].get(metric, 0.0) or 0.0 for new_data in new_data_list]
+            new_evaluated_score = evaluate_criteria(new_scores, evaluated_criteria)
+
+            if new_evaluated_score < threshold:
+                color = 'red'
+                nbre_degradations += 1
+            elif new_evaluated_score > threshold:
+                color = 'green'
+                nbre_improvements += 1
+            else:
+                color = 'blue'
+                nbre_no_change += 1
+
+            table_data.append(f"{key}\n{new_evaluated_score:.3f}")
+            cell_colors.append(color)
+
+        num_rows = (len(sorted_keys) + max_columns - 1) // max_columns
+        table_matrix = np.empty((num_rows, max_columns), dtype=object)
+        color_matrix = np.empty((num_rows, max_columns), dtype=object)
+        table_matrix.fill("")
+        color_matrix.fill("white")
+
+        for i, (value, color) in enumerate(zip(table_data, cell_colors)):
+            row, col = divmod(i, max_columns)
+            table_matrix[row, col] = value
+            color_matrix[row, col] = color
+
+        table = tbl.Table(ax, bbox=[0, 0, 1, 1])
+        cell_width = 1.0 / max_columns
+        cell_height = 1.0 / num_rows
+
+        for row in range(num_rows):
+            for col in range(max_columns):
+                text = table_matrix[row, col]
+                table.add_cell(row, col, cell_width, cell_height, text=text, facecolor=color_matrix[row, col], edgecolor='black', loc='center')
+
+        ax.add_table(table)
+        worse_patch = mpatches.Patch(color='red', label=f'Worse ({nbre_degradations})')
+        better_patch = mpatches.Patch(color='green', label=f'Better ({nbre_improvements})')
+        same_patch = mpatches.Patch(color='blue', label=f'No Change ({nbre_no_change})')
+        plt.legend(handles=[worse_patch, better_patch, same_patch], loc='upper center', bbox_to_anchor=(0.5, -0.1), ncol=3)
+        plt.title(f"Comparison to threshold={threshold} of {metric} scores using {evaluated_criteria} criteria")
         pp.savefig()
         if show:
             plt.show()
@@ -939,9 +1030,11 @@ def all_prints(files_names: list[str], core_files_names: list[str]):
     #plot_scores_relative_to_core_responses_multiple_criteria(core_files_names, files_names, "max")
     #plot_scores_relative_to_core_responses_multiple_criteria(core_files_names, files_names, "mean")
     #plot_scores_relative_to_core_responses_multiple_criteria(core_files_names, files_names, "min")
-    generate_score_comparison_matrices(core_files_names, files_names, "max")
-    generate_score_comparison_matrices(core_files_names, files_names, "mean")
-    generate_score_comparison_matrices(core_files_names, files_names, "min")
+    generate_score_comparison_matrices_to_core(core_files_names, files_names, "max")
+    generate_score_comparison_matrices_to_core(core_files_names, files_names, "mean")
+    generate_score_comparison_matrices_to_core(core_files_names, files_names, "min")
+
+    generate_score_comparison_matrices_to_treshold(files_names, "max", 0.5)
 
     # plot_scores_relative_to_core_responses(core_files_names, file_name)
     # plot_comparison_to_core_good_responses(core_files_names, file_name, exclusive_core=True)
@@ -1121,16 +1214,12 @@ def all_prints(files_names: list[str], core_files_names: list[str]):
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.realpath(__file__))
     core_files = [
-        script_dir + "/BestOutputs/olds/QALD-10_sparklisllm_20250307_211841.json",
-        script_dir + "/BestOutputs/olds/QALD-10_sparklisllm_20250307_234947.json",
-        script_dir + "/BestOutputs/olds/QALD-10_sparklisllm_20250312_003603.json"
+        script_dir + "/BestOutputs/olds/QALD-10_sparklisllm_20250318_203757.json",
     ]
 
     input_files = [
         # script_dir + "/BestOutputs/QALD-10_sparklisllm_20250312_003603.json",
-        script_dir + "/BestOutputs/LLMFrameworkBooleanBySubquestions/QALD-10_sparklisllm-LLMFrameworkBooleanBySubquestions_20250324_181731.json",
-        script_dir + "/BestOutputs/LLMFrameworkBooleanBySubquestions/QALD-10_sparklisllm-LLMFrameworkBooleanBySubquestions_20250324_201635.json",
-        script_dir + "/BestOutputs/LLMFrameworkBooleanBySubquestions/QALD-10_sparklisllm-LLMFrameworkBooleanBySubquestions_20250324_221601.json"
+        script_dir + "/Outputs/QALD-10_sparklisllm-LLMFrameworkBooleanBySubquestions_20250327_095318_partiel.json",
     ]
 
     all_prints(input_files, core_files)

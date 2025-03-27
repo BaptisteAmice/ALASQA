@@ -412,7 +412,7 @@ class LLMFrameworkBooleanBySubquestions extends LLMFramework {
             sparklis.home(); // we want to reset sparklis between different queries
             this.reasoning_text += "<br>No subquestion needed, executing the commands directly<br>";
             let output_commands_query = await this.executeStep(step_generation, "LLM generation", 
-                [this, simplified_commands_chain_system_prompt(),"simplified_commands_chain_system_prompt", this.question]
+                [this, commands_chain_system_prompt(),"commands_chain_system_prompt", this.question]
             );
             let extracted_commands_list = await this.executeStep(step_extract_tags, "Extracted commands", [this, output_commands_query, "commands"]);
             let extracted_commands = extracted_commands_list.at(-1) || "";
@@ -429,7 +429,7 @@ class LLMFrameworkBooleanBySubquestions extends LLMFramework {
                 sparklis.home(); // we want to reset sparklis between different queries
                 this.reasoning_text += "<br>Subquestion:<br>";
                 let output_commands_subquestion = await this.executeStep(step_generation, "LLM generation", 
-                    [this, simplified_commands_chain_system_prompt(),"simplified_commands_chain_system_prompt", subquestion]
+                    [this, commands_chain_system_prompt(),"commands_chain_system_prompt", subquestion]
                 );
                 let extracted_commands_list = await this.executeStep(step_extract_tags, "Extracted commands", [this, output_commands_subquestion, "commands"]);
                 let extracted_commands = extracted_commands_list.at(-1) || "";
