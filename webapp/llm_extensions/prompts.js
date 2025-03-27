@@ -49,7 +49,7 @@ function commands_chain_system_prompt() {
     <commands>list film; forwardProperty director; Tim Burton; forwardProperty release date; after 1980</commands>
 
     Q: among the founders of tencent company, who has been member of national people' congress?"
-    A: I can start by finding the FOUNDERS of something called TENCENT. Then, I can filter by people who have been members of the NATIONAL PEOPLE'S CONGRESS.
+    A: I can start by looking for something called TENCENT. Then, I can look for the FOUNDERS of TENCENT and filter by people who have held a position in the NATIONAL PEOPLE'S CONGRESS.
     <commands>Tencent;forwardProperty founder of; forwardProperty position; National People's Congress</commands>
     `;
 }
