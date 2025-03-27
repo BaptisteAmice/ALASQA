@@ -145,7 +145,7 @@ function process_step(place, step) {
 		sparklis.setModifierConstr(constr);
 		return Promise.resolve(sparklis.currentPlace());
 
-    } else if ((match = /^list\s+(.+)\s*$/.exec(step))) {
+    } else if ((match = /^a\s+(.+)\s*$/.exec(step))) {
 	return search_and_apply_suggestion(
 	    place, "class", match[1],
 	    (place,constr) => place.getConceptSuggestions(false,constr),
