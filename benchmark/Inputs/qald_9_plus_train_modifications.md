@@ -24,8 +24,8 @@ there isn't a proper time property on those items in wikidata to filter them
 returns nothing (even in input json)
 Last Christmas (Q1318118) doesn't have an album property in wikidata
 
-## Empty result (in input json) removed temporary but should be tested to know why
-96, 109, 173, 331, 377, 383, 389, 392, 394, 399
+## Empty result (in input json and in exp.) removed temporary but should be tested to know why
+96, 109, 173, 331, 377, 383, 389, 392, 394, 399, 404
 
 # Incorrect query to change
 
