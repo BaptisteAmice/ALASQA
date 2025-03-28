@@ -513,13 +513,12 @@ class LLMFrameworkBooleanBySubquestions extends LLMFramework {
             let input_comparison = data_input_prompt(input_data_dict, true);
 
             let output_combined = await this.executeStep(step_generation, "LLM generation", 
-                [this, prompt_use_subquestions(),"prompt_use_subquestions",
+                [this, prompt_use_subquestions_for_boolean(),"prompt_use_subquestions_for_boolean",
                      input_comparison]
             );
             let extracted_query_list = await this.executeStep(step_extract_tags, "Extracted commands", [this, output_combined, "query"]);
             let extracted_query = extracted_query_list.at(-1) || "";
             this.sparql = extracted_query;
-            //todo to redo t'as get l'answer au lieu de la query....
         } else {
             //error
             let message = error_messages[5];
@@ -531,4 +530,85 @@ class LLMFrameworkBooleanBySubquestions extends LLMFramework {
     }
 }
 window.LLMFrameworkBooleanBySubquestions = LLMFrameworkBooleanBySubquestions;
-window.LLMFrameworks.push(LLMFrameworkBooleanBySubquestions.name);
+
+
+
+class LLMFrameworkBySubquestionsForward extends LLMFramework {
+    async answerQuestionLogic() {
+        // Get a list of necessary subquestions to reach the answer
+        //Generation of the subquestions by the LLML
+        let outputed_subquestions = await this.executeStep(step_generation, "LLM generation 1", 
+            [this, prompt_get_subquestions(),"prompt_get_subquestions", this.question]
+        );
+        // Extract the subquestions from the LLM output
+        let extracted_subquestions = await this.executeStep(step_extract_tags, "Extract subquestions", [this, outputed_subquestions, "subquestion"]);
+        //Adapt the bahavior depending on the number of subquestions
+        if (extracted_subquestions.length == 0) {
+            //if we don't have a subquery we will execute the commands as is
+            //for questions such as "What is the capital of France?"
+            sparklis.home(); // we want to reset sparklis between different queries
+            this.reasoning_text += "<br>No subquestion needed, executing the commands directly<br>";
+            let output_commands_query = await this.executeStep(step_generation, "LLM generation", 
+                [this, forward_commands_chain_system_prompt(),"forward_commands_chain_system_prompt", this.question]
+            );
+            let extracted_commands_list = await this.executeStep(step_extract_tags, "Extracted commands", [this, output_commands_query, "commands"]);
+            let extracted_commands = extracted_commands_list.at(-1) || "";
+            await this.executeStep(step_execute_commands, "Commands execution", [this, extracted_commands]);
+            let place = sparklis.currentPlace();
+            await this.executeStep(step_get_results, "Get results", [this, place]);
+        } else if (extracted_subquestions.length > 0) {
+            //if we have multiple subquestions we will execute them 
+            // for questions such as "Were Angela Merkel and Tony Blair born in the same year?"
+            this.reasoning_text += "<br>Subquestions needed, answering them first<br>";
+            let subqueries = [];
+            let subanswers = [];
+            for (let subquestion of extracted_subquestions) {
+                sparklis.home(); // we want to reset sparklis between different queries
+                this.reasoning_text += "<br>Subquestion:<br>";
+                let output_commands_subquestion = await this.executeStep(step_generation, "LLM generation", 
+                    [this, forward_commands_chain_system_prompt(),"forward_commands_chain_system_prompt", subquestion]
+                );
+                let extracted_commands_list = await this.executeStep(step_extract_tags, "Extracted commands", [this, output_commands_subquestion, "commands"]);
+                let extracted_commands = extracted_commands_list.at(-1) || "";
+                await this.executeStep(step_execute_commands, "Commands execution", [this, extracted_commands]);
+                let place = sparklis.currentPlace();
+                await this.executeStep(step_get_results, "Get results", [this, place]);
+                subqueries.push(this.sparql);
+                this.result_text = truncateResults(this.result_text, 6, 4000); //truncate results to avoid surpassing the token limit
+                subanswers.push(this.result_text);
+                this.reasoning_text += "<br>Subquestion query:<br>" + this.sparql;
+                this.reasoning_text += "<br>Subquestion result (truncated):<br>" + this.result_text;
+            }
+            //and then combine the results to generate a query answering the original question
+            sparklis.home(); // we want to reset sparklis between different queries
+            this.reasoning_text += "<br>Combining the results of the subquestions<br>";
+
+            //make the input data for the comparison prompt
+            let input_data_dict = { "question": this.question};
+            for (let i = 0; i < subanswers.length; i++) {
+                input_data_dict["subquery" + (i+1).toString()] = subqueries[i];
+            }
+            for (let i = 0; i < subanswers.length; i++) {
+                input_data_dict["subanswer" + (i+1).toString()] = subanswers[i];
+            }
+            let input_comparison = data_input_prompt(input_data_dict, true);
+
+            let output_combined = await this.executeStep(step_generation, "LLM generation", 
+                [this, prompt_use_subquestions_for_any(),"prompt_use_subquestions_for_any",
+                     input_comparison]
+            );
+            let extracted_query_list = await this.executeStep(step_extract_tags, "Extracted commands", [this, output_combined, "query"]);
+            let extracted_query = extracted_query_list.at(-1) || "";
+            this.sparql = extracted_query;
+        } else {
+            //error
+            let message = error_messages[5];
+            console.log(message);
+            this.errors += message;
+            // Step failed
+            this.setCurrentStepStatus(STATUS_FAILED);
+        }
+    }
+}
+window.LLMFrameworkBySubquestionsForward = LLMFrameworkBySubquestionsForward;
+window.LLMFrameworks.push(LLMFrameworkBySubquestionsForward.name);
