@@ -1,8 +1,8 @@
 # Corrected result (by correcting query)
 
 ## 1 
-returned all boardgames instead of just GMT games
-now only returns GMT games
+returned all boardgames instead of just GMT boardgames
+now only returns GMT boardgames
 
 # Corrected obsolete SPARQL query
 

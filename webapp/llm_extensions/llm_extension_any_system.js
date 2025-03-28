@@ -337,6 +337,62 @@ window.LLMFrameworkOneShot = LLMFrameworkOneShot; //to be able to access the cla
 window.LLMFrameworks.push(LLMFrameworkOneShot.name); //to be able to access the class name
 
 
+/**
+ * Prompt is simplified with less commands
+ */
+class LLMFrameworkOneShotForward extends LLMFramework {
+    constructor(question, question_id, select_sugg_logic = null) {
+        super(question, question_id, select_sugg_logic);
+    }
+    async answerQuestionLogic() {
+        // Call llm generation
+        let output_llm = await this.executeStep(step_generation, "LLM generation", 
+            [this, forward_commands_chain_system_prompt(),"forward_commands_chain_system_prompt", this.question]
+        )
+        // Extract the commands from the LLM output
+        let extracted_commands_list = await this.executeStep(step_extract_tags, "Extracted commands",
+             [this, output_llm, "commands"]
+        );
+        // Execute the commands, wait for place evaluation and get the results
+        let extracted_commands = extracted_commands_list.at(-1) || "";
+        await this.executeStep(step_execute_commands, "Commands execution", [this, extracted_commands]);
+        let place = sparklis.currentPlace();
+        await this.executeStep(step_get_results, "Get results", [this, place]);
+    }
+}
+window.LLMFrameworkOneShotForward = LLMFrameworkOneShotForward; //to be able to access the class
+window.LLMFrameworks.push(LLMFrameworkOneShotForward.name); //to be able to access the class name
+
+/**
+ * Prompt is simplified with less commands but with "match ..." instead of "a ..."
+ */
+class LLMFrameworkOneShotForwardWithMatch extends LLMFramework {
+    constructor(question, question_id, select_sugg_logic = null) {
+        super(question, question_id, select_sugg_logic);
+    }
+    async answerQuestionLogic() {
+        // Call llm generation
+        let output_llm = await this.executeStep(step_generation, "LLM generation", 
+            [this, forward_commands_chain_system_prompt_match(),"forward_commands_chain_system_prompt_match", this.question]
+        )
+        // Extract the commands from the LLM output
+        let extracted_commands_list = await this.executeStep(step_extract_tags, "Extracted commands",
+             [this, output_llm, "commands"]
+        );
+        // Execute the commands, wait for place evaluation and get the results
+        let extracted_commands = extracted_commands_list.at(-1) || "";
+        await this.executeStep(step_execute_commands, "Commands execution", [this, extracted_commands]);
+        let place = sparklis.currentPlace();
+        await this.executeStep(step_get_results, "Get results", [this, place]);
+    }
+}
+window.LLMFrameworkOneShotForwardWithMatch = LLMFrameworkOneShotForwardWithMatch; //to be able to access the class
+window.LLMFrameworks.push(LLMFrameworkOneShotForwardWithMatch.name); //to be able to access the class name
+
+
+
+
+
 class LLMFrameworkOneShotCustomLogic extends LLMFrameworkOneShot {
     constructor(question, question_id) {
         super(question, question_id, "test");

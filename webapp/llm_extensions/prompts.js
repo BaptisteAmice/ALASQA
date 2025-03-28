@@ -56,7 +56,7 @@ function commands_chain_system_prompt() {
     `;
 }
 
-function simplified_commands_chain_system_prompt() {
+function forward_commands_chain_system_prompt() {
     return `
     ## Task: Generate knowledge graph query commands for Sparklis (SPARQL-based tool).
 
@@ -67,29 +67,100 @@ function simplified_commands_chain_system_prompt() {
     ### Available Commands:
     - a [concept] → Retrieve entities of a given concept (e.g., "a book" to find books). **⚠️ IMPORTANT:** If the question already contains the name of an entity (e.g., the book title of the book), DO NOT use "a [concept]". Directly query the entity instead.
     - [entity] → Retrieve a specific entity (e.g., "Albert Einstein" to find the entity representing Einstein). Use this when asking about a specific thing or individual.
-    - forwardProperty [property] → Filter by property (e.g., "forwardProperty director" to find films directed by someone).
+    - forwardProperty [property] → Filter by property (e.g., "forwardProperty director" to find films directed by someone). **⚠️ Forward direction only:** You can only move from subject to object, not the reverse. Structure queries accordingly.
     - higherThan [number], lowerThan [number] → Value constraints.
     - after [date], before [date] → Time constraints (e.g., "after 2000").
 
+    ### ⚠️ Best Practice:
+    **Try to start from a known entity whenever possible.** If the question includes a specific entity (e.g., "Tim Burton"), use it as the starting point instead of querying a general concept (e.g., "a person"). This helps create more precise queries.
+
     ## Examples:
     Q: At which school went Yayoi Kusama?
-    A: To answer this question, I need to identify the entity for "Yayoi Kusama" and the property "educated at" that connects her to the schools she attended. Using the forwardProperty educated at command will allow us to filter the institutions where she received her education.
-    <commands>Yayoi Kusama; forwardProperty educated at</commands>
+    A: 
+    - The question asks for the school where Yayoi Kusama studied.
+    - We first retrieve the entity "Yayoi Kusama".
+    - Then, we follow the "educated at" property to find the corresponding school.
+     <commands>Yayoi Kusama; forwardProperty educated at</commands>
 
     Q: What is the boiling point of water?
-    A: The core of the request is WATER. From this entity, I will be able to retrieve the property BOILING POINT.  
+    A: 
+    - The question asks for the boiling point of water.
+    - We first retrieve the entity "water".
+    - Then, we follow the "boiling point" property to get the value.
     <commands>water; forwardProperty boiling point</commands>
 
     Q: Movies by Tim Burton after 1980?
-    A: I need to find FILMS by Tim Burton released after 1980. I can start by listing FILMS and then filter by DIRECTOR and RELEASE DATE. 
+    A: 
+    - The question asks for movies directed by Tim Burton that were released after 1980.
+    - We start by retrieving entities of type "film".
+    - Then, we filter these films by the "director" property.
+    - Next, we match the specific director "Tim Burton".
+    - Finally, we apply a date filter to include only movies released after 1980.
     <commands>a film; forwardProperty director; Tim Burton; forwardProperty release date; after 1980</commands>
 
     Q: among the founders of tencent company, who has been member of national people' congress?"
-    A: I can start by looking for something called TENCENT. Then, I can look for the FOUNDERS of TENCENT and filter by people who have held a position in the NATIONAL PEOPLE'S CONGRESS.
+    A: 
+    - The question asks for founders of Tencent who were also members of the National People's Congress.
+    - We first retrieve the entity "Tencent".
+    - Then, we follow the "founder of" property to get its founders.
+    - Next, we filter by the "position" property to check roles these founders held.
+    - Finally, we match "National People's Congress" to find those who were members.
     <commands>Tencent;forwardProperty founder of; forwardProperty position; National People's Congress</commands>
     `;
 }
 
+function forward_commands_chain_system_prompt_match() {
+    return `
+    ## Task: Generate knowledge graph query commands for Sparklis (SPARQL-based tool).
+
+    ## Format:
+    1. Think step by step about what entities and relationships are needed.
+    2. Finish your response with a sequence of commands, separated by semicolons (;), and wrapped in <commands>...</commands>.
+
+    ### Available Commands:
+    - a [concept] → Retrieve entities of a given concept (e.g., "a book" to find books). **⚠️ IMPORTANT:** If the question already contains the name of an entity (e.g., the book title of the book), DO NOT use "a [concept]". Directly query the entity instead.
+    - match [string] → Retrieve the list of entities matching the string (e.g., "Albert Einstein" to find the entities representing Einstein). Use this when asking about a specific thing or individual.
+    - forwardProperty [property] → Filter by property (e.g., "forwardProperty director" to find films directed by someone). **⚠️ Forward direction only:** You can only move from subject to object, not the reverse. Structure queries accordingly.
+    - higherThan [number], lowerThan [number] → Value constraints.
+    - after [date], before [date] → Time constraints (e.g., "after 2000").
+
+    ### ⚠️ Best Practice:
+    **Try to start from a known entity whenever possible.** If the question includes a specific entity (e.g., "Tim Burton"), use it as the starting point instead of querying a general concept (e.g., "a person"). This helps create more precise queries.
+
+    ## Examples:
+    Q: At which school went Yayoi Kusama?
+    A: 
+    - The question asks for the school where Yayoi Kusama studied.
+    - We first retrieve the entity "Yayoi Kusama".
+    - Then, we follow the "educated at" property to find the corresponding school.
+    <commands>match Yayoi Kusama; forwardProperty educated at</commands>
+
+    Q: What is the boiling point of water?
+    A: 
+    - The question asks for the boiling point of water.
+    - We first retrieve the entity "water".
+    - Then, we follow the "boiling point" property to get the value.
+    <commands>match water; forwardProperty boiling point</commands>
+
+    Q: Movies by Tim Burton after 1980?
+    A: 
+    - The question asks for movies directed by Tim Burton that were released after 1980.
+    - We start by retrieving entities of type "film".
+    - Then, we filter these films by the "director" property.
+    - Next, we match the specific director "Tim Burton".
+    - Finally, we apply a date filter to include only movies released after 1980.
+    <commands>a film; forwardProperty director; match Tim Burton; forwardProperty release date; after 1980</commands>
+
+    Q: among the founders of tencent company, who has been member of national people' congress?"
+    A: 
+    - The question asks for founders of Tencent who were also members of the National People's Congress.
+    - We first retrieve the entity "Tencent".
+    - Then, we follow the "founder of" property to get its founders.
+    - Next, we filter by the "position" property to check roles these founders held.
+    - Finally, we match "National People's Congress" to find those who were members.
+    <commands>match Tencent;forwardProperty founder of; forwardProperty position;match National People's Congress</commands>
+    `;
+}
 
 ///// Verifier
 function verifier_system_prompt() {
