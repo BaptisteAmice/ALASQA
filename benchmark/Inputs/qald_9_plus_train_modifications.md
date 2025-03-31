@@ -4,8 +4,6 @@
 returned all boardgames instead of just GMT boardgames
 now only returns GMT boardgames
 
-# Corrected obsolete SPARQL query
-
 # Removed non-working in input file and now
 
 ## 13

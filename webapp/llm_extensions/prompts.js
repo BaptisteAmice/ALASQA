@@ -74,6 +74,10 @@ function forward_commands_chain_system_prompt() {
     ### ⚠️ Best Practice:
     **Try to start from a known entity whenever possible.** If the question includes a specific entity (e.g., "Tim Burton"), use it as the starting point instead of querying a general concept (e.g., "a person"). This helps create more precise queries.
 
+    ### Wikidata-Specific Precision:
+    - a humans → real people
+    - a human → fictional people
+
     ## Examples:
     Q: At which school went Yayoi Kusama?
     A: 
@@ -126,6 +130,10 @@ function forward_commands_chain_system_prompt_match() {
 
     ### ⚠️ Best Practice:
     **Try to start from a known entity whenever possible.** If the question includes a specific entity (e.g., "Tim Burton"), use it as the starting point instead of querying a general concept (e.g., "a person"). This helps create more precise queries.
+
+    ### Wikidata-Specific Precision:
+    - a humans → real people
+    - a human → fictional people
 
     ## Examples:
     Q: At which school went Yayoi Kusama?
@@ -553,6 +561,7 @@ function prompt_use_subquestions_for_any() {
     </query>
     
     Now, given a new input, extract relevant information, construct a new query that retrieves the answer, and return it in <query> tags.
+    Make your justification before the query, and never put comments in the query.
     It's not your role to replace URI by labels, so do not do it.
     `;
 }
