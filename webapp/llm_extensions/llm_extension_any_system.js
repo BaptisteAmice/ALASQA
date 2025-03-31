@@ -393,13 +393,13 @@ window.LLMFrameworks.push(LLMFrameworkOneShotForwardWithMatch.name); //to be abl
 
 
 
-class LLMFrameworkOneShotCustomLogic extends LLMFrameworkOneShot {
+class LLMFrameworkOneShotForwardScoringReferences extends LLMFrameworkOneShotForward {
     constructor(question, question_id) {
-        super(question, question_id, "test");
+        super(question, question_id, "count_references");
     }
 }
-window.LLMFrameworkOneShotCustomLogic = LLMFrameworkOneShotCustomLogic; //to be able to use the class through the window object
-window.LLMFrameworks.push(LLMFrameworkOneShotCustomLogic.name); // to be able to access the class name in the interface and choose it in the dropdown
+window.LLMFrameworkOneShotForwardScoringReferences = LLMFrameworkOneShotForwardScoringReferences; //to be able to use the class through the window object
+window.LLMFrameworks.push(LLMFrameworkOneShotForwardScoringReferences.name); // to be able to access the class name in the interface and choose it in the dropdown
 
 /**
  * Same as LLMFrameworkOneShot, but also checks if a boolean is expected for a result.

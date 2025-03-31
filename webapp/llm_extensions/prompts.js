@@ -75,8 +75,8 @@ function forward_commands_chain_system_prompt() {
     **Try to start from a known entity whenever possible.** If the question includes a specific entity (e.g., "Tim Burton"), use it as the starting point instead of querying a general concept (e.g., "a person"). This helps create more precise queries.
 
     ### Wikidata-Specific Precision:
-    - a humans → real people
-    - a human → fictional people
+    - a human → real people
+    - a fictional human → fictional people
 
     ## Examples:
     Q: At which school went Yayoi Kusama?

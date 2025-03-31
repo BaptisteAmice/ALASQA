@@ -199,11 +199,11 @@ function search_and_apply_suggestion(place, kind, query, getSuggestions, filterS
 		console.log(kind, "constr : ", constr);
 		place.onEvaluated(() => {
 		    getSuggestions(place, constr)
-			.then(res => {
+			.then(async res => {
 			    let forest = res.forest;
 			    console.log("got suggestions for constraint");
 			    //console.log(forest);
-			    let best_sugg = select_sugg(kind, query, forest, filterSuggestion, lexicon);
+			    let best_sugg = await select_sugg(kind, query, forest, filterSuggestion, lexicon);
 			    if (!best_sugg) {
 				reject("no suggestion found");
 			    } else {
@@ -245,12 +245,12 @@ function get_constr(kind, query) {
 }
 
 // selecting the most frequent suggestion satisfying pred
-function select_sugg(kind, query, forest, pred, lexicon) { //todo llm ici
+async function select_sugg(kind, query, forest, pred, lexicon) { //todo llm ici
 	if (window.select_sugg_logic) {
 		// using custom logic
 		console.log("using custom select_sugg_logic", window.select_sugg_logic);
-		if (window.select_sugg_logic == "test") {
-			return forest[0].item.suggestion;
+		if (window.select_sugg_logic == "count_references") {
+			return await count_references_select_sugg_logic(kind, query, forest, pred, lexicon);
 		}
 	} else {
 		// using basic logic
@@ -275,6 +275,44 @@ function basic_select_sugg_logic(kind, query, forest, pred, lexicon) {
 	    }
 	}
     });
+    return best_item.suggestion;
+}
+
+async function count_references_select_sugg_logic(kind, query, forest, pred, lexicon) {
+    let best_item = null;
+    let best_score = null;
+
+    for (const tree of forest) {
+        let item = tree.item;
+        if (pred(item.suggestion)) {
+            let score = get_score(lexicon, kind, query, item);
+
+			//add a bonus for the most referenced entities (but only do it for the best ones to avoid too much querying)
+			//this will allow to diferentiate between entities with the same name
+			if (
+				(score !== null && best_score === null)
+				|| (score !== null && (score >= (0.95 * best_score)))
+			) {
+				let uri = suggestion_uri(item.suggestion);
+				let id = uri.split("/").pop();
+				let references_result  = await sparklis.evalSparql(countReferencesQuery(id, "wikidata"));
+				let references_count = 0;
+				if (references_result?.rows?.[0]?.[0]?.number !== undefined) {
+					references_count = references_result.rows[0][0].number;
+				}
+				score += references_count * 0.00001;
+			} 
+
+            if (best_item === null
+                || best_score === null
+                || (score !== null && best_score !== null && score > best_score)) {
+                best_item = item;
+                best_score = score;
+            }
+        }
+    }
+
+    console.log("BEST SCORE", best_score);
     return best_item.suggestion;
 }
 
@@ -388,7 +426,16 @@ function isNumeric(str) {
 	if (typeof str != "string") return false // we only process strings!  
 	return !isNaN(str) && // use type coercion to parse the _entirety_ of the string (`parseFloat` alone does not do this)...
 		   !isNaN(parseFloat(str)) // ...and ensure strings of whitespace fail
-  }
+}
+
+function countReferencesQuery(entity, source) {
+    if (source === "wikidata") {
+        return `SELECT (COUNT(*) AS ?count) WHERE {
+  				?subject ?predicate wd:${entity}. }`;
+    } else {
+        throw new Error("Unsupported source for countReferencesQuery: " + source);
+    }
+}
 
 // example steps
 // on DBpedia Core: a film; has director; Tim Burton; down; or; Spielberg; up; up; has starring ; has birthdate ; after 1980
