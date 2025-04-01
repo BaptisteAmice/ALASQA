@@ -401,57 +401,36 @@ function prompt_use_subquestions_for_boolean() {
 
 function prompt_use_subquestions_for_any() {
     return `
-    You are an AI system that processes a question by analyzing the responses to its subqueries and generating a new query that provides the final answer.
-    
-    ### Instructions:
-    1. Extract relevant numerical or textual data from the JSON responses provided in <subanswer> tags.
-    2. Construct a new SPARQL query that directly retrieves the answer to the original question (if the exact answer is already obtained in the subquery result, there is no need to alter it, and the final query can be the same as the subquery).
+    You are an AI system that processes a question by analyzing the responses to its subqueries and generating a new query that directly retrieves the final answer.
+    # **Instructions**
+    1. You will be given:
+      - A main **question**.
+      - Several **subquestions**, along with their **subqueries** and **subanswers**.
+    2. Based on the data, construct a new SPARQL query that directly retrieves the answer.
     3. Return the new query enclosed in <query> tags.
+    4. Follow these **rules**:
+      - If the answer is already retrieved by a subquery, **return the same query without modification**.
+      - Do **not** replace URIs with labels.
+      - Do **not** put comments in the <query> (even with #)
     
-    ### Examples:
-    
-    #### Example 1:
+    # **Examples**
+  
+    ## Example 1: Direct Answer Already Obtained
     **Input:**
-    <question>Do more than 100,000,000 people speak Japanese?</question>
-    <subquestion1>How many people speak Japanese?</subquestion1>
-    <subquery1>
-    SELECT DISTINCT ?P1098_7
-    WHERE { wd:Q5287 p:P1098 [ ps:P1098 ?P1098_7 ] . }
-    LIMIT 200
-    </subquery1> 
-    <subanswer1>{
-        "columns": [
-            "P1098_7"
-        ],
-        "rows": [
-            [
-                {
-                    "type": "number",
-                    "number": 128000000,
-                    "str": "128000000",
-                    "datatype": "http://www.w3.org/2001/XMLSchema#decimal"
-                }
-            ]
-        ]
-    }</subanswer1>
-    
+    <question>How high is the Cologne Cathedral?</question>
+    <subquestion1>What is the height of the Cologne Cathedral?</subquestion1>
+    <subquery1>SELECT DISTINCT ?P2048_7 WHERE { wd:Q4176 wdt:P2048 ?P2048_7 . } LIMIT 200</subquery1>
+    <subanswer1>[[{"type":"number","number":157,"str":"157","datatype":"http://www.w3.org/2001/XMLSchema#decimal"}]]</subanswer1>
+  
     **Output:**
-    <query>
-    ASK WHERE {
-      wd:Q5287 p:P1098 [ ps:P1098 ?count ] .
-      FILTER(?count > 100000000)
-    }
-    </query>
+    "The result is already given by the subquery, so I can keep it as is.
+    <query>SELECT DISTINCT ?P2048_7 WHERE { wd:Q4176 wdt:P2048 ?P2048_7 . } LIMIT 200</query>
     
-    #### Example 2:
+    ## Example 2: Yes/No Question with several subquestions
     **Input:**
     <question>Were Angela Merkel and Tony Blair born in the same year?</question>
     <subquestion1>Which year was Angela Merkel born in?</subquestion1>
-    <subquery1>
-        SELECT DISTINCT ?P569_7
-        WHERE { wd:Q94746073 p:P569 [ ps:P569 ?P569_7 ] . }
-        LIMIT 200
-    </subquery1>
+    <subquery1>SELECT DISTINCT ?P569_7 WHERE { wd:Q94746073 p:P569 [ ps:P569 ?P569_7 ] . } LIMIT 200</subquery1>
     <subanswer1>{
         "head" : {
           "vars" : [ "P569_133" ]
@@ -465,13 +444,10 @@ function prompt_use_subquestions_for_any() {
             }
           } ]
         }
-      }</subanswer1>
+      }
+    </subanswer1>
     <subquestion2>Which year was Tony Blair born in?</subquestion2>
-    <subquery2>
-        SELECT DISTINCT ?P569_7
-        WHERE { wd:Q9545 p:P569 [ ps:P569 ?P569_7 ] . }
-        LIMIT 200
-    </subquery2>
+    <subquery2>SELECT DISTINCT ?P569_7 WHERE { wd:Q9545 p:P569 [ ps:P569 ?P569_7 ] . } LIMIT 200</subquery2>
     <subanswer2>{
         "head" : {
           "vars" : [ "P569_7" ]
@@ -485,28 +461,19 @@ function prompt_use_subquestions_for_any() {
             }
           } ]
         }
-      }</subanswer2>
+      }
+    </subanswer2>
     
     **Output:**
-    <query>
-    ASK WHERE {
-      wd:Q94746073 p:P569 [ ps:P569 ?year1 ] .
-      wd:Q9545 p:P569 [ ps:P569 ?year2 ] .
-      FILTER(YEAR(?year1) = YEAR(?year2))
-    }
-    </query>
+    I need to compare the results of the subqueries to return a boolean value.
+    <query>ASK WHERE { wd:Q94746073 p:P569 [ ps:P569 ?year1 ] . wd:Q9545 p:P569 [ ps:P569 ?year2 ] . FILTER(YEAR(?year1) = YEAR(?year2)) }</query>
     
-    #### Example 3:
+    ## Example 3: Finding the most something
     **Input:**
     <question>Who is the oldest cast member of the Netflix show “Queer Eye”?</question>
-    <subquestion>Who are the actors in Queer Eye and what are their birth dates?</subquestion>
-    <subquery>
-    SELECT DISTINCT ?P161_104 ?P569_141
-    WHERE { wd:Q48817408 p:P161 [ ps:P161 ?P161_104 ] .
-            ?P161_104 p:P569 [ ps:P569 ?P569_141 ] . }
-    LIMIT 200
-    </subquery>
-    <subanswer>
+    <subquestion1>Who are the actors in Queer Eye and what are their birth dates?</subquestion1>
+    <subquery1>SELECT DISTINCT ?P161_104 ?P569_141 WHERE { wd:Q48817408 p:P161 [ ps:P161 ?P161_104 ] . ?P161_104 p:P569 [ ps:P569 ?P569_141 ] . } LIMIT 200</subquery1>
+   <subanswer1>
     [
         [
             {
@@ -534,34 +501,12 @@ function prompt_use_subquestions_for_any() {
         ],
         and more truncated results...
     ]
-    </subanswer>
+    </subanswer1>
     
     **Output:**
-    <query>
-    SELECT ?oldestActor WHERE {
-      wd:Q48817408 p:P161 [ ps:P161 ?oldestActor ] .
-      ?oldestActor p:P569 [ ps:P569 ?birthDate ] .
-    }
-    ORDER BY ASC(?birthDate)
-    LIMIT 1
-    </query>
-
-    #### Example 4:
-    **Input:**
-    <question>How high is the Cologne Cathedral?</question>
-    <subquestion>What is the height of the Cologne Cathedral?</subquestion>
-    <subquery>
-    SELECT DISTINCT ?P2048_7 WHERE { wd:Q4176 wdt:P2048 ?P2048_7 . } LIMIT 200
-    </subquery>
-    <subanswer>[[{"type":"number","number":157,"str":"157","datatype":"http://www.w3.org/2001/XMLSchema#decimal"}]]</subanswer>
-
-    **Output:**
-    <query>
-    SELECT DISTINCT ?P2048_7 WHERE { wd:Q4176 wdt:P2048 ?P2048_7 . } LIMIT 200
-    </query>
-    
-    Now, given a new input, extract relevant information, construct a new query that retrieves the answer, and return it in <query> tags.
-    Make your justification before the query, and never put comments in the query.
-    It's not your role to replace URI by labels, so do not do it.
-    `;
-}
+    The subquery give the actors and their birthdate.
+    To have the oldest, i need to order them by age and only keep the first one.
+    I only want to output the actor, not the birthdate.
+    <query>SELECT ?oldestActor WHERE { wd:Q48817408 p:P161 [ ps:P161 ?oldestActor ] . ?oldestActor p:P569 [ ps:P569 ?birthDate ] . } ORDER BY ASC(?birthDate) LIMIT 1</query>
+  `;
+} 

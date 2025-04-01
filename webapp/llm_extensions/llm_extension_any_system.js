@@ -264,6 +264,20 @@ async function step_execute_commands(framework, commands) {
 }
 
 /**
+ * Function to remove the LIMIT clause from the query (only for a given limit number).
+ * We don't want to remove a limit number that is not the one we are looking for (could be the result of previous commands).
+ * @param {*} framework 
+ * @param {*} query 
+ * @param {*} limit 
+ * @returns 
+ */
+function step_remove_limit(framework, query, limit) {
+    framework.reasoning_text += "<br>Removing LIMIT " + limit + "<br>";
+    const regex = new RegExp(`\\bLIMIT\\s+${limit}\\b`, 'i');
+    return query.replace(regex, '').trim();
+}
+
+/**
  * Function to query the results of the SPARQL query and parse them.
  * @param {*} framework 
  * @param {*} place 
@@ -574,7 +588,7 @@ class LLMFrameworkBySubquestionsForward extends LLMFramework {
                 let place = sparklis.currentPlace();
                 await this.executeStep(step_get_results, "Get results", [this, place]);
                 subqueries.push(this.sparql);
-                this.result_text = truncateResults(this.result_text, 6, 4000); //truncate results to avoid surpassing the token limit
+                this.result_text = truncateResults(this.result_text, 4, 4000); //truncate results to avoid surpassing the token limit
                 subanswers.push(this.result_text);
                 this.reasoning_text += "<br>Subquestion query:<br>" + this.sparql;
                 this.reasoning_text += "<br>Subquestion result (truncated):<br>" + this.result_text;
