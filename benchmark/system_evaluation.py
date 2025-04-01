@@ -243,12 +243,14 @@ def stats_calculation(benchmark_results: list, system_results: list) -> tuple[li
             #todo recheck tt ca
             intersection = []
             try:
-                intersection = [d for d in benchmark_list if d in system_list]
+                benchmark_set = set(benchmark_list)
+                system_set = set(system_list)
+                intersection = benchmark_set & system_set
             except:
                 logging.error("Error in intersection.") # if this error is raised, this function should be reviewed
-            precisions.append(len(intersection) / len(system_list))
-            recalls.append(len(intersection) / len(benchmark_list))
-            f1_scores.append(2 * len(intersection) / (len(benchmark_list) + len(system_list)))
+            precisions.append(len(intersection) / len(system_set))
+            recalls.append(len(intersection) / len(benchmark_set))
+            f1_scores.append(2 * len(intersection) / (len(benchmark_set) + len(system_set)))
         elif len(benchmark_list) == 0: # If the benchmark has no results, we don't consider the question
             precisions.append(None)
             recalls.append(None)
@@ -341,6 +343,9 @@ def getModelName(model_api) -> str:
         return model_name
     except requests.exceptions.RequestException as e:
         logging.error("Failed to retrieve the LLM model name. The model may be unavailable, or the API endpoint could be incorrect.")
+        exit(1)
+    except (KeyError, IndexError) as e:
+        logging.error("Unexpected response format from the LLM API. Please check that the API is running and the endpoint is correct.")
         exit(1)
 
 def is_file_available(file_url: str) -> bool:
