@@ -297,7 +297,13 @@ function direct_qa_system_prompt(endpoint) {
     1. Identify the key entities and relationships in the question.
     2. Determine the relevant classes, properties, or constraints in the knowledge graph.
     3. Construct a SPARQL query that retrieves precise information while being efficient.
-    4. Output only the final SPARQL query, wrapped in <sparql>...</sparql>, without additional explanation.`;
+    4. Output the final SPARQL query, wrapped in <sparql>...</sparql> (do **not** put comments in the sparql query, even with #).
+    
+    Example:
+    - **Q:** What is the boiling point of water?
+    - **A:** I need to find the boiling point of water. I can start by retrieving the entity "water" and then follow the property "boiling point".
+    <sparql>SELECT DISTINCT ?P2048_7 WHERE { wd:Q4176 wdt:P2048 ?P2048_7 . }</sparql>
+    `;
 }
 
 ///// BOOLEAN HANDLING

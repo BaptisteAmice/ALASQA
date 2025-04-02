@@ -492,8 +492,20 @@ class LLMFrameworkReact extends LLMFramework {
     //todo
 }
 class LLMFrameworkDirect extends LLMFramework {
-    //todo
+    async answerQuestionLogic() {
+        let used_endpoint = sparklis.endpoint();
+        let output = await this.executeStep(step_generation, "LLM generation", 
+            [this, direct_qa_system_prompt(used_endpoint),"direct_qa_system_prompt", this.question]
+        );
+        let extracted_sparql = await this.executeStep(step_extract_tags, "Extracted SPARQL", [this, output, "sparql"]);
+        let extracted_sparql_query = extracted_sparql.at(-1) || "";
+        this.sparql = extracted_sparql_query;
+    }
 }
+window.LLMFrameworkDirect = LLMFrameworkDirect; //to be able to use the class through the window object
+window.LLMFrameworks.push(LLMFrameworkDirect.name); // to be able to access the class name in the interface and choose it in the dropdown
+
+
 class LLMFrameworkSteps extends LLMFramework {
     //todo
 }
