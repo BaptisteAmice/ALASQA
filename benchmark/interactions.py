@@ -23,8 +23,8 @@ def simulated_user(url: str, interactions, driver: webdriver.Firefox = None) -> 
     if driver is None:
         driver = webdriver.Firefox(options=options)
     driver.get(url)
-    result, error, steps_status, reasoning = interactions(driver)
-    return result, error, steps_status, reasoning, driver
+    result, nl_query, error, steps_status, reasoning = interactions(driver)
+    return result, nl_query, error, steps_status, reasoning, driver
 
 def wait_and_handle_alert(driver, timeout: int, end_condition) -> str:
     """
@@ -162,6 +162,12 @@ def sparklisllm_question(driver, question, endpoint_sparql, system_name) -> tupl
     if sparql_request.text == "":
         error += "Warning: Empty SPARQL request from the system;"
 
+    # Find the sparklis-request inside the last chatbot-qa div
+    sparklis_request = last_chatbot_qa.find_element(By.CLASS_NAME, "sparklis-request")
+    # If the sparql-request is empty, add a warning
+    if sparklis_request.text == "":
+        error += "Warning: Empty Sparklis request from the system;"
+
     # Find the chatbot-errors inside the last chatbot-qa div
     chatbot_errors = last_chatbot_qa.find_element(By.CLASS_NAME, "chatbot-errors")
     # Retrieve the error messages from the system
@@ -177,4 +183,4 @@ def sparklisllm_question(driver, question, endpoint_sparql, system_name) -> tupl
     # Get the current status of the steps
     steps_status = getStepsStatus(driver)
 
-    return sparql_request.text, error, steps_status, chatbot_reasoning.text
+    return sparql_request.text, sparklis_request.text, error, steps_status, chatbot_reasoning.text

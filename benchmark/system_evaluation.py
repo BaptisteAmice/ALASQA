@@ -29,6 +29,7 @@ def main(benchmark_file: str, benchmark_name: str, tested_system_name: str, endp
 
     # Initialize empty lists to accumulate results
     all_system_queries, all_errors, all_steps_status_list, all_reasonings = [], [], [], []
+    all_system_nl_queries = []
     all_benchmark_results, all_system_results = [], []
     all_systems_times = []
     all_responses_types = []
@@ -42,7 +43,7 @@ def main(benchmark_file: str, benchmark_name: str, tested_system_name: str, endp
         batch_question_ids = questions_ids[i:i + batch_size]
         batch_benchmark_queries = benchmark_queries[i:i + batch_size]
 
-        batch_system_queries, batch_errors, steps_status_list, batch_reasonings, batch_times = system_queries_generation(
+        batch_system_queries, batch_system_nl_queries, batch_errors, steps_status_list, batch_reasonings, batch_times = system_queries_generation(
             batch_questions, system, endpoint
         )
         batch_benchmark_results, batch_expected_reponse_types, batch_system_results, batch_errors = queries_evaluation(
@@ -52,6 +53,7 @@ def main(benchmark_file: str, benchmark_name: str, tested_system_name: str, endp
         
         # Append batch results to global lists
         all_system_queries.extend(batch_system_queries)
+        all_system_nl_queries.extend(batch_system_nl_queries)
         all_errors.extend(batch_errors)
         all_steps_status_list.extend(steps_status_list)
         all_reasonings.extend(batch_reasonings)
@@ -66,6 +68,7 @@ def main(benchmark_file: str, benchmark_name: str, tested_system_name: str, endp
         # Rewrite the file after each batch
         data = make_dict(meta, questions_ids[: len(all_system_queries)], questions[: len(all_system_queries)], 
                          benchmark_queries[: len(all_system_queries)], all_system_queries, 
+                         all_system_nl_queries,
                          all_benchmark_results, all_system_results, 
                          all_systems_times, all_responses_types,
                          all_errors, all_steps_status_list, all_reasonings,
@@ -111,19 +114,21 @@ def system_queries_generation(questions: list, system: TestSystem, endpoint_spar
     """
     logging.info('System queries generation Start')
     queries = []
+    nl_queries = []
     errors = []
     steps_status_list = []
     reasonings = []
     times = []
     for question in questions:
         current_time = datetime.datetime.now()
-        query, error, steps_status, reasoning = system.create_query(question, endpoint_sparql)
+        query, nl_query, error, steps_status, reasoning = system.create_query(question, endpoint_sparql)
         queries.append(query)
+        nl_queries.append(nl_query)
         errors.append(error)
         steps_status_list.append(steps_status)
         reasonings.append(reasoning)
         times.append((datetime.datetime.now() - current_time).total_seconds())
-    return queries, errors, steps_status_list, reasonings, times
+    return queries, nl_queries, errors, steps_status_list, reasonings, times
 
 def find_response_type(response: dict) -> str:
     """
@@ -262,7 +267,8 @@ def stats_calculation(benchmark_results: list, system_results: list) -> tuple[li
     return precisions, recalls, f1_scores
 
 def make_dict(meta: dict, questions_ids: list, questions: list, 
-              benchmark_queries: list, system_queries: list, benchmark_results: list, 
+              benchmark_queries: list, system_queries: list, system_nl_queries: list,
+              benchmark_results: list, 
               system_results: list, all_system_times: list, all_responses_types: list,
               errors: list, steps_status: list, reasoning: list, 
               precisions: list, recalls: list, f1_scores: list) -> dict:
@@ -280,7 +286,7 @@ def make_dict(meta: dict, questions_ids: list, questions: list,
     stats["MeanSystemTime"] = sum(all_system_times) / len(all_system_times)
     stats['NbQuestions'] = len(questions_ids)
     stats['NbValidQuestions'] = min(len(valid_precisions), len(valid_recalls), len(valid_f1_scores)) #todo better name
-    #todo classifier questions booléennes (résultat booléen pour le benchmark)
+
     if len(valid_precisions) > 0:
         stats['MeanPrecision']  = sum(valid_precisions) / len(valid_precisions)
         stats['MeanRecall'] = sum(valid_recalls) / len(valid_recalls)
@@ -323,6 +329,7 @@ def make_dict(meta: dict, questions_ids: list, questions: list,
             'F1Score' : f1_scores[i],
             'BenchmarkQuery' : benchmark_queries[i],
             'SystemQuery' : system_queries[i],
+            'SystemNLQuery': system_nl_queries[i],
             'SystemTime' : all_system_times[i],
             'BenchmarkResultType' : all_responses_types[i],
             'BenchmarkResult' : benchmark_results[i],

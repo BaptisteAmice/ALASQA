@@ -38,7 +38,6 @@ var error_messages = [
 
 /////// System ////////
 
-//todo voir pour mieux decouper en fonctions et mieux sécuriser le flow
 async function qa_control() {
     /////////// Initialization ///////////
     resetStepsStatus(); // Reset steps for each new question
@@ -199,7 +198,7 @@ async function qa_control() {
     //update reasoning one last time in case of for
     updateReasoning(questionId, reasoningText);
     //set the result in the answer field
-    updateAnswer(questionId, resultText, "???", sparql, errors); //todo sparklis_request 
+    updateAnswer(questionId, resultText, "???", sparql, errors); 
 
     //re-enable interactions (used as the condition to end the wait from tests)
     enableInputs(); 

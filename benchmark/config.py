@@ -50,7 +50,7 @@ BENCHMARK_NAME = benchmark_extraction.QALD9_PLUS
 TESTED_SYSTEM = 'sparklisllm-LLMFrameworkOneShotForward' # dummy | sparklisllm-[specific_system_name]
 
 # SPARQL endpoint, only used in scripts and not by the API
-#SPARQL_ENDPOINT = 'https://dbpedia.org/sparql' #todo
+#SPARQL_ENDPOINT = 'https://dbpedia.org/sparql'
 SPARQL_ENDPOINT = 'https://query.wikidata.org/sparql'
 #SPARQL_ENDPOINT = 'https://skynet.coypu.org/wikidata/'
 #SPARQL_ENDPOINT = 'invalid/endpoint' #todo erreur specifique?

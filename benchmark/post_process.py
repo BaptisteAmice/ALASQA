@@ -34,16 +34,20 @@ command_list = [
     "or",
     "not",
     "up",
-    "down"
+    "down",
+    "goback",
+    "filter"
 ]
 
 # List of recognizable error messages
 error_messages = [
     # System error messages
-    "Error: No match found for <commands>...</commands>;",
+    "Empty LLM output",
+    "Error: No match found in tags",
     "Warning: Commands failed to finish",
     "Error: error while evaluating SPARQL query",
     "Error: error while parsing SPARQL results",
+    "Error: condition shouldn't have matched",
 
     # Alert messages
     "The query was not understood by the SPARQL endpoint",

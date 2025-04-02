@@ -15,13 +15,13 @@ class TestSystem:
         If an error occurs, it is returned as a string in the second element of the tuple.
         """
         try:
-            response, error, steps_status, reasoning = self.create_query_body(question, endpoint)
+            response, nl_query, error, steps_status, reasoning = self.create_query_body(question, endpoint)
         except Exception as e:
             response = ""
             error = "Error: please try to intercept the error before." + str(e)
             reasoning = ""
             steps_status = ""
-        return response, error, steps_status, reasoning
+        return response, nl_query, error, steps_status, reasoning
 
     @abstractmethod
     def create_query_body(self, question: str, endpoint: str) -> tuple[str, str, str, str]:
@@ -42,7 +42,7 @@ class TestSystem:
 
 class Dummy(TestSystem):
     def create_query_body(self, question: str, endpoint: str) -> tuple[str, str, str, str]:
-        return 'SELECT ?s WHERE { ?s <http://example.com/nonexistentPredicate> ?o.}', 'Error: dummy', '', ''
+        return 'SELECT ?s WHERE { ?s <http://example.com/nonexistentPredicate> ?o.}',"no nl query", 'Error: dummy', '', ''
     
     def end_system(self):
         pass
@@ -53,13 +53,13 @@ class Sparklisllm(TestSystem):
     used_driver = None
 
     def create_query_body(self, question: str, endpoint: str) -> tuple[str, str, str, str]:
-        response, error, steps_status, reasoning, driver = interactions.simulated_user(
+        response, nl_query, error, steps_status, reasoning, driver = interactions.simulated_user(
             config.SPARKLIS_FILE,
             lambda driver: interactions.sparklisllm_question(driver, question, endpoint, self.system_name),
             driver=Sparklisllm.used_driver,
         )
         Sparklisllm.used_driver = driver
-        return response, error, steps_status, reasoning
+        return response, nl_query, error, steps_status, reasoning
     
     def end_system(self):
         # Close the driver (and the page) if it was opened

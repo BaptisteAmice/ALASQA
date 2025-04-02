@@ -92,19 +92,21 @@ function process_step(place, step) {
 	if (!isNumeric(match[1])) {
 		return Promise.reject("higherThan something that is not a number");
 	}
-	//todo only allow if number on both sides
 	console.log(place.results());
 	let constr = { type: "HigherThan", value: match[1] };
 	let sugg = {type: "IncrConstr", constr: constr, filterType: "OnlyLiterals"};
 	return apply_suggestion(place, "higher-than", sugg)
-    } else if ((match = /^lowerThan\s*(.+)$/.exec(step))) { //todo empecher si pas numerique? //juste test js ou est ce qu'on veut pouvoir utiliser propriétés?
+    } else if ((match = /^lowerThan\s*(.+)$/.exec(step))) {
 	if (!isNumeric(match[1])) {
 		return Promise.reject("lowerThan something that is not a number");
 	}
 	let constr = { type: "LowerThan", value: match[1] };
 	let sugg = {type: "IncrConstr", constr: constr, filterType: "OnlyLiterals"};
 	return apply_suggestion(place, "lower-than", sugg)
-    } else if ((match = /^between\s+(.+)\s+and\s+(.+)$/.exec(step))) {//todo empecher si pas numerique?
+    } else if ((match = /^between\s+(.+)\s+and\s+(.+)$/.exec(step))) {
+	if (!isNumeric(match[1]) || !isNumeric(match[2])) {
+		return Promise.reject("between something that is not a number");
+	}
 	let constr = { type: "Between", valueFrom: match[1], valueTo: match[2] };
 	let sugg = {type: "IncrConstr", constr: constr, filterType: "OnlyLiterals"};
 	return apply_suggestion(place, "between", sugg)
@@ -245,7 +247,7 @@ function get_constr(kind, query) {
 }
 
 // selecting the most frequent suggestion satisfying pred
-async function select_sugg(kind, query, forest, pred, lexicon) { //todo llm ici
+async function select_sugg(kind, query, forest, pred, lexicon) {
 	if (window.select_sugg_logic) {
 		// using custom logic
 		console.log("using custom select_sugg_logic", window.select_sugg_logic);

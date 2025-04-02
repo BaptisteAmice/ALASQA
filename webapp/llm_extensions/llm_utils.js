@@ -135,6 +135,38 @@ async function getWikidataLabel(wikidataURI, language = "en") {
 }
 
 /**
+ * Search for a keyword in Wikidata and return possible values as a list of dictionaries with id, label and description
+ * @param {*} keyword 
+ * @param {*} type 
+ * @returns 
+ */
+async function searchWikidataKeyword(keyword, type) {
+    const baseUrl = "https://www.wikidata.org/w/api.php";
+    
+    if (!["item", "property", "lexeme", "form", "sense"].includes(type)) {
+        throw new Error("Invalid type. Use 'item', 'property', 'lexeme', 'form', or 'sense'");
+    }
+    
+    const url = `${baseUrl}?action=wbsearchentities&search=${encodeURIComponent(keyword)}&language=en&type=${type}&format=json&origin=*`;
+    
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        const data = await response.json();
+        return (data.search || []).map(item => ({
+            id: item.id,
+            label: item.label || "Unknown label",
+            description: item.description || "No description available"
+        }));
+    } catch (error) {
+        console.error(`Error fetching ${keyword}:`, error);
+        return null;
+    }
+}
+
+/**
  * Give the question currently in the input field.
  * @returns 
  */
@@ -224,45 +256,6 @@ async function verify_incorrect_result(input_question, sparql, resultText, reaso
     let answer_considered_incorrect = answer && answer[1].toLowerCase() == "incorrect";
 
     return [answer_considered_incorrect, reasoningText];
-}
-
-//todo tester et ameliorer
-/**
- * Use the LLM to improve the query and get the new results (should only be used at the end of the process)
- * @param {string} questionId 
- * @param {string} question 
- * @param {string} sparql 
- * @param {string} results 
- * @param {string} reasoningText 
- * @returns 
- */
-async function refine_query(questionId, question, sparql, results, reasoningText) { //todo catch error
-    let input = data_input_prompt({ "question": question, "sparql": sparql, "results": results }, true);
-    reasoningText += "- REFINE QUERY - system message: " + "refine_query_system_prompt()" + " - user input: " + input + " - ";
-    let output_refine = await sendPrompt(
-        usualPrompt(refine_query_system_prompt(), input), 
-        true, 
-        (text) => { 
-            updateReasoning(questionId, reasoningText + text);
-        } 
-    );
-    reasoningText += output_refine;
-    //get the new query
-    let matchQuery = output.match(/<query>(.*?)<\/query>/s);
-    let newQuery = matchQuery ? matchQuery[1].trim() : "";
-    let newResults;
-    //try the new query and get its results
-    try { 
-        newQuery = removePrefixes(newQuery);
-        newResults = await getResultsWithLabels(newQuery);
-    } catch (e) {
-        //catch error thrown by wikidata endpoint
-        console.error("refine_query failed", e);
-        //If the new query fails, we keep the old one
-        newQuery = sparql;
-        newResults = results;
-    }
-    return  [newQuery, newResults, reasoningText];
 }
 
 /**
@@ -391,11 +384,6 @@ async function getConceptSuggestionsWithLabels() { //todo
     return conceptSuggestions;
 }
 
-function pickSuggestion() {
-    //applySuggestion
-    return; //todo
-}
-
 /**
  * Evaluate a SPARQL query and add labels to it's result if it's for every uri from wikidata.
  * @param {*} sparqlQuery 
@@ -412,30 +400,4 @@ async function getResultsWithLabels(sparqlQuery) {
         }
     }
     return results;
-}
-
-function getQuery() {
-    //let sparql = place.sparql();
-    return; //todo
-}
-
-function llmHelp() {
-    //current question
-    //current query
-    //current results (not all if too many) 
-    //is this query responding to the question
-    //can you alter this query to respond to the question
-    return; //todo
-}
-
-function queryWrapping(query, type, options = {}) {
-    //todo deplacer prefixes, mettre query dans wrapper filtrer grace aux options
-    switch (type) {
-        case QueryTypes.count:
-            //todo
-        case QueryTypes.verify:
-            //todo
-        default:
-            return query;
-    }
 }

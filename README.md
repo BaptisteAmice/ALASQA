@@ -34,6 +34,9 @@ launch the api (or you can just open the html if you want to just use it manuall
 fastapi dev api.py
 (if virtual env not activated : source .venv/bin/activate)
 
+lm studio
+use gpu (vulkan for example)
+
 
 ## License
 For open source projects, say how it is licensed.
