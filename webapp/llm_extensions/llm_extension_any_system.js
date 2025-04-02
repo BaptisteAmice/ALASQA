@@ -447,7 +447,7 @@ class LLMFrameworkOneShotWithBooleanConv extends LLMFramework {
     async answerQuestionLogic() {
         //same as LLMFrameworkOneShot
         let output_llm = await this.executeStep(step_generation, "LLM generation 1", 
-            [this, commands_chain_system_prompt(),"commands_chain_system_prompt", this.question]
+            [this, commands_chain_system_prompt_v2(),"commands_chain_system_prompt_v2", this.question]
         )
         let extracted_commands_list = await this.executeStep(step_extract_tags, "Extracted commands", [this, output_llm, "commands"]);
         let extracted_commands = extracted_commands_list.at(-1) || "";
@@ -526,7 +526,7 @@ class LLMFrameworkBooleanBySubquestions extends LLMFramework {
             sparklis.home(); // we want to reset sparklis between different queries
             this.reasoning_text += "<br>No subquestion needed, executing the commands directly<br>";
             let output_commands_query = await this.executeStep(step_generation, "LLM generation", 
-                [this, commands_chain_system_prompt(),"commands_chain_system_prompt", this.question]
+                [this, commands_chain_system_prompt_v2(),"commands_chain_system_prompt_v2", this.question]
             );
             let extracted_commands_list = await this.executeStep(step_extract_tags, "Extracted commands", [this, output_commands_query, "commands"]);
             let extracted_commands = extracted_commands_list.at(-1) || "";
@@ -543,7 +543,7 @@ class LLMFrameworkBooleanBySubquestions extends LLMFramework {
                 sparklis.home(); // we want to reset sparklis between different queries
                 this.reasoning_text += "<br>Subquestion:<br>";
                 let output_commands_subquestion = await this.executeStep(step_generation, "LLM generation", 
-                    [this, commands_chain_system_prompt(),"commands_chain_system_prompt", subquestion]
+                    [this, commands_chain_system_prompt_v2(),"commands_chain_system_prompt_v2", subquestion]
                 );
                 let extracted_commands_list = await this.executeStep(step_extract_tags, "Extracted commands", [this, output_commands_subquestion, "commands"]);
                 let extracted_commands = extracted_commands_list.at(-1) || "";
@@ -589,6 +589,14 @@ class LLMFrameworkBooleanBySubquestions extends LLMFramework {
 }
 window.LLMFrameworkBooleanBySubquestions = LLMFrameworkBooleanBySubquestions;
 
+class LLMFrameworkBooleanBySubquestionsScoringReferences 
+    extends LLMFrameworkBooleanBySubquestions {
+        constructor(question, question_id) {
+            super(question, question_id, "count_references");
+        }
+}
+window.LLMFrameworkBooleanBySubquestionsScoringReferences = LLMFrameworkBooleanBySubquestionsScoringReferences;
+window.LLMFrameworks.push(LLMFrameworkBooleanBySubquestionsScoringReferences.name);
 
 
 class LLMFrameworkBySubquestionsForward extends LLMFramework {

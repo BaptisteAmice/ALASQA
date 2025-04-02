@@ -335,10 +335,11 @@ function prompt_get_subquestions() {
     2. Formulate each subquestion as a direct factual inquiry.  
     3. Ensure minimal yet complete coverage—only include subquestions that are strictly necessary.  
     4. If the question itself is already a factual inquiry, return it as is, without additional subquestions.  
-    5. If no subquestions are needed, return nothing.
+    5. If no subquestions are needed, return exactly "no subquestion needed".
 
     ### Output Format:  
-    Return each subquestion between <subquestion> tags. If no subquestions are required, return an empty response.
+    - Return each subquestion between <subquestion> tags.
+    - If no subquestions are needed, return exactly "no subquestion needed".    
 
     ### Examples:
 
@@ -351,14 +352,13 @@ function prompt_get_subquestions() {
     <subquestion>Which year was Angela Merkel born?</subquestion>  
     <subquestion>Which year was Tony Blair born?</subquestion>
 
-    - **Q:** "Was Google founded by Bill Gates?"  
+    - **Q:** "Was Shaquille O'Neal a basketball player?"  
     **Response:**  
-    <subquestion>Was Google founded by Bill Gates?</subquestion>
+    <subquestion>What was the occupation of Shaquille O'Neal ?</subquestion>
 
     - **Q:** "What is the capital of France?"  
-    **Response:** *(empty output, as the question itself is already a factual inquiry)*
+    **Response:** no subquestion needed.
 
-    Ensure the response only contains subquestions within <subquestion> tags, or nothing if no subquestions are needed.
     `;
 }
 
