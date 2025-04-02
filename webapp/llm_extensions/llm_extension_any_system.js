@@ -456,6 +456,14 @@ class LLMFrameworkOneShotWithBooleanConv extends LLMFramework {
 window.LLMFrameworkOneShotWithBooleanConv = LLMFrameworkOneShotWithBooleanConv;
 window.LLMFrameworks.push(LLMFrameworkOneShotWithBooleanConv.name);
 
+class LLMFrameworkOneShotWithBooleanConvScoringReferences extends LLMFrameworkOneShotWithBooleanConv {
+    constructor(question, question_id) {
+        super(question, question_id, "count_references");
+    }
+}
+window.LLMFrameworkOneShotWithBooleanConvScoringReferences = LLMFrameworkOneShotWithBooleanConvScoringReferences; //to be able to use the class through the window object
+window.LLMFrameworks.push(LLMFrameworkOneShotWithBooleanConvScoringReferences.name); // to be able to access the class name in the interface and choose it in the dropdown
+
 class LLMFrameworkReact extends LLMFramework {
     //todo
 }
