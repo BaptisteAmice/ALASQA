@@ -663,6 +663,10 @@ def plot_scores_relative_to_core_responses_multiple_criteria(core_files: list[st
 
 
 def generate_score_comparison_matrices_to_core(core_files: list[str], new_files: list[str], evaluated_criteria: str, max_columns=None):
+    if not core_files:
+        print("No core to compare to.")
+        return
+    
     metrics = ["Precision", "Recall", "F1Score"]
     core_data_list = [load_and_filter_data(core_file, {}) for core_file in core_files]
     new_data_list = [load_and_filter_data(new_file, {}) for new_file in new_files]
@@ -1163,31 +1167,25 @@ def all_prints(files_names: list[str], core_files_names: list[str]):
 
 
     # Todo temp
-    # Test the verifier fiability
+    # Test the boolean expected fiability
     constraints_verifier_tp = { # True positive
-        "BenchmarkResult": lambda x : x not in [None, []],
-        "F1Score": lambda x: x > 0,
-        "Reasoning": lambda x: x is not None and "<answer>correct</answer>" in x #todo 2 times in it
+        "BenchmarkResult": lambda x : x in [True, False],
+        "Reasoning": lambda x: x is not None and "<answer>boolean</answer>" in x
     }
     constraints_verifier_fp = { # False positive
-        "BenchmarkResult": lambda x : x not in [None, []],
-        "F1Score": lambda x: x == 0,
-        "Reasoning": lambda x: x is not None and "<answer>correct</answer>" in x
+        "BenchmarkResult": lambda x : x not in [True, False],
+        "Reasoning": lambda x: x is not None and "<answer>boolean</answer>" in x
     }
     constraints_verifier_fn = { # False negative
-        "BenchmarkResult": lambda x : x not in [None, []],
-        "F1Score": lambda x: x > 0,
-        "Reasoning": lambda x: x is not None and "<answer>incorrect</answer>" in x
+        "BenchmarkResult": lambda x : x in [True, False],
+        "Reasoning": lambda x: x is not None and "<answer>non-boolean</answer>" in x
     }
     constraints_verifier_tn = { # True negative
-        "BenchmarkResult": lambda x : x not in [None, []],
-        "F1Score": lambda x: x == 0,
-        "Reasoning": lambda x: x is not None and "<answer>incorrect</answer>" in x
+        "BenchmarkResult": lambda x : x not in [True, False],
+        "Reasoning": lambda x: x is not None and "<answer>non-boolean</answer>" in x
     }
     constraint_verifier_failed = { # Failed
-        "BenchmarkResult": lambda x : x not in [None, []],
-        "F1Score": lambda x: x == 0,
-        "Reasoning": lambda x: x is not None and "<answer>correct</answer>" not in x and "<answer>incorrect</answer>" not in x
+        "Reasoning": lambda x: "<answer>boolean</answer>" not in x and "<answer>non-boolean</answer>" not in x
     }
     #make table with all the data
     table_headers_verifier = []
@@ -1207,19 +1205,25 @@ def all_prints(files_names: list[str], core_files_names: list[str]):
     table_headers_verifier.append("Failed")
     filtered_verifier_failed_data = load_and_filter_data(file_name, constraint_verifier_failed)
     table_data_verifier.append([len(filtered_verifier_failed_data)])
-    plot_table(table_headers_verifier, table_data_verifier, all_data, "verifier performances")
+    plot_table(table_headers_verifier, table_data_verifier, all_data, "Boolean expected fiability")
 
     pp.close() # Close the pdf file
 
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.realpath(__file__))
     core_files = [
-        script_dir + "/BestOutputs/olds/QALD-10_sparklisllm_20250318_203757.json",
+        #script_dir + "/BestOutputs/QALD9/QALD-9-plus_sparklisllm-LLMFrameworkOneShot_20250326_102358.json",
+        #script_dir + "/BestOutputs/QALD9/QALD-9-plus_sparklisllm-LLMFrameworkOneShot_20250326_204637.json",
+        #script_dir + "/BestOutputs/QALD9/QALD-9-plus_sparklisllm-LLMFrameworkOneShot_20250331_014207.json",
+        #script_dir + "/BestOutputs/QALD9/QALD-9-plus_sparklisllm-LLMFrameworkOneShot_20250331_043712.json",
     ]
 
     input_files = [
         # script_dir + "/BestOutputs/QALD-10_sparklisllm_20250312_003603.json",
-        script_dir + "/Outputs/QALD-10_sparklisllm-LLMFrameworkBooleanBySubquestions_20250327_095318_partiel.json",
+        #script_dir + "/BestOutputs/QALD9/QALD-9-plus_sparklisllm-LLMFrameworkOneShotForwardScoringReferences_20250331_180426.json",
+        #script_dir + "/BestOutputs/QALD9/QALD-9-plus_sparklisllm-LLMFrameworkOneShotForwardScoringReferences_20250331_211720.json",
+        #script_dir + "/BestOutputs/QALD9/QALD-9-plus_sparklisllm-LLMFrameworkOneShotForwardScoringReferences_20250401_003941.json",
+        script_dir + "/Outputs/QALD-9-plus_sparklisllm-LLMFrameworkIsBooleanExpected_20250402_113407.json",
     ]
 
     all_prints(input_files, core_files)

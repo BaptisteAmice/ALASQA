@@ -666,3 +666,25 @@ class LLMFrameworkBySubquestionsForwardScoringReferences extends LLMFrameworkByS
 }
 window.LLMFrameworkBySubquestionsForwardScoringReferences = LLMFrameworkBySubquestionsForwardScoringReferences; //to be able to use the class through the window object
 window.LLMFrameworks.push(LLMFrameworkBySubquestionsForwardScoringReferences.name); // to be able to access the class name in the interface and choose it in the dropdown
+
+
+/**
+ * Just test if the expected answer of a question is a boolean or not.
+ */
+class LLMFrameworkIsBooleanExpected extends LLMFramework {
+    async answerQuestionLogic() {
+        // Call llm generation
+        let output_llm = await this.executeStep(step_generation, "LLM generation", 
+            [this, prompt_is_boolean_expected(),"prompt_is_boolean_expected", this.question]
+        )
+        // Extract the commands from the LLM output
+        let extracted_commands_list = await this.executeStep(step_extract_tags, "Extracted commands",
+             [this, output_llm, "answer"]
+        );
+        // Execute the commands, wait for place evaluation and get the results
+        let extracted_commands = extracted_commands_list.at(-1) || "";
+        this.result_text = extracted_commands;
+    }
+}
+window.LLMFrameworkIsBooleanExpected = LLMFrameworkIsBooleanExpected; //to be able to access the class
+window.LLMFrameworks.push(LLMFrameworkIsBooleanExpected.name); // to be able to access the class name in the interface and choose it in the dropdown
