@@ -508,9 +508,8 @@ window.LLMFrameworks.push(LLMFrameworkDirect.name); // to be able to access the 
 
 class LLMFrameworkDirectBoolean extends LLMFramework {
     async answerQuestionLogic() {
-        let used_endpoint = sparklis.endpoint();
         let output = await this.executeStep(step_generation, "LLM generation", 
-            [this, direct_boolean_answering_prompt(used_endpoint),"direct_boolean_answering_prompt", this.question]
+            [this, direct_boolean_answering_prompt(),"direct_boolean_answering_prompt", this.question]
         );
         let extracted_bool_list = await this.executeStep(step_extract_tags, "Extracted SPARQL", [this, output, "answer"]);
         let extracted_bool = extracted_bool_list.at(-1) || "";
@@ -528,6 +527,62 @@ class LLMFrameworkDirectBoolean extends LLMFramework {
 }
 window.LLMFrameworkDirectBoolean = LLMFrameworkDirectBoolean; //to be able to use the class through the window object
 window.LLMFrameworks.push(LLMFrameworkDirectBoolean.name); // to be able to access the class name in the interface and choose it in the dropdown
+
+class LLMFrameworkScoreAtAllCost extends LLMFramework { //todo tester
+    constructor(question, question_id) {
+        super(question, question_id, "count_references");
+    }
+    async answerQuestionLogic() { 
+        ////////////////////////// GET QUESTION TYPE
+        // Call llm generation
+        let output_llm = await this.executeStep(step_generation, "LLM generation", 
+            [this, prompt_is_boolean_expected(),"prompt_is_boolean_expected", this.question]
+        )
+        // Extract the commands from the LLM output
+        let extracted_type_list = await this.executeStep(step_extract_tags, "Extracted question type",
+             [this, output_llm, "answer"]
+        );
+        // Execute the commands, wait for place evaluation and get the results
+        let extracted_type = extracted_type_list.at(-1) || "";
+
+        ////////////////////////// FOR BOOLEAN JUST USE THE LLM
+        if (extracted_type == "boolean") {
+            let output = await this.executeStep(step_generation, "LLM generation", 
+                [this, direct_boolean_answering_prompt(),"direct_boolean_answering_prompt", this.question]
+            );
+            let extracted_bool_list = await this.executeStep(step_extract_tags, "Extracted SPARQL", [this, output, "answer"]);
+            let extracted_bool = extracted_bool_list.at(-1) || "";
+            let bool_query = "";
+
+            //make a query always true or false depending on the answer of the LLM
+            //the response is based on the LLM knowledge anyway, so it won't be persistent
+            if (extracted_bool == "true") {
+                bool_query = "ASK WHERE {}";
+            } else {
+                bool_query = "ASK WHERE { FILTER(false) }";
+            } 
+            this.sparql = bool_query;
+        } else {
+            ////////////////////////// USE ThE BEST WORKING SYSTEM FOR THE REST
+            // Call llm generation
+            let output_llm = await this.executeStep(step_generation, "LLM generation", 
+                [this, forward_commands_chain_system_prompt(),"forward_commands_chain_system_prompt", this.question]
+            )
+            // Extract the commands from the LLM output
+            let extracted_commands_list = await this.executeStep(step_extract_tags, "Extracted commands",
+                [this, output_llm, "commands"]
+            );
+            // Execute the commands, wait for place evaluation and get the results
+            let extracted_commands = extracted_commands_list.at(-1) || "";
+            await this.executeStep(step_execute_commands, "Commands execution", [this, extracted_commands]);
+            let place = sparklis.currentPlace();
+            await this.executeStep(step_get_results, "Get results", [this, place]);
+        }
+        //todo add un rattrapage si la réponse est null,si la requete est vide
+    }
+}
+window.LLMFrameworkScoreAtAllCost = LLMFrameworkScoreAtAllCost; //to be able to use the class through the window object
+window.LLMFrameworks.push(LLMFrameworkScoreAtAllCost.name); // to be able to access the class name in the interface and choose it in the dropdown
 
 
 class LLMFrameworkSteps extends LLMFramework {
@@ -722,12 +777,12 @@ class LLMFrameworkIsBooleanExpected extends LLMFramework {
             [this, prompt_is_boolean_expected(),"prompt_is_boolean_expected", this.question]
         )
         // Extract the commands from the LLM output
-        let extracted_commands_list = await this.executeStep(step_extract_tags, "Extracted commands",
+        let extracted_type_list = await this.executeStep(step_extract_tags, "Extracted question type",
              [this, output_llm, "answer"]
         );
         // Execute the commands, wait for place evaluation and get the results
-        let extracted_commands = extracted_commands_list.at(-1) || "";
-        this.result_text = extracted_commands;
+        let extracted_type = extracted_type_list.at(-1) || "";
+        this.result_text = extracted_type;
     }
 }
 window.LLMFrameworkIsBooleanExpected = LLMFrameworkIsBooleanExpected; //to be able to access the class
