@@ -221,6 +221,13 @@ def recursive_dict_extract(obj: dict, key_name: str) -> list:
             values.extend(recursive_dict_extract(item, key_name))  # Handle lists as well
     return values
 
+def remove_duplicates(original_list: list) -> list:
+    unique_list = []
+    for item in original_list:
+        if item not in unique_list:
+            unique_list.append(item)
+    return unique_list
+
 def stats_calculation(benchmark_results: list, system_results: list) -> tuple[list, list, list]:
     """
     Calculate precision, recall and F1 score for each question
@@ -244,19 +251,14 @@ def stats_calculation(benchmark_results: list, system_results: list) -> tuple[li
             elif isinstance(system_results[i], list) and len(system_results[i]) > 0:  # Handle SELECT query
                 system_list = recursive_dict_extract(system_results[i], 'value')
 
-        if len(benchmark_list) > 0 and len(system_list) > 0:
-            try:
-                benchmark_set = set(benchmark_list)
-                system_set = set(system_list)
-                intersection = benchmark_set & system_set
-                precisions.append(len(intersection) / len(system_set))
-                recalls.append(len(intersection) / len(benchmark_set))
-                f1_scores.append(2 * len(intersection) / (len(benchmark_set) + len(system_set)))
-            except:
-                logging.error("Error in intersection.") # if this error is raised, this function should be reviewed
-                precisions.append(0)
-                recalls.append(0)
-                f1_scores.append(0)
+        # not a real set to avoid errors with non hashable items
+        benchmark_set = remove_duplicates(benchmark_list)
+        system_set = remove_duplicates(system_list)
+        if len(benchmark_set) > 0 and len(system_set) > 0:
+            intersection = [d for d in benchmark_set if d in system_set]
+            precisions.append(len(intersection) / len(system_set))
+            recalls.append(len(intersection) / len(benchmark_set))
+            f1_scores.append(2 * len(intersection) / (len(benchmark_set) + len(system_set)))
         elif len(benchmark_list) == 0: # If the benchmark has no results, we don't consider the question
             precisions.append(None)
             recalls.append(None)
