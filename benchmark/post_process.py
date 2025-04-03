@@ -1000,6 +1000,90 @@ def plot_confusion_matrix_bool(filtered_data):
         plt.show()
     plt.close()
 
+def boolean_prediction_fiability(file_name: str, all_data: dict):
+    # Test the boolean expected fiability
+    constraints_verifier_tp = { # True positive
+        "BenchmarkResult": lambda x : x in [True, False],
+        "Reasoning": lambda x: x is not None and "<answer>boolean</answer>" in x
+    }
+    constraints_verifier_fp = { # False positive
+        "BenchmarkResult": lambda x : x not in [True, False],
+        "Reasoning": lambda x: x is not None and "<answer>boolean</answer>" in x
+    }
+    constraints_verifier_fn = { # False negative
+        "BenchmarkResult": lambda x : x in [True, False],
+        "Reasoning": lambda x: x is not None and "<answer>non-boolean</answer>" in x
+    }
+    constraints_verifier_tn = { # True negative
+        "BenchmarkResult": lambda x : x not in [True, False],
+        "Reasoning": lambda x: x is not None and "<answer>non-boolean</answer>" in x
+    }
+    constraint_verifier_failed = { # Failed
+        "Reasoning": lambda x: "<answer>boolean</answer>" not in x and "<answer>non-boolean</answer>" not in x
+    }
+    #make table with all the data
+    table_headers_verifier = []
+    table_data_verifier = []
+    table_headers_verifier.append("True positive")
+    filtered_verifier_tp_data = load_and_filter_data(file_name, constraints_verifier_tp)
+    table_data_verifier.append([len(filtered_verifier_tp_data)])
+    table_headers_verifier.append("False positive")
+    filtered_verifier_fp_data = load_and_filter_data(file_name, constraints_verifier_fp)
+    table_data_verifier.append([len(filtered_verifier_fp_data)])
+    table_headers_verifier.append("False negative")
+    filtered_verifier_fn_data = load_and_filter_data(file_name, constraints_verifier_fn)
+    table_data_verifier.append([len(filtered_verifier_fn_data)])
+    table_headers_verifier.append("True negative")
+    filtered_verifier_tn_data = load_and_filter_data(file_name, constraints_verifier_tn)
+    table_data_verifier.append([len(filtered_verifier_tn_data)])
+    table_headers_verifier.append("Failed")
+    filtered_verifier_failed_data = load_and_filter_data(file_name, constraint_verifier_failed)
+    table_data_verifier.append([len(filtered_verifier_failed_data)])
+    plot_table(table_headers_verifier, table_data_verifier, all_data, "Boolean type prediction fiability")
+
+def question_word_ranking(filtered_data, filtered_data_malus, title_complement=""):
+    """
+    Parse all the questions and count the number of times each word appears.
+    """
+    word_count = defaultdict(int)
+    for entry in filtered_data.values():
+        question = entry.get("Question")
+        if question:
+            # Split the question into words and count them
+            words = re.findall(r'\w+', question.lower())
+            for word in words:
+                word_count[word] += 1
+
+    # Apply malus for words appearing in filtered_data_malus
+    for entry in filtered_data_malus.values():
+        question = entry.get("Question")
+        if question:
+            words = re.findall(r'\w+', question.lower())
+            for word in words:
+                word_count[word] -= 1  # Subtract malus for each occurrence
+
+    # Sort the words by their counts in descending order
+    sorted_word_count = sorted(word_count.items(), key=lambda x: x[1], reverse=True)
+
+    # Make a histogram of the word count, ordered by the number of times they appear
+    if sorted_word_count:
+        words, counts = zip(*sorted_word_count)
+    else:
+        words, counts = [], []  # Assign empty lists if there's nothing to unpack
+
+    plt.figure(figsize=(12, 6))
+    plt.bar(words[:20], counts[:20], color='skyblue', edgecolor='black')
+    plt.xticks(rotation=45, ha="right", fontsize=10)  # Rotate x-axis labels
+    plt.xlabel("Words")
+    plt.ylabel("Count")
+    plt.title("Top 20 Words in Questions for " + title_complement)
+
+    plt.grid()
+    pp.savefig()
+    if show:
+        plt.show()
+    plt.close()
+    
 
 def all_prints(files_names: list[str], core_files_names: list[str]):
     # Data to be displayed in a table
@@ -1169,47 +1253,29 @@ def all_prints(files_names: list[str], core_files_names: list[str]):
     # Plot the tree
     plot_tree(tree_data)
 
+    # Plot the confusion matrix of type predictions
+    boolean_prediction_fiability(file_name, all_data)
 
-    # Todo temp
-    # Test the boolean expected fiability
-    constraints_verifier_tp = { # True positive
-        "BenchmarkResult": lambda x : x in [True, False],
-        "Reasoning": lambda x: x is not None and "<answer>boolean</answer>" in x
+
+    constraints_f1_at_0 = {
+        "BenchmarkResult": lambda x : x not in [None, []],
+        "F1Score": lambda x: x == 0
+    }   
+    filtered_f1_at_0 = load_and_filter_data(file_name, constraints_f1_at_0)
+    constraints_f1_greater_than_0 = {
+        "BenchmarkResult": lambda x : x not in [None, []],
+        "F1Score": lambda x: x > 0
     }
-    constraints_verifier_fp = { # False positive
-        "BenchmarkResult": lambda x : x not in [True, False],
-        "Reasoning": lambda x: x is not None and "<answer>boolean</answer>" in x
+    filtered_f1_greater_than_0 = load_and_filter_data(file_name, constraints_f1_greater_than_0)
+    constraints_f1_at_1 = {
+        "BenchmarkResult": lambda x : x not in [None, []],
+        "F1Score": lambda x: x == 1
     }
-    constraints_verifier_fn = { # False negative
-        "BenchmarkResult": lambda x : x in [True, False],
-        "Reasoning": lambda x: x is not None and "<answer>non-boolean</answer>" in x
-    }
-    constraints_verifier_tn = { # True negative
-        "BenchmarkResult": lambda x : x not in [True, False],
-        "Reasoning": lambda x: x is not None and "<answer>non-boolean</answer>" in x
-    }
-    constraint_verifier_failed = { # Failed
-        "Reasoning": lambda x: "<answer>boolean</answer>" not in x and "<answer>non-boolean</answer>" not in x
-    }
-    #make table with all the data
-    table_headers_verifier = []
-    table_data_verifier = []
-    table_headers_verifier.append("True positive")
-    filtered_verifier_tp_data = load_and_filter_data(file_name, constraints_verifier_tp)
-    table_data_verifier.append([len(filtered_verifier_tp_data)])
-    table_headers_verifier.append("False positive")
-    filtered_verifier_fp_data = load_and_filter_data(file_name, constraints_verifier_fp)
-    table_data_verifier.append([len(filtered_verifier_fp_data)])
-    table_headers_verifier.append("False negative")
-    filtered_verifier_fn_data = load_and_filter_data(file_name, constraints_verifier_fn)
-    table_data_verifier.append([len(filtered_verifier_fn_data)])
-    table_headers_verifier.append("True negative")
-    filtered_verifier_tn_data = load_and_filter_data(file_name, constraints_verifier_tn)
-    table_data_verifier.append([len(filtered_verifier_tn_data)])
-    table_headers_verifier.append("Failed")
-    filtered_verifier_failed_data = load_and_filter_data(file_name, constraint_verifier_failed)
-    table_data_verifier.append([len(filtered_verifier_failed_data)])
-    plot_table(table_headers_verifier, table_data_verifier, all_data, "Boolean expected fiability")
+    filtered_f1_at_1 = load_and_filter_data(file_name, constraints_f1_at_1)
+    question_word_ranking(filtered_valid_data, {}, "valid benchmark data")
+    question_word_ranking(filtered_f1_at_0, filtered_f1_at_1, "f1 score at 0 - f1 score at 1")
+    
+
 
     pp.close() # Close the pdf file
 
