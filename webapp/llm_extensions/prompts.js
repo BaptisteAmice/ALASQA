@@ -306,6 +306,16 @@ function direct_qa_system_prompt(endpoint) {
     `;
 }
 
+function direct_boolean_answering_prompt() {
+  return `Given a natural language question, answer by true or false.
+  Think step by step, then put your answer in <answer>...</answer> tags.
+
+  Example:
+  - **Q:** Was Shaquille O'Neal a basketball player?
+  - **A:** Yes, he was a basketball player. <answer>true</answer>
+  `;
+}
+
 ///// BOOLEAN HANDLING
 
 function prompt_convert_query_to_boolean_query() {

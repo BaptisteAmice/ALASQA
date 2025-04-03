@@ -506,6 +506,30 @@ window.LLMFrameworkDirect = LLMFrameworkDirect; //to be able to use the class th
 window.LLMFrameworks.push(LLMFrameworkDirect.name); // to be able to access the class name in the interface and choose it in the dropdown
 
 
+class LLMFrameworkDirectBoolean extends LLMFramework {
+    async answerQuestionLogic() {
+        let used_endpoint = sparklis.endpoint();
+        let output = await this.executeStep(step_generation, "LLM generation", 
+            [this, direct_boolean_answering_prompt(used_endpoint),"direct_boolean_answering_prompt", this.question]
+        );
+        let extracted_bool_list = await this.executeStep(step_extract_tags, "Extracted SPARQL", [this, output, "answer"]);
+        let extracted_bool = extracted_bool_list.at(-1) || "";
+        let bool_query = "";
+
+        //make a query always true or false depending on the answer of the LLM
+        //the response is based on the LLM knowledge anyway, so it won't be persistent
+        if (extracted_bool == "true") {
+            bool_query = "ASK WHERE {}";
+        } else if(extracted_bool == "false") {
+            bool_query = "ASK WHERE { FILTER(false) }";
+        } 
+        this.sparql = bool_query;
+    }
+}
+window.LLMFrameworkDirectBoolean = LLMFrameworkDirectBoolean; //to be able to use the class through the window object
+window.LLMFrameworks.push(LLMFrameworkDirectBoolean.name); // to be able to access the class name in the interface and choose it in the dropdown
+
+
 class LLMFrameworkSteps extends LLMFramework {
     //todo
 }
