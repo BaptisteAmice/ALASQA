@@ -245,17 +245,18 @@ def stats_calculation(benchmark_results: list, system_results: list) -> tuple[li
                 system_list = recursive_dict_extract(system_results[i], 'value')
 
         if len(benchmark_list) > 0 and len(system_list) > 0:
-            #todo recheck tt ca
-            intersection = []
             try:
                 benchmark_set = set(benchmark_list)
                 system_set = set(system_list)
                 intersection = benchmark_set & system_set
+                precisions.append(len(intersection) / len(system_set))
+                recalls.append(len(intersection) / len(benchmark_set))
+                f1_scores.append(2 * len(intersection) / (len(benchmark_set) + len(system_set)))
             except:
                 logging.error("Error in intersection.") # if this error is raised, this function should be reviewed
-            precisions.append(len(intersection) / len(system_set))
-            recalls.append(len(intersection) / len(benchmark_set))
-            f1_scores.append(2 * len(intersection) / (len(benchmark_set) + len(system_set)))
+                precisions.append(0)
+                recalls.append(0)
+                f1_scores.append(0)
         elif len(benchmark_list) == 0: # If the benchmark has no results, we don't consider the question
             precisions.append(None)
             recalls.append(None)
