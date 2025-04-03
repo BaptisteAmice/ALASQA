@@ -766,7 +766,7 @@ def generate_score_comparison_matrices_to_core(core_files: list[str], new_files:
             plt.show()
         plt.close()
 
-def generate_score_comparison_matrices_to_treshold(new_files: list[str], evaluated_criteria: str, threshold: float = 0.5, max_columns=None):
+def generate_score_comparison_matrices_to_treshold(new_files: list[str], evaluated_criteria: str, max_columns=None):
     metrics = ["Precision", "Recall", "F1Score"]
     new_data_list = [load_and_filter_data(new_file, {}) for new_file in new_files]
     common_keys = set(new_data_list[0].keys())
@@ -813,15 +813,15 @@ def generate_score_comparison_matrices_to_treshold(new_files: list[str], evaluat
             new_scores = [new_data[key].get(metric, 0.0) or 0.0 for new_data in new_data_list]
             new_evaluated_score = evaluate_criteria(new_scores, evaluated_criteria)
 
-            if new_evaluated_score < threshold:
-                color = 'red'
-                nbre_degradations += 1
-            elif new_evaluated_score > threshold:
+            if new_evaluated_score == 1:
                 color = 'green'
                 nbre_improvements += 1
-            else:
+            elif new_evaluated_score > 0:
                 color = 'blue'
                 nbre_no_change += 1
+            else: 
+                color = 'red'
+                nbre_degradations += 1
 
             table_data.append(f"{key}\n{new_evaluated_score:.3f}")
             cell_colors.append(color)
@@ -847,11 +847,11 @@ def generate_score_comparison_matrices_to_treshold(new_files: list[str], evaluat
                 table.add_cell(row, col, cell_width, cell_height, text=text, facecolor=color_matrix[row, col], edgecolor='black', loc='center')
 
         ax.add_table(table)
-        worse_patch = mpatches.Patch(color='red', label=f'Worse ({nbre_degradations})')
-        better_patch = mpatches.Patch(color='green', label=f'Better ({nbre_improvements})')
-        same_patch = mpatches.Patch(color='blue', label=f'No Change ({nbre_no_change})')
-        plt.legend(handles=[worse_patch, better_patch, same_patch], loc='upper center', bbox_to_anchor=(0.5, -0.1), ncol=3)
-        plt.title(f"Comparison to threshold={threshold} of {metric} scores using {evaluated_criteria} criteria")
+        worse_patch = mpatches.Patch(color='red', label=f'==0: ({nbre_degradations})')
+        better_patch = mpatches.Patch(color='green', label=f'==1: ({nbre_improvements})')
+        same_patch = mpatches.Patch(color='blue', label=f'>0: ({nbre_no_change})')
+        plt.legend(handles=[worse_patch,same_patch,better_patch], loc='upper center', bbox_to_anchor=(0.5, -0.1), ncol=3)
+        plt.title(f"{metric} scores using {evaluated_criteria} criteria")
         pp.savefig()
         if show:
             plt.show()
@@ -1126,7 +1126,7 @@ def all_prints(files_names: list[str], core_files_names: list[str]):
     generate_score_comparison_matrices_to_core(core_files_names, files_names, "mean")
     generate_score_comparison_matrices_to_core(core_files_names, files_names, "min")
 
-    generate_score_comparison_matrices_to_treshold(files_names, "max", 0.5)
+    generate_score_comparison_matrices_to_treshold(files_names, "max")
 
     # plot_scores_relative_to_core_responses(core_files_names, file_name)
     # plot_comparison_to_core_good_responses(core_files_names, file_name, exclusive_core=True)
@@ -1283,17 +1283,14 @@ if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.realpath(__file__))
     core_files = [
         #script_dir + "/BestOutputs/QALD9/QALD-9-plus_sparklisllm-LLMFrameworkOneShot_20250326_102358.json",
-        #script_dir + "/BestOutputs/QALD9/QALD-9-plus_sparklisllm-LLMFrameworkOneShot_20250326_204637.json",
-        #script_dir + "/BestOutputs/QALD9/QALD-9-plus_sparklisllm-LLMFrameworkOneShot_20250331_014207.json",
-        #script_dir + "/BestOutputs/QALD9/QALD-9-plus_sparklisllm-LLMFrameworkOneShot_20250331_043712.json",
+        script_dir + "/BestOutputs/QALD9/QALD-9-plus_sparklisllm-LLMFrameworkOneShot_20250326_204637.json",
+        script_dir + "/BestOutputs/QALD9/QALD-9-plus_sparklisllm-LLMFrameworkOneShot_20250331_014207.json",
+        script_dir + "/BestOutputs/QALD9/QALD-9-plus_sparklisllm-LLMFrameworkOneShot_20250331_043712.json",
     ]
 
     input_files = [
         # script_dir + "/BestOutputs/QALD-10_sparklisllm_20250312_003603.json",
-        #script_dir + "/BestOutputs/QALD9/QALD-9-plus_sparklisllm-LLMFrameworkOneShotForwardScoringReferences_20250331_180426.json",
-        #script_dir + "/BestOutputs/QALD9/QALD-9-plus_sparklisllm-LLMFrameworkOneShotForwardScoringReferences_20250331_211720.json",
-        #script_dir + "/BestOutputs/QALD9/QALD-9-plus_sparklisllm-LLMFrameworkOneShotForwardScoringReferences_20250401_003941.json",
-        script_dir + "/Outputs/QALD-9-plus_sparklisllm-LLMFrameworkIsBooleanExpected_20250402_113407.json",
+        script_dir + "/BestOutputs/QALD9/QALD-9-plus_sparklisllm-LLMFrameworkOneShotForward_20250328_184623.json",
     ]
 
     all_prints(input_files, core_files)

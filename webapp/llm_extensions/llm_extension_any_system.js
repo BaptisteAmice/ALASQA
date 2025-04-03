@@ -578,7 +578,12 @@ class LLMFrameworkScoreAtAllCost extends LLMFramework { //todo tester
             let place = sparklis.currentPlace();
             await this.executeStep(step_get_results, "Get results", [this, place]);
         }
-        //todo add un rattrapage si la réponse est null,si la requete est vide
+        // trying to save the process
+        if (this.sparql == "") {
+            this.reasoning_text += "<br>SPARQL query is empty, trying to get another result<br>";
+            //todo temp solution
+            this.sparql = "ASK WHERE { FILTER(false) }";
+        } 
     }
 }
 window.LLMFrameworkScoreAtAllCost = LLMFrameworkScoreAtAllCost; //to be able to use the class through the window object

@@ -1,12 +1,34 @@
+ASK WHERE {}
+ASK WHERE { FILTER(false) }
+
+
+todo
+- direct boolean answer
+- tester prediction boolean qald9
+- remplacer "boolean" par "yes/no question" et restester
+- tester LLMFrameworkDirect
+- restester v0.1
+- retester v0.1 with logic
+- tester juste backwardProperty
+- tester LLMFrameworkBooleanBySubquestionsScoringReferences
+- tester direct boolean
+- tester meilleur LLM 
+- tester score at all cost
+
+question classification using llm
+question classification prompt engineering
+
+# A implémenter
+- inverse tt les forward en backward
+- utiliser match et pas selection dans extension (réfléchir détails)
+
+
+
+
 todo
 - LE GROS TRUC QUI MANQUE C LE REToUR EN LANGUE NATUREL ET SON utiLISATION APRES CHAQUE COMMANDE
-- cf todo diapo
 - ajouter commande filter (trouver comment gérer par colonne)
 //comment traduire suggestions d'objet vers texte affichage (il y a un hook pour?)
-await sparklis.currentPlace().getConceptSuggestions(false,sparklis.conceptConstr())
--add prompt version in final log
-
-TODO RESTEST TO LES SYSTEMES
 
 -todo save les schemas qq part
 
@@ -25,40 +47,7 @@ TODO RESTEST TO LES SYSTEMES
         - dire llm -> commande pas fonctionnée (existe pas), autre idée de commande?
     - commande executée
         - on a fait ca, on a eu ca -> on fait quoi maintenant?
-
-//commande revient en arriere
-//commande erreur
-
-//probleme : higherThan -> higher or equal to
-
-- Question is ..., we currently have filter by what ? -> pick
--> enough to respond ?
--> filter by what ? -> pick
-
-property ??? not found
-
-le premier prompt on pourrait le remplacer par celui du one shot -> on garde que la commande 1
-
-perso
-raffiner mes nouveaux prompts (et les factoriser aussi)
-tester : direct sparql, step by step
-essayer mintaka
-tester si prediction résultat est bon 
-finetuning? huggingface -> lmstudio (extracteur réponse au format pour finetuning->pp)
-#experimentations à faire:
-- low temperature
-- autre modèles
-- change prompt
-- suite de prompts
--------------
-probleme commandes
-forwardProperty namedAfter -> fowardProperty named after
-
 ----------------------------------
-#todo
-qald 10: 
--id 2: faux la requete et son résultat (mm l'ancien)
--id 145: MAIS LEQUEL? YA UNE ADAPTATION MAIS YA FORCEMENT UN ORIGINAL WORK
 
 #todo patcher is something
 ->considéré comme entité -> si pas de rep -> seul suggrestion est celle obtenue -> l'annule
@@ -94,10 +83,7 @@ utilisation tool?
 -------------
 #https://lmstudio.ai/docs/api/tools
 #todo yaml of python code
-
-????toask is year of???
 ------------------------
-
 #todo commenter mieux les raisons dans le code
 
 #############################
@@ -114,50 +100,6 @@ WIKIDATA
 https://github.com/KGQA/QALD-10 -> ~80% pour etre significatif
 https://github.com/amazon-science/mintaka
 https://query.wikidata.org/
-
-
---
-Sparklis LLM
-
-demander plan de base -> essayer pour guider de base 
-comparer 2 stratégies simples
--? construire directement suite commande en input utilisant qa_extension
--? choix mot de départ -> filtre et cherche dans les deux listes (pas de rep demande synonyme)-> lecture retour fr + rep -> doit continuer ? -> si oui filtre et recherche dans les deux listes -> etc 
-
-
 -----------------------------------
 TEXT2SPARQL workshop
 https://text2sparql.aksw.org/#knowledge-graphs-for-evaluation
-
------------------------------------
-Langchain??
-
------------------------------------
-
-http://127.0.0.1:8000/static/osparklis.html?
-
-title=Wikidata
-endpoint=https%3A//query.wikidata.org/sparql&wikidata_mode=true
-class_hierarchy=false
-property_hierarchy=false
-intentional_init_concepts=false
-nary_relations=true
-entity_lexicon_select=http%3A//www.w3.org/2000/01/rdf-schema%23label
-entity_lexicon_lang=en
-concept_lexicons_select=http%3A//www.w3.org/2000/01/rdf-schema%23label
-concept_lexicons_lang=en
-auto-filtering=false
-
-
-traduit entités
-entity_lexicon_select=http%3A//www.w3.org/2000/01/rdf-schema%23label
-traduit relations
-concept_lexicons_select=http%3A//www.w3.org/2000/01/rdf-schema%23label
-
-http://127.0.0.1:8000/static/osparklis.html?title=Wikidata&endpoint=https%3A//query.wikidata.org/sparql&wikidata_mode=true&class_hierarchy=false&property_hierarchy=false&intentional_init_concepts=false&nary_relations=true&entity_lexicon_select=http%3A//www.w3.org/2000/01/rdf-schema%23label&entity_lexicon_lang=en&concept_lexicons_select=http%3A//www.w3.org/2000/01/rdf-schema%23label&concept_lexicons_lang=en&auto-filtering=false
-
-http://127.0.0.1:8000/static/osparklis.html?title=Core%20English%20DBpedia&endpoint=https%3A//query.wikidata.org/sparql
-
-http://127.0.0.1:8000/static/osparklis.html?title=Core%20English%20DBpedia&endpoint=https%3A//query.wikidata.org/sparql
-
-&wikidata_mode=true&entity_lexicon_select=http%3A//www.w3.org/2000/01/rdf-schema%23label&entity_lexicon_lang=en&concept_lexicons_select=http%3A//www.w3.org/2000/01/rdf-schema%23label&concept_lexicons_lang=en&auto-filtering=false
