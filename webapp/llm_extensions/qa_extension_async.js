@@ -257,7 +257,8 @@ async function select_sugg(kind, query, forest, pred, lexicon) {
 	} else {
 		// using basic logic
 		console.log("using basic select_sugg_logic");
-		return await count_references_select_sugg_logic(kind, query, forest, pred, lexicon);
+		//return await count_references_select_sugg_logic(kind, query, forest, pred, lexicon);
+		return basic_select_sugg_logic(kind, query, forest, pred, lexicon);
 	}
 }
 
