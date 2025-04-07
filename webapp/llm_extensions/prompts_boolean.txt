@@ -1,0 +1,98 @@
+What is the type expected by this question?
+uri/literal/bool
+------------------------
+boolean question treatment
+
+translate to query giving boolean answer
+------------------------
+if question type boolean and response type !boolean
+-------------------------
+are brooke raboutou and colin duffy from same state of the usa?
+
+make two parallel queries -> combine them in a ask query
+
+Brooke Raboutou; forwardProperty birthplace;
+Colin Duffy; forwardProperty birthplace;
+
+PREFIX wd: <http://www.wikidata.org/entity/>
+PREFIX p: <http://www.wikidata.org/prop/>
+PREFIX ps: <http://www.wikidata.org/prop/statement/>
+SELECT DISTINCT ?P19_7
+WHERE { wd:Q87192979 p:P19 [ ps:P19 ?P19_7 ] . }
+LIMIT 200
+
+PREFIX wd: <http://www.wikidata.org/entity/>
+PREFIX p: <http://www.wikidata.org/prop/>
+PREFIX ps: <http://www.wikidata.org/prop/statement/>
+SELECT DISTINCT ?P19_7
+WHERE { wd:Q2926117 p:P19 [ ps:P19 ?P19_7 ] . }
+LIMIT 200
+
+given these queries, i want to have a query responding to the question are brooke raboutou and colin duffy from same state of the usa?
+
+
+-------------------------
+can i play don't starve on play station 4?
+Don't Starve; forwardProperty supported platforms;
+
+given this query, i want to have a query responding to the question can i play don't starve on play station 4?
+
+-------------------------
+Did adam ondra win a medal in the 2020 summer olympics?
+
+
+
+
+-------------------------
+boolean handling dans une fonction
+
+question attendue est elle booléenne?
+
+question attendue est elle une comparaison? ex : plus grand que, plus petit que, égal à, différent de
+SI oui, cb d'éléments comparés?
+    -> créer requete élément 1
+    -> pour élément 1 tu as fait .... -> crée requete élement n
+    -> prompt combinaison n éléments
+
+
+
+---------------------
+ #### Example 3:
+    **Input:**
+    <question>In the country where Ghost in the Shell was born, who is the current head of state?</question>
+    <subquestion1>Which country was Ghost in the Shell born in?</subquestion1>
+    <subquery1>
+    SELECT DISTINCT ?P495_7
+    WHERE { wd:Q1066948 p:P495 [ ps:P495 ?P495_7 ] . }
+    LIMIT 200
+    </subquery1>
+    <subanswer1>{
+        "columns": [
+            "P495_7"
+        ],
+        "rows": [
+            [
+                {
+                    "type": "uri",
+                    "value": "http://www.wikidata.org/entity/Q17"
+                }
+            ]
+        ]
+    }</subanswer1>
+    
+    <subquestion2>Who is the current head of state of that country?</subquestion2>
+    <subquery2>
+    SELECT DISTINCT ?P35_7
+    WHERE { wd:Q17 p:P35 [ ps:P35 ?P35_7 ] . }
+    LIMIT 1
+    </subquery2>
+    
+    **Output:**
+    <query>
+    SELECT DISTINCT ?P35_7
+    WHERE {
+      wd:Q17 p:P35 [ ps:P35 ?P35_7 ] .
+    }
+    LIMIT 1
+    </query>
+ 

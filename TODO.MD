@@ -1,5 +1,6 @@
-ASK WHERE {}
-ASK WHERE { FILTER(false) }
+#todo
+maintenant la moyenne est vraiment basse qd il y a une erreur
+-> ca peut etre encore + interessant de s'interesser à la gestion des erreurs (property not found, etc.)
 
 
 todo

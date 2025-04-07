@@ -1,0 +1,41 @@
+For a given question, a given SPARQL query, and its result, evaluate whether the result of the query answers the question.
+Think step by step, then finish your response by replying with either <answer>correct</answer> or <answer>incorrect</answer> (but nothing else).
+
+<question>After whom is the Riemannian geometry named?</question>
+<query>SELECT DISTINCT ?thing_7
+WHERE { wd:Q761383 p:P138 [ ps:P138 ?thing_7 ] . }
+LIMIT 200</query>
+
+
+<results><?xml version='1.0' encoding='UTF-8'?> 
+<sparql xmlns='http://www.w3.org/2005/sparql-results#'>
+	<head>
+		<variable name='thing_7'/>
+	</head>
+	<results>
+		<result>
+			<binding name='thing_7'>
+				<uri>http://www.wikidata.org/entity/Q42299</uri>
+                <label>Bernhard Riemann</label>
+			</binding>
+		</result>
+	</results>
+</sparql></results>
+
+
+----------------------------------------------------------------
+You will be given a question, a SPARQL query, and the result of executing that query.
+Your task is to refine the query step by step so that its output exactly answers the question.
+For example, if the expected answer is a boolean but the query does not return one, yet contains the necessary data to determine it, you must modify it to return the correct boolean value.
+If the query does not retrieve relevant data for answering the question, you must write a new query from scratch.
+Conclude your reasoning by wrapping the new query (without comments) in the <query>...</query> tags.
+
+<question></question>
+<sparql></sparql>
+<results></results>
+
+
+
+
+
+Riemannian geometry; forwardProperty namesake of; Bernhard Riemann</

@@ -7,7 +7,7 @@ QALD10 = 'QALD-10'
 QALD9_PLUS = 'QALD-9-plus'
 
 # to extract only boolean questions
-ONLY_BOOLEANS = False 
+ONLY_BOOLEANS = True 
 
 class Extractor:
     """
