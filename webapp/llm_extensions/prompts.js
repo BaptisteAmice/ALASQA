@@ -73,7 +73,7 @@ function commands_chain_system_prompt_v2() {
   - after [date], before [date] → Time constraints (e.g., "forwardProperty release date ; after 2000").
 
   ### ⚠️ Best Practice:
-  **If you use "forwardProperty", try to start from a known entity whenever possible.** If the question includes a specific entity (e.g., "Tim Burton"), use it as the starting point instead of querying a general concept (e.g., "a person"). This helps create more precise queries.
+  **If you use "forwardProperty", try to start from a known entity whenever possible.** If the question includes a specific entity (e.g., "Tim Burton"), use it as the starting point instead of querying a general concept (e.g., "a human"). This helps create more precise queries.
   **If multiple entities share the same name (homonyms), using backwardProperty first helps disambiguate the entity by its relationship (e.g., "backwardProperty director; Burton" will have better chances to succeed than "Burton ; forwardProperty director" if several Burtons exist in the knowledge graph).**
 
   ### Wikidata-Specific Precision:
@@ -130,7 +130,7 @@ function forward_commands_chain_system_prompt() {
     - after [date], before [date] → Time constraints (e.g., "after 2000").
 
     ### ⚠️ Best Practice:
-    **Try to start from a known entity whenever possible.** If the question includes a specific entity (e.g., "Tim Burton"), use it as the starting point instead of querying a general concept (e.g., "a person"). This helps create more precise queries.
+    **Try to start from a known entity whenever possible.** If the question includes a specific entity (e.g., "Tim Burton"), use it as the starting point instead of querying a general concept (e.g., "a human"). This helps create more precise queries.
 
     ### Wikidata-Specific Precision:
     - a human → real people

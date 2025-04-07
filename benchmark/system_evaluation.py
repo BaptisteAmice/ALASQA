@@ -263,8 +263,8 @@ def stats_calculation(benchmark_results: list, system_results: list) -> tuple[li
             precisions.append(None)
             recalls.append(None)
             f1_scores.append(None)
-        elif len(system_list) == 0: # If the system has no results, the precision is 1, the f1 and recall are 0
-            precisions.append(1)
+        elif len(system_list) == 0: # If the system has no results, the precision is 0, the f1 and recall are 0
+            precisions.append(0) # Usually the precision is set to 1, but setting it to 0 eases the tracking of ameliorations
             recalls.append(0)
             f1_scores.append(0)
     return precisions, recalls, f1_scores
