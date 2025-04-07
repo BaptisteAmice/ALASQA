@@ -14,7 +14,7 @@ class Extractor:
     Abstract class for extracting data from a benchmark file.
     """
     @abstractmethod
-    def extractData(self) -> list[list]:
+    def extractData(self, file_name: str, language: str) -> list[list]:
         pass
 
 
@@ -34,7 +34,7 @@ class ExtractorMintaka:
     """
     Extracts data from the Mintaka1k benchmark
     """
-    def extractData(self, file_name: str) -> list[list]:
+    def extractData(self, file_name: str, language: str) -> list[list]:
         with open(file_name, 'r') as file:
             data = json.load(file)
     
@@ -55,7 +55,7 @@ class ExtractorQald:
     """
     Extracts data from the QALD-10 benchmark
     """
-    def extractData(self, file_name: str) -> list[list]:
+    def extractData(self, file_name: str, language: str) -> list[list]:
         with open(file_name, encoding='utf-8') as file:
             data = json.load(file)
         ids = []
@@ -67,7 +67,7 @@ class ExtractorQald:
                 # Find the English question
                 english_question = None
                 for q in item["question"]:
-                    if q["language"] == "en":
+                    if q["language"] == language:
                         english_question = q["string"]
                         break  # Stop searching once found
                 questions.append(english_question)
