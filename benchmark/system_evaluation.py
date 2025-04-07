@@ -263,8 +263,8 @@ def stats_calculation(benchmark_results: list, system_results: list) -> tuple[li
             precisions.append(None)
             recalls.append(None)
             f1_scores.append(None)
-        elif len(system_list) == 0: # If the system has no results, the precision and recall are 0
-            precisions.append(0)
+        elif len(system_list) == 0: # If the system has no results, the precision is 1, the f1 and recall are 0
+            precisions.append(1)
             recalls.append(0)
             f1_scores.append(0)
     return precisions, recalls, f1_scores
@@ -298,6 +298,19 @@ def make_dict(meta: dict, questions_ids: list, questions: list,
         stats['MeanPrecision']  = None
         stats['MeanRecall'] = None
         stats['MeanF1Score'] = None
+
+    # Global stats for questions where the system has results
+    non_empty_system_precisions = [p for p, r in zip(precisions, system_results) if p is not None and p != '' and p != [] 
+                               and r is not None and r != '' and r != []]
+    non_empty_system_recalls = [r for r, r2 in zip(recalls, system_results) if r is not None and r != '' and r != [] 
+                               and r2 is not None and r2 != '' and r2 != []]
+    non_empty_system_f1_scores = [f for f, r in zip(f1_scores, system_results) if f is not None and f != '' and f != [] 
+                               and r is not None and r != '' and r != []]
+    stats['NbQuestionsWithResults'] = len(non_empty_system_precisions)
+    if len(non_empty_system_precisions) > 0:
+        stats['MeanPrecisionWithResults'] = sum(non_empty_system_precisions) / len(non_empty_system_precisions)
+        stats['MeanRecallWithResults'] = sum(non_empty_system_recalls) / len(non_empty_system_recalls)
+        stats['MeanF1ScoreWithResults'] = sum(non_empty_system_f1_scores) / len(non_empty_system_f1_scores)
 
     # Global stats per type of expected response
     bool_ids = [i for i, t in enumerate(all_responses_types) if t == 'boolean']
