@@ -106,7 +106,7 @@ def extract_benchmark(benchmark_file: str, benchmark_name: str) -> list:
     """
     logging.info('Benchmark extraction Start')
     extractor = benchmark_extraction.extractorFactory(benchmark_name)
-    return extractor.extractData(benchmark_file, config.LANGUAGE)
+    return extractor.extractData(benchmark_file, config.LANGUAGE_QUESTIONS)
 
 def system_queries_generation(questions: list, system: TestSystem, endpoint_sparql: str) -> tuple[list, list, list, list, list]:
     """

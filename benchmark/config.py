@@ -46,11 +46,14 @@ BENCHMARK_FILE = script_dir + '/Inputs/' + 'qald_9_plus_train_wikidata_patched.j
 # Name of the tested benchmark (MINTAKA1K | QALD10 | QALD9_PLUS)
 BENCHMARK_NAME = benchmark_extraction.QALD9_PLUS
 
-# Language of the benchmark and used by the system (en | fr)
-LANGUAGE = 'en'
+# Separating the language in 2 variable enable different approaches (e.g., reasoning in the question language if the 2 are the same, or translating the question in the system language)
+# Language in which the question of the benchmark are extracted
+LANGUAGE_QUESTIONS = 'en'
+# Language in which Sparklis will be used to answer the questions
+LANGUAGE_SPARKLIS = 'en'
 
 # Name of the tested system
-TESTED_SYSTEM = 'sparklisllm-LLMFrameworkDirectBoolean' # dummy | sparklisllm-[specific_system_name]
+TESTED_SYSTEM = 'sparklisllm-LLMFrameworkOneShotForwardScoringReferences' # dummy | sparklisllm-[specific_system_name]
 
 # SPARQL endpoint, only used in scripts and not by the API
 #SPARQL_ENDPOINT = 'https://dbpedia.org/sparql'

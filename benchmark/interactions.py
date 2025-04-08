@@ -83,7 +83,7 @@ def sparklisllm_question(driver, question, endpoint_sparql, system_name) -> tupl
     """
     # The errors will be concatenated in this variable
     error = ""
-    language = config.LANGUAGE
+    language = config.LANGUAGE_SPARKLIS
     #todo temp solution
     if "wikidata" in endpoint_sparql:
         #Open config modal
