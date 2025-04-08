@@ -46,6 +46,9 @@ BENCHMARK_FILE = script_dir + '/Inputs/' + 'qald_9_plus_train_wikidata_patched.j
 # Name of the tested benchmark (MINTAKA1K | QALD10 | QALD9_PLUS)
 BENCHMARK_NAME = benchmark_extraction.QALD9_PLUS
 
+# Language of the benchmark and used by the system (en | fr)
+LANGUAGE = 'en'
+
 # Name of the tested system
 TESTED_SYSTEM = 'sparklisllm-LLMFrameworkDirectBoolean' # dummy | sparklisllm-[specific_system_name]
 

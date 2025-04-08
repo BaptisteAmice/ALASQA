@@ -83,7 +83,7 @@ def sparklisllm_question(driver, question, endpoint_sparql, system_name) -> tupl
     """
     # The errors will be concatenated in this variable
     error = ""
-
+    language = config.LANGUAGE
     #todo temp solution
     if "wikidata" in endpoint_sparql:
         #Open config modal
@@ -91,7 +91,7 @@ def sparklisllm_question(driver, question, endpoint_sparql, system_name) -> tupl
         #config_trigger.click()
         #For the labels of entities, use property *rdfs:label* with language *en*
         #For the labels of classes, properties, and qualifiers, use property *rdfs:label* *en*
-        url_extension = '&wikidata_mode=true&entity_lexicon_select=http%3A//www.w3.org/2000/01/rdf-schema%23label&entity_lexicon_lang=en&concept_lexicons_select=http%3A//www.w3.org/2000/01/rdf-schema%23label&concept_lexicons_lang=en&auto-filtering=false'
+        url_extension = '&wikidata_mode=true&entity_lexicon_select=http%3A//www.w3.org/2000/01/rdf-schema%23label&entity_lexicon_lang='+language+'&concept_lexicons_select=http%3A//www.w3.org/2000/01/rdf-schema%23label&concept_lexicons_lang='+language+'&auto-filtering=false'
         driver.get(driver.current_url + url_extension)
 
     # Set the sparql endpoint
