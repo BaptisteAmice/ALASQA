@@ -1,20 +1,23 @@
 #todo
+tags...
+type erreurs??
+
+GERBIL Experiment?
+https://gerbil-qa.aksw.org/gerbil/config
+to try other systems
+
+modeles à essayer 
+claude
+
 maintenant la moyenne est vraiment basse qd il y a une erreur
 -> ca peut etre encore + interessant de s'interesser à la gestion des erreurs (property not found, etc.)
 
 
 todo
-- direct boolean answer
 - tester prediction boolean qald9
 - remplacer "boolean" par "yes/no question" et restester
 - tester LLMFrameworkDirect
-- restester v0.1
-- retester v0.1 with logic
-- tester juste backwardProperty
-- tester LLMFrameworkBooleanBySubquestionsScoringReferences
-- tester direct boolean
 - tester meilleur LLM 
-- tester score at all cost
 
 question classification using llm
 question classification prompt engineering
