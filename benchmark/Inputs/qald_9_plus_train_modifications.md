@@ -1,3 +1,49 @@
+# Added tags
+added tags to questions for post-processing
+Tag list: todo
+todo 243
+
+todo add location, time etc. list   to question already done (replace all by list ?)
+traitemant auto
+- This uses COUNT, GROUP BY, and ORDER BY → an aggregation query.
+
+
+# Question already missing in input file
+6,.....
+todo
+
+# Weird
+
+Question 1: List all boardgames by GMT.
+Question 290: List all games by GMT.
+--------------------------------------------------
+Question 9: Give me all actors starring in movies directed by and starring William Shatner.
+Question 286: Give me all actors starring in movies directed by William Shatner.
+--------------------------------------------------
+Question 11: Give me all Danish films.
+Question 51: Give me all Danish movies.
+--------------------------------------------------
+Question 20: Give me the Apollo 14 astronauts.
+Question 61: Give me all Apollo 14 astronauts.
+--------------------------------------------------
+Question 21: Who wrote the book The pillars of the Earth?
+Question 335: Who wrote the book The Pillars of the Earth?
+--------------------------------------------------
+Question 23: Which spaceflights were launched from Baikonur?
+Question 167: Which rockets were launched from Baikonur?
+--------------------------------------------------
+Question 25: Which U.S. states are in the same timezone as Utah?
+Question 108: Which U.S. states are in the same time zone as Utah?
+--------------------------------------------------
+Question 148: Which holidays are celebrated around the world?
+Question 305: Which holidays are celebrated around the world?
+--------------------------------------------------
+
+
+Give me the birthdays of all actors of the television show Charmed
+return only the birthdays (technically respond to the question but probably not the intent)
+
+
 # Corrected result (by correcting query)
 
 ## 1
