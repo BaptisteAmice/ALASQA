@@ -41,6 +41,7 @@ class ExtractorMintaka:
         ids = []
         questions = []
         sparql_requests = [] 
+        tags = []
             
         for item in data:
             ids.append(item['ID'])
@@ -48,7 +49,7 @@ class ExtractorMintaka:
             request = item['Sparql ID based']
             request_trimmed = trim_request(request)
             sparql_requests.append(request_trimmed)
-        return [ids, questions, sparql_requests]
+        return [ids, questions, sparql_requests, tags]
     
 
 class ExtractorQald:
@@ -61,6 +62,7 @@ class ExtractorQald:
         ids = []
         questions = []
         sparql_requests = [] 
+        tags = []
         for item in data["questions"]:
             if (not ONLY_BOOLEANS) or ("boolean" in item['answers'][0]):
                 ids.append(item['id'])
@@ -74,7 +76,13 @@ class ExtractorQald:
                 request = item['query']['sparql']
                 request_trimmed = trim_request(request)
                 sparql_requests.append(request_trimmed)
-        return [ids, questions, sparql_requests]
+                # Add tags if they exist
+                if 'tags' in item:
+                    tags.append(item['tags'])
+                else:
+                    tags.append([])
+
+        return [ids, questions, sparql_requests, tags]
 
 
 

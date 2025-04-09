@@ -21,7 +21,7 @@ def main(benchmark_file: str, benchmark_name: str, tested_system_name: str, endp
     now = datetime.datetime.now()
     filename = benchmark_name+'_'+tested_system_name+'_'+now.strftime('%Y%m%d_%H%M%S')+'.json'
     meta: dict = metadata(benchmark_name, tested_system_name, endpoint, used_llm)
-    questions_ids, questions, benchmark_queries = extract_benchmark(benchmark_file, benchmark_name)
+    questions_ids, questions, benchmark_queries, tags = extract_benchmark(benchmark_file, benchmark_name)
 
     # Create the system object
     system: TestSystem = testSystemFactory(tested_system_name)
@@ -67,6 +67,7 @@ def main(benchmark_file: str, benchmark_name: str, tested_system_name: str, endp
 
         # Rewrite the file after each batch
         data = make_dict(meta, questions_ids[: len(all_system_queries)], questions[: len(all_system_queries)], 
+                         tags[: len(all_system_queries)],
                          benchmark_queries[: len(all_system_queries)], all_system_queries, 
                          all_system_nl_queries,
                          all_benchmark_results, all_system_results, 
@@ -269,7 +270,8 @@ def stats_calculation(benchmark_results: list, system_results: list) -> tuple[li
             f1_scores.append(0)
     return precisions, recalls, f1_scores
 
-def make_dict(meta: dict, questions_ids: list, questions: list, 
+def make_dict(meta: dict, questions_ids: list, questions: list,
+              tags: list, 
               benchmark_queries: list, system_queries: list, system_nl_queries: list,
               benchmark_results: list, 
               system_results: list, all_system_times: list, all_responses_types: list,
@@ -338,6 +340,7 @@ def make_dict(meta: dict, questions_ids: list, questions: list,
     for i in range(len(questions_ids)):
         data[questions_ids[i]] = {
             'Question' : questions[i],
+            'Tags' : tags[i],
             **({'Error': errors[i]} if errors[i] != '' else {}), # only add if it's not an empty string
             'StepsStatus' : steps_status[i],
             'Precision' : precisions[i],

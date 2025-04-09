@@ -737,9 +737,9 @@ def generate_score_comparison_matrices_to_treshold(new_files: list[str], evaluat
                                edgecolor='black', loc='center')
 
         ax.add_table(table)
-        worse_patch = mpatches.Patch(color='red', label=f'Worse ({nbre_degradations})')
-        better_patch = mpatches.Patch(color='green', label=f'Better ({nbre_improvements})')
-        same_patch = mpatches.Patch(color='blue', label=f'No Change ({nbre_no_change})')
+        worse_patch = mpatches.Patch(color='red', label=f'x==0: ({nbre_degradations})')
+        better_patch = mpatches.Patch(color='green', label=f'x==1: ({nbre_improvements})')
+        same_patch = mpatches.Patch(color='blue', label=f'0<x<1: ({nbre_no_change})')
         plt.legend(handles=[worse_patch, better_patch, same_patch], loc='upper center', bbox_to_anchor=(0.5, -0.1), ncol=3)
         plt.title(f"{metric} scores using {evaluated_criteria} criteria")
         pp.savefig()
@@ -934,54 +934,109 @@ def boolean_prediction_fiability(file_name: str, all_data: dict):
     table_data_verifier.append([len(filtered_verifier_failed_data)])
     plot_table(table_headers_verifier, table_data_verifier, all_data, "Boolean type prediction fiability")
 
-def question_word_ranking(filtered_data, filtered_data_malus, title_complement=""):
-    """
-    Parse all the questions and count the number of times each word appears.
-    """
-    word_count = defaultdict(int)
-    for entry in filtered_data.values():
-        question = entry.get("Question")
-        if question:
-            # Split the question into words and count them
-            words = re.findall(r'\w+', question.lower())
-            for word in words:
-                word_count[word] += 1
+def question_word_ratio_ranking(filtered_data_0, filtered_data_1, title_complement="", number_of_words=30):
+    word_count_0 = defaultdict(int)
+    word_count_1 = defaultdict(int)
 
-    # Apply malus for words appearing in filtered_data_malus
-    for entry in filtered_data_malus.values():
+    for entry in filtered_data_0.values():
         question = entry.get("Question")
         if question:
             words = re.findall(r'\w+', question.lower())
             for word in words:
-                word_count[word] -= 1  # Subtract malus for each occurrence
+                word_count_0[word] += 1
 
-    # Sort the words by their counts in descending order
-    sorted_word_count = sorted(word_count.items(), key=lambda x: x[1], reverse=True)
+    for entry in filtered_data_1.values():
+        question = entry.get("Question")
+        if question:
+            words = re.findall(r'\w+', question.lower())
+            for word in words:
+                word_count_1[word] += 1
 
-    # Make a histogram of the word count, ordered by the number of times they appear
-    if sorted_word_count:
-        words, counts = zip(*sorted_word_count)
-    else:
-        words, counts = [], []  # Assign empty lists if there's nothing to unpack
+    all_words = set(word_count_0.keys()) | set(word_count_1.keys())
+    word_ratios = {}
+
+    for word in all_words:
+        count_0 = word_count_0.get(word, 0)
+        count_1 = word_count_1.get(word, 0)
+        # Smooth with +1
+        ratio = (count_0 + 1) / (count_1 + 1)
+        word_ratios[word] = ratio
+
+    # Sort by ratio (descending = more prominent in data_0)
+    sorted_ratios = sorted(word_ratios.items(), key=lambda x: x[1], reverse=True)
+
+    words, ratios = zip(*sorted_ratios[:number_of_words])
 
     plt.figure(figsize=(12, 6))
-    plt.bar(words[:20], counts[:20], color='skyblue', edgecolor='black')
-    plt.xticks(rotation=45, ha="right", fontsize=10)  # Rotate x-axis labels
+    plt.bar(words, ratios, color='lightcoral', edgecolor='black')
+    plt.xticks(rotation=45, ha="right", fontsize=10)
     plt.xlabel("Words")
-    plt.ylabel("Count")
-    plt.title("Top 20 Words in Questions for " + title_complement)
+    plt.ylabel("Frequency Ratio (+1 smoothing)")
+    plt.title(f'Top {number_of_words} worst words by ratio - {title_complement}')
 
     plt.grid()
     pp.savefig()
     if show:
         plt.show()
     plt.close()
+
+
+def get_all_question_tags(filtered_data) -> set:
+    """
+    Extracts all question tags from the filtered data entries.
+    Set of the concatenation of the lists of tags (field tags).
+    """
+    all_tags = set()
+    for entry in filtered_data.values():
+        tags = entry.get("Tags")
+        if tags:
+            for tag in tags:
+                all_tags.add(tag)
+    return all_tags
     
 
-def all_prints(files_names: list[str], core_files_names: list[str]):
+
+def question_tags_pp(filtered_data, file_name):
+    # Get data
+    all_tags = get_all_question_tags(filtered_data)
+    all_tags_precisions, all_tags_recalls, all_tags_f1_scores = [], [], []
+    for tag in all_tags:
+        constraint_tag = {
+            "Tags": lambda x: tag in x
+        }
+        filtered_tag_data = load_and_filter_data(file_name, constraint_tag)
+        precisions, recalls, f1_scores = extract_scores(filtered_tag_data)
+        all_tags_precisions.append(precisions)
+        all_tags_recalls.append(recalls)
+        all_tags_f1_scores.append(f1_scores)
+
+
+    # Plot boxplots for each metric
+    metrics = [all_tags_precisions, all_tags_recalls, all_tags_f1_scores]
+    metric_names = ["Precision", "Recall", "F1 Score"]
+    for i, metric in enumerate(metrics):
+        plt.figure(figsize=(12, 6))
+        plt.boxplot(metric, labels=all_tags)
+        plt.xticks(rotation=45, ha="right", fontsize=10)
+        plt.xlabel("Tags")
+        plt.ylabel(metric_names[i])
+        plt.title(f'Boxplot of {metric_names[i]} per Tag')
+        plt.grid()
+        pp.savefig()
+        if show:
+            plt.show()
+        plt.close()
+
+
+
+
+
+
+def make_pdf_report(files_names: list[str], core_files_names: list[str]):
     """
     Generate all the plots and tables for the given files.
     """
+    logging.info("Starting to make to make the PDF")
     # Data to be displayed in a table
     table_headers = []
     table_data = []
@@ -1165,17 +1220,38 @@ def all_prints(files_names: list[str], core_files_names: list[str]):
         "F1Score": lambda x: x == 1
     }
     filtered_f1_at_1 = load_and_filter_data(file_name, constraints_f1_at_1)
-    question_word_ranking(filtered_valid_data, {}, "valid benchmark data")
-    question_word_ranking(filtered_f1_at_0, filtered_f1_at_1, "f1 score at 0 - f1 score at 1")
+
+    question_word_ratio_ranking(filtered_f1_at_0, filtered_f1_at_1, "F1at0/F1at1")
     
 
+    # Advanced error analysis
+    logging.info("Advanced error analysis")
 
-    pp.close() # Close the pdf file
+    # boxplot per question tag
+    question_tags_pp(filtered_valid_data, file_name)
+
+    # todo pour groupe questions similaires
+    # ->boite à moustache groupe de questions similaires
+
+    #todo matrice erreur
+    #lignes : x==0, x==1, 0<x<1
+    #colonnes : commandes finies, commandes pas finies[fwd not found, bwd not found, etc.]
+
+    #todo matrice
+    #lignes: commandes pas finies[...]
+    #colonnes: mots clefs
+
+    #todo histogramme des mots clefs
+
+
+
+    # Close the pdf file
+    pp.close()
+    logging.info("PDF done.")
 
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.realpath(__file__))
     core_files = [
-        #script_dir + "/BestOutputs/QALD9/QALD-9-plus_sparklisllm-LLMFrameworkOneShot_20250326_102358.json",
         script_dir + "/BestOutputs/QALD9/QALD-9-plus_sparklisllm-LLMFrameworkOneShot_20250403_233916.json",
         script_dir + "/BestOutputs/QALD9/QALD-9-plus_sparklisllm-LLMFrameworkOneShot_20250404_022249.json",
         script_dir + "/BestOutputs/QALD9/QALD-9-plus_sparklisllm-LLMFrameworkOneShot_20250404_050920.json",
@@ -1186,4 +1262,4 @@ if __name__ == "__main__":
         script_dir + "/BestOutputs/QALD9/QALD-9-plus_sparklisllm-LLMFrameworkOneShotForwardScoringReferences_20250403_131636.json",
     ]
 
-    all_prints(input_files, core_files)
+    make_pdf_report(input_files, core_files)

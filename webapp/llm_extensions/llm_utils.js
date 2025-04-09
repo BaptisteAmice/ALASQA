@@ -119,7 +119,7 @@ function waitForEvaluation(place) {
  * @param {string} wikidataURI
  * @param {string} language 
  * @returns 
- */
+ */ //todo language here
 async function getWikidataLabel(wikidataURI, language = "en") {
     const entityId = wikidataURI.split('/').pop();
     const url = `https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${entityId}&format=json&props=labels&languages=${language}&origin=*`;
