@@ -12,6 +12,9 @@ import numpy as np
 import os
 import re
 
+logging.basicConfig(
+    level=logging.INFO, # NOTSET | DEBUG | INFO | WARNING | ERROR | CRITICAL
+)
 
 # Page to display all data
 pp = PdfPages("post_process_data.pdf")
@@ -1092,7 +1095,7 @@ def plot_table_commands_failed(rows: dict):
         # Columns are: Command completed + every error in cmd_error_messages
         # for each message in cmd_error_messages, score + 1 if in ["Error"]
         # if no error for the item, score + 1 in "Commands completed"
-        row = [0] * (len(table_headers) - 1)
+        row = [0] * (len(table_headers))
         for entry in row_data.values():
             failed_cmd_bool = False
             for cmd_error in cmd_error_messages:
@@ -1127,7 +1130,10 @@ def plot_table_commands_failed(rows: dict):
     plt.close(fig)
 
 
-
+def failed_cmd_id_histogram(filtered_data):
+    cmds_list = get_commands_list(filtered_data)
+    #todo
+    #get failed command
 
 
 
@@ -1291,10 +1297,6 @@ def make_pdf_report(files_names: list[str], core_files_names: list[str]):
     filtered_sparql_error_but_not_empty_data = load_and_filter_data(file_name, constraints_sparql_error)
     tree_data["All questions"]["children"]["Error while evaluating non-empty SystemQuery"] = {"count": len(filtered_sparql_error_but_not_empty_data), "children": {}}
 
-    #todo specific warnings (from alerts, etc.)
-
-    #todo matrice etape premiere erreur / commande
-
     # Table 
     plot_table(table_headers, table_data, all_data, "global data")
     # Plot the tree
@@ -1323,11 +1325,19 @@ def make_pdf_report(files_names: list[str], core_files_names: list[str]):
     question_word_ratio_ranking(filtered_f1_at_0, filtered_f1_at_1, "F1at0/F1at1")
     
 
-    # Advanced error analysis
+    #### Advanced error analysis
     logging.info("Advanced error analysis")
 
     # boxplot per question tag
     question_tags_pp(filtered_valid_data, file_name)
+
+    #failed cmd indexes (one of cmd_error_messages in Error)
+    constraints_failed_cmd = {
+        "Error": lambda x: isinstance(x, str) and any(cmd_error in x for cmd_error in cmd_error_messages)
+    }
+    filtered_failed_cmd_data = load_and_filter_data(file_name, constraints_failed_cmd)
+    failed_cmd_id_histogram(filtered_failed_cmd_data)
+    #todo finir qd on aura failed cmd
 
     # todo pour groupe questions similaires
     # ->boite à moustache groupe de questions similaires
@@ -1335,14 +1345,6 @@ def make_pdf_report(files_names: list[str], core_files_names: list[str]):
     #todo matrice erreur
     #lignes : x==0, x==1, 0<x<1
     #colonnes : commandes finies, commandes pas finies[fwd not found, bwd not found, etc.]
-
-    #todo matrice
-    #lignes: commandes pas finies[...]
-    #colonnes: mots clefs
-
-    #todo histogramme des mots clefs
-
-
 
     # Close the pdf file
     pp.close()

@@ -251,7 +251,12 @@ async function step_execute_commands(framework, commands) {
             }
         )
         .catch(async error => {
-            let message = error_messages[2] + error;
+            let qa_field = getQAInputField();
+            let qa_value = qa_field.value;
+            //the first remaining command is the one that failed
+            let first_remaining_command = qa_value.split(";")[0] || "";
+            let message = error_messages[2] + error
+            + ` (failed command:${first_remaining_command})`;
             console.log(message);
             framework.errors  += message;
         }

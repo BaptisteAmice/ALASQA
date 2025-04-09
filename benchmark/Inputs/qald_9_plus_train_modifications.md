@@ -27,6 +27,7 @@ Question 20: Give me the Apollo 14 astronauts.
 Question 61: Give me all Apollo 14 astronauts.
 --------------------------------------------------
 Question 21: Who wrote the book The pillars of the Earth?
+Question 195: Who wrote the book Les Piliers de la terre?
 Question 335: Who wrote the book The Pillars of the Earth?
 --------------------------------------------------
 Question 23: Which spaceflights were launched from Baikonur?
