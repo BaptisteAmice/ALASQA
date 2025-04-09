@@ -57,6 +57,16 @@ error_messages = [
     "Timeout",
     "Error: please try to intercept the error before.",
 ]
+# List of recognizable errors for "Warning: Commands failed to finish"
+cmd_error_messages = [
+    "term not found",
+    "fwd property not found",
+    "bwd property not found",
+    "class not found"
+    "higherThan something that is not a number",
+    "between something that is not a number",
+    "lowerThan something that is not a number",
+]
 
 step_names = {} # Global variable to store the names of the steps (need to call find_first_non_done_step to set it)
 
@@ -1016,7 +1026,7 @@ def question_tags_pp(filtered_data, file_name):
     metric_names = ["Precision", "Recall", "F1 Score"]
     for i, metric in enumerate(metrics):
         plt.figure(figsize=(12, 6))
-        plt.boxplot(metric, labels=all_tags)
+        plt.boxplot(metric, tick_labels=all_tags)
         plt.xticks(rotation=45, ha="right", fontsize=10)
         plt.xlabel("Tags")
         plt.ylabel(metric_names[i])
@@ -1026,6 +1036,32 @@ def question_tags_pp(filtered_data, file_name):
         if show:
             plt.show()
         plt.close()
+
+    # PLot ratio of tags (1+ nb score at 0)/(1 + nb score at 1)
+    ratio_tags = []
+    for tag in all_tags:
+        constraint_tag = {
+            "Tags": lambda x: tag in x
+        }
+        filtered_tag_data = load_and_filter_data(file_name, constraint_tag)
+        precisions, recalls, f1_scores = extract_scores(filtered_tag_data)
+        ratio_tags.append((f1_scores.count(0) + 1) / (f1_scores.count(1) + 1))
+    # Sort tags by ratio
+    sorted_tags = sorted(zip(all_tags, ratio_tags), key=lambda x: x[1], reverse=True)
+    tags, ratios = zip(*sorted_tags)
+
+    plt.figure(figsize=(12, 6))
+    plt.bar(tags, ratios, color='lightcoral', edgecolor='black')
+    plt.xticks(rotation=45, ha="right", fontsize=10)
+    plt.xlabel("Tags")
+    plt.ylabel("Frequency Ratio (+1 smoothing)")
+    plt.title(f'Top {len(all_tags)} worst tags by ratio')
+    plt.grid()
+    pp.savefig()
+    if show:
+        plt.show()
+
+
 
 
 
