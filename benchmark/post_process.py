@@ -62,7 +62,7 @@ cmd_error_messages = [
     "term not found",
     "fwd property not found",
     "bwd property not found",
-    "class not found"
+    "class not found",
     "higherThan something that is not a number",
     "between something that is not a number",
     "lowerThan something that is not a number",
@@ -978,7 +978,8 @@ def question_word_ratio_ranking(filtered_data_0, filtered_data_1, title_compleme
     words, ratios = zip(*sorted_ratios[:number_of_words])
 
     plt.figure(figsize=(12, 6))
-    plt.bar(words, ratios, color='lightcoral', edgecolor='black')
+    colors = ['springgreen' if r <= 1 else 'lightcoral' for r in ratios]
+    plt.bar(words, ratios, color=colors, edgecolor='black')
     plt.xticks(rotation=45, ha="right", fontsize=10)
     plt.xlabel("Words")
     plt.ylabel("Frequency Ratio (+1 smoothing)")
@@ -1010,11 +1011,13 @@ def question_tags_pp(filtered_data, file_name):
     # Get data
     all_tags = get_all_question_tags(filtered_data)
     all_tags_precisions, all_tags_recalls, all_tags_f1_scores = [], [], []
+    filtered_tags_data_dict = {}
     for tag in all_tags:
         constraint_tag = {
             "Tags": lambda x: tag in x
         }
         filtered_tag_data = load_and_filter_data(file_name, constraint_tag)
+        filtered_tags_data_dict[tag] = filtered_tag_data
         precisions, recalls, f1_scores = extract_scores(filtered_tag_data)
         all_tags_precisions.append(precisions)
         all_tags_recalls.append(recalls)
@@ -1037,7 +1040,7 @@ def question_tags_pp(filtered_data, file_name):
             plt.show()
         plt.close()
 
-    # PLot ratio of tags (1+ nb score at 0)/(1 + nb score at 1)
+    # Plot ratio of tags (1+ nb score at 0)/(1 + nb score at 1)
     ratio_tags = []
     for tag in all_tags:
         constraint_tag = {
@@ -1051,7 +1054,8 @@ def question_tags_pp(filtered_data, file_name):
     tags, ratios = zip(*sorted_tags)
 
     plt.figure(figsize=(12, 6))
-    plt.bar(tags, ratios, color='lightcoral', edgecolor='black')
+    colors = ['springgreen' if r <= 1 else 'lightcoral' for r in ratios]
+    plt.bar(tags, ratios, color=colors, edgecolor='black')
     plt.xticks(rotation=45, ha="right", fontsize=10)
     plt.xlabel("Tags")
     plt.ylabel("Frequency Ratio (+1 smoothing)")
@@ -1060,8 +1064,67 @@ def question_tags_pp(filtered_data, file_name):
     pp.savefig()
     if show:
         plt.show()
+    plt.close()
 
+    # Add total at the end of filtered_tags_data_dict 
+    constraint_total = { #valid benchmark data
+        "BenchmarkResult": lambda x: x not in [None, []]
+    }
+    filtered_total_data = load_and_filter_data(file_name, constraint_total)
+    filtered_tags_data_dict["Total"] = filtered_total_data
+    # Plot the table of commands and system errors
+    plot_table_commands_failed(filtered_tags_data_dict)
 
+def plot_table_commands_failed(rows: dict):
+    """
+    Creates a table displaying command completion and failure counts.
+
+    Arguments:
+        rows (dict): Dictionary where key is the row name and value is the data for that row.
+    """
+
+    # Create the table headers
+    table_headers = cmd_error_messages + ["Commands completed"]
+
+    # Create the table data
+    table_data = []
+    for row_name, row_data in rows.items():
+        # Columns are: Command completed + every error in cmd_error_messages
+        # for each message in cmd_error_messages, score + 1 if in ["Error"]
+        # if no error for the item, score + 1 in "Commands completed"
+        row = [0] * (len(table_headers) - 1)
+        for entry in row_data.values():
+            failed_cmd_bool = False
+            for cmd_error in cmd_error_messages:
+                if cmd_error in entry.get("Error", ""):
+                    row[table_headers.index(cmd_error)] += 1
+                    failed_cmd_bool = True
+            if not failed_cmd_bool:
+                row[-1] += 1  # Increment the last column for completed commands
+        table_data.append(row)
+        
+    fig, ax = plt.subplots(figsize=(12, 15))
+    ax.axis("off")
+
+    #put cells with a number above 10 in red
+    ax.table(
+        cellText=table_data,
+        colLabels=table_headers,
+        rowLabels=list(rows.keys()),
+        loc="center",
+        cellLoc="center",
+        cellColours=[["#FF9999" if cell > 10 else "#FFFFFF" for cell in row] for row in table_data],
+    )
+
+    ax.set_title("Table of Commands and System Errors", fontsize=14)
+
+    if pp:
+        pp.savefig(fig)
+
+    if show:
+        plt.show()
+
+    plt.close(fig)
 
 
 
