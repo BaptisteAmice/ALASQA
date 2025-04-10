@@ -1013,6 +1013,12 @@ def get_all_question_tags(filtered_data) -> set:
 def question_tags_pp(filtered_data, file_name):
     # Get data
     all_tags = get_all_question_tags(filtered_data)
+
+    #if no tags, return
+    if not all_tags:
+        logging.warning("No tags found in the data.")
+        return
+
     all_tags_precisions, all_tags_recalls, all_tags_f1_scores = [], [], []
     filtered_tags_data_dict = {}
     for tag in all_tags:
