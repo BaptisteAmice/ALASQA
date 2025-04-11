@@ -106,6 +106,7 @@ function countCommands(commands) {
  * @returns 
  */
 function waitForEvaluation(place) {
+    console.log("Waiting for place evaluation...");
     return new Promise((resolve) => {
         place.onEvaluated(() => {
             console.log("Place evaluated");

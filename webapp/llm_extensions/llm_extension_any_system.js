@@ -1,6 +1,10 @@
 //Dependencies: qa_extension.js, llm_add_interface_extension.js, llm_utils.js, prompts.js
 console.log("LLM any sytem extension loaded");
 
+// This bus is used to communicate between the LLM extension and the QA extension 
+//it allows to make synchronous calls between the two extensions
+const bus = new EventTarget();
+
 // If updated, also update the post-processing script 
 var error_messages = [ //todo update pp
     "Empty LLM output",
@@ -24,17 +28,6 @@ window.LLMFrameworks = [];
  * Class to handle the logic of the LLM extension
  */
 class LLMFramework {
-    question;
-    question_id;
-    errors = "";
-    reasoning_text = "";
-    sparklis_nl = "";
-    sparql = "";
-    result_text = "";
-
-    steps_status = {};
-    select_sugg_logic;
-
     /**
      * 
      * @param {str} question - question to answer
@@ -42,10 +35,23 @@ class LLMFramework {
      * @param {str|null} select_sugg_logic - logic to select suggestions in the qa extension
      */
     constructor(question, question_id, select_sugg_logic = null){
+        this.errors = "";
+        this.reasoning_text = "";
+        this.sparklis_nl = "";
+        this.sparql = "";
+        this.result_text = "";
+    
+        this.steps_status = {};    
+        this.sparql_query_limit_number = null;
+
+
         this.question = question;
         this.question_id = question_id;
         this.insertNewStepStatus("Start", STATUS_NOT_STARTED);
         this.select_sugg_logic = select_sugg_logic;
+
+        this.handleLimit = this.handleLimit.bind(this); // Bind the method to the class instance. JS needs it apparently.
+        bus.addEventListener('limit', this.handleLimit);
     }
 
     /**
@@ -125,6 +131,12 @@ class LLMFramework {
      */
     async answerQuestionLogic() {
         throw new Error("Method 'answerQuestion()' must be implemented.");
+    }
+
+    handleLimit(event) {
+        const { limit_number } = event.detail;
+        console.log(`Handling limit task with limit = ${limit_number}`);
+        this.sparql_query_limit_number = limit_number;
     }
 }
 
@@ -283,14 +295,40 @@ function step_remove_limit(framework, query, limit) {
 }
 
 /**
+ * Function to add a LIMIT clause to the query (or change it if it already exists).
+ * @param {*} framework 
+ * @param {*} query 
+ * @param {*} limit 
+ * @returns 
+ */
+function step_change_or_add_limit(framework, query, limit) {
+    console.log("Query before limit change: ", query);
+    framework.reasoning_text += "<br>Adding LIMIT " + limit + "<br>";
+    
+    // Remove existing LIMIT clause (case-insensitive)
+    const queryWithoutLimit = query.replace(/LIMIT\s+\d+/i, '').trim();
+    
+    // Ensure there's a newline before appending LIMIT
+    const updatedQuery = `${queryWithoutLimit}\nLIMIT ${limit}`;
+    
+    return updatedQuery;
+}
+
+/**
  * Function to query the results of the SPARQL query and parse them.
  * @param {*} framework 
  * @param {*} place 
  * @returns 
  */
-async function step_get_results(framework, place) {
+async function step_get_results(framework, place, overidding_sparql = null) {
     framework.reasoning_text += "<br>" + framework.getCurrentStep()["Name"] + "<br>";
-    let sparql = place.sparql();
+    let sparql;
+    //if a query is given, we use it instead of the one from the place
+    if (overidding_sparql) {
+        sparql = overidding_sparql;
+    } else {
+        sparql = place.sparql();
+    }
     let results;
     try { 
         sparql = removePrefixes(sparql); //todo temp patch because of wikidata endpoint for which the prefixes are duplicated when requested by the LLM (only difference is that the event is automatically activated)
@@ -378,6 +416,37 @@ class LLMFrameworkOneShotImproved extends LLMFramework {
 }
 window.LLMFrameworkOneShotImproved = LLMFrameworkOneShotImproved; //to be able to access the class
 window.LLMFrameworks.push(LLMFrameworkOneShotImproved.name); //to be able to access the class name
+
+
+class LLMFrameworkOneTheMost extends LLMFramework {
+    constructor(question, question_id) {
+        super(question, question_id, "count_references");
+    }
+    async answerQuestionLogic() {
+        // Call llm generation
+        let output_llm = await this.executeStep(step_generation, "LLM generation", 
+            [this, commands_chain_system_prompt_the_most(),"commands_chain_system_prompt_the_most", this.question]
+        );
+        // Extract the commands from the LLM output
+        let extracted_commands_list = await this.executeStep(step_extract_tags, "Extracted commands",
+             [this, output_llm, "commands"]
+        );
+        // Execute the commands, wait for place evaluation and get the results
+        let extracted_commands = extracted_commands_list.at(-1) || "";
+        await this.executeStep(step_execute_commands, "Commands execution", [this, extracted_commands]);
+        
+        //if the sparql query limit number is set, change the limit clause in the query
+        let place = sparklis.currentPlace();
+        this.sparql = place.sparql();
+        if (this.sparql_query_limit_number) {
+            //execute step
+            this.sparql = await this.executeStep(step_change_or_add_limit, "Add/change limit", [this, this.sparql, this.sparql_query_limit_number]);
+        }
+        await this.executeStep(step_get_results, "Get results", [this, place, this.sparql]);
+    }
+}
+window.LLMFrameworkOneTheMost = LLMFrameworkOneTheMost; //to be able to access the class
+window.LLMFrameworks.push(LLMFrameworkOneTheMost.name); //to be able to access the class name
 
 
 /**

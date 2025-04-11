@@ -128,6 +128,31 @@ function process_step(place, step) {
 		))
 	})	
 
+	} else if ((match = /^limit\s*(.+)$/.exec(step))) {
+		if (!isNumeric(match[1])) {
+			return Promise.reject("limit something that is not a number");
+		}
+
+		//test if the bus exists
+		if (typeof bus === "undefined") {
+			return Promise.reject("bus is not defined, please include llm_extension_any_systems.js");
+		}
+
+		//synchronous signal, delegating the responsibility to the subscriber to handle the event
+		bus.dispatchEvent(new CustomEvent('limit', { detail: { limit_number: match[1] } }));
+		console.log("event dispatched")
+
+		//Keep the current place and does nothing
+		return new Promise((resolve, reject) => {
+			try {
+				waitForEvaluation(sparklis.currentPlace()).then(() => {
+					resolve(sparklis.currentPlace());
+				});
+			} catch (error) {
+				reject(error);
+			}
+		});
+
 	} else if (step === "goback") { //todo marche pas 2 fois d'affilées
 		return new Promise((resolve, reject) => {
 			try {

@@ -69,6 +69,8 @@ cmd_error_messages = [
     "higherThan something that is not a number",
     "between something that is not a number",
     "lowerThan something that is not a number",
+    "limit something that is not a number",
+    "bus is not defined",
 ]
 
 step_names = {} # Global variable to store the names of the steps (need to call find_first_non_done_step to set it)
