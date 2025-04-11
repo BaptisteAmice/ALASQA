@@ -43,6 +43,7 @@ class LLMFramework {
     
         this.steps_status = {};    
         this.sparql_query_limit_number = null;
+        this.sparql_query_offset_number = null;
 
 
         this.question = question;
@@ -52,6 +53,9 @@ class LLMFramework {
 
         this.handleLimit = this.handleLimit.bind(this); // Bind the method to the class instance. JS needs it apparently.
         bus.addEventListener('limit', this.handleLimit);
+
+        this.handleOffset = this.handleOffset.bind(this); // Bind the method to the class instance. JS needs it apparently.
+        bus.addEventListener('offset', this.handleOffset);
     }
 
     /**
@@ -137,6 +141,11 @@ class LLMFramework {
         const { limit_number } = event.detail;
         console.log(`Handling limit task with limit = ${limit_number}`);
         this.sparql_query_limit_number = limit_number;
+    }
+    handleOffset(event) {
+        const { offset_number } = event.detail;
+        console.log(`Handling offset task with offset = ${offset_number}`);
+        this.sparql_query_offset_number = offset_number;
     }
 }
 
@@ -314,6 +323,39 @@ function step_change_or_add_limit(framework, query, limit) {
     return updatedQuery;
 }
 
+/**
+ * Function to add an OFFSET clause to the query (or change it if it already exists).
+ * The OFFSET clause will appear before the LIMIT clause if one exists.
+ * @param {*} framework 
+ * @param {*} query 
+ * @param {*} offset 
+ */
+function step_change_or_add_offset(framework, query, offset) {
+    console.log("Query before offset change: ", query);
+    framework.reasoning_text += "<br>Adding OFFSET " + offset + "<br>";
+
+    // Remove existing OFFSET clause (case-insensitive)
+    let queryWithoutOffset = query.replace(/OFFSET\s+\d+/i, '').trim();
+
+    // Check if there's a LIMIT clause
+    const limitMatch = queryWithoutOffset.match(/LIMIT\s+\d+/i);
+    
+    let updatedQuery;
+    if (limitMatch) {
+        // Insert OFFSET before LIMIT
+        const limitStart = limitMatch.index;
+        updatedQuery = 
+            queryWithoutOffset.slice(0, limitStart).trim() +
+            `\nOFFSET ${offset}\n` +
+            queryWithoutOffset.slice(limitStart).trim();
+    } else {
+        // Append OFFSET at the end
+        updatedQuery = `${queryWithoutOffset}\nOFFSET ${offset}`;
+    }
+
+    return updatedQuery;
+}
+
 function step_remove_ordering_var_from_select(framework, query) {
     framework.reasoning_text += "<br>Removing ordering variable from SELECT<br>";
     const selectRegex = /SELECT\s+(DISTINCT\s+)?([^\n\r{]+)/i;
@@ -475,6 +517,10 @@ class LLMFrameworkOneTheMost extends LLMFramework {
             this.sparql = await this.executeStep(step_change_or_add_limit, "Add/change limit", [this, this.sparql, this.sparql_query_limit_number]);
             //remove the ordering variable from the select clause
             this.sparql = await this.executeStep(step_remove_ordering_var_from_select, "Remove ordering variable from select", [this, this.sparql]);
+        }
+        if (this.sparql_query_offset_number) {
+            //execute step
+            this.sparql = await this.executeStep(step_change_or_add_offset, "Add/change offset", [this, this.sparql, this.sparql_query_offset_number]);
         }
         await this.executeStep(step_get_results, "Get results", [this, place, this.sparql]);
     }

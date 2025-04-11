@@ -137,7 +137,7 @@ function commands_chain_system_prompt_the_most() {
   **If you use "forwardProperty", try to start from a known entity whenever possible.** If the question includes a specific entity (e.g., "Tim Burton"), use it as the starting point instead of querying a general concept (e.g., "a human"). This helps create more precise queries.
   **If multiple entities share the same name (homonyms), using backwardProperty first helps disambiguate the entity by its relationship (e.g., "backwardProperty director; Burton" will have better chances to succeed than "Burton ; forwardProperty director" if several Burtons exist in the knowledge graph).**
   **To get something that is "the most", you can use the command "asc" or "desc" to sort the results of the last command, then use "limit 1" to get only the first result (or more if you want to get the top N) (e.g., "a human ; forwardProperty height; desc; limit 1" to get the tallest person).**
-  **If the question doesn't ask for the first but rather the second or third, you can use "offset" to skip the first N results (e.g., "a human ; forwardProperty height; desc; limit 1; offset 1" to get the second tallest person).**
+  **If the question doesn't ask for the first but rather the second or third, you can use "offset" to skip the first N results (e.g., "a human ; forwardProperty height; desc; offset 1; limit 1" to get the second tallest person).**
 
   ## Examples:
   Q: At which school went Yayoi Kusama?
