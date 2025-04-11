@@ -45,6 +45,8 @@ BENCHMARK_FILE = script_dir + '/Inputs/' + 'qald_9_plus_train_wikidata_patched.j
 
 # Name of the tested benchmark (MINTAKA1K | QALD10 | QALD9_PLUS)
 BENCHMARK_NAME = benchmark_extraction.QALD9_PLUS
+# Filter on the extracted questions of the benchmark (e.g., {} to get all questions, {"tags": lambda x: x is not None and "aggregation" in x} to get only the questions with the tag "aggregation" in a QALD benchmark)
+BENCHMARK_QUESTIONS_FILTER = {"tags": lambda x: x is not None and "the most" in x}
 
 # Separating the language in 2 variable enable different approaches (e.g., reasoning in the question language if the 2 are the same, or translating the question in the system language)
 # Language in which the question of the benchmark are extracted

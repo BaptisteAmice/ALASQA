@@ -14,7 +14,7 @@ class Extractor:
     Abstract class for extracting data from a benchmark file.
     """
     @abstractmethod
-    def extractData(self, file_name: str, language: str) -> list[list]:
+    def extractData(self, file_name: str, language: str, extraction_filter: dict) -> list[list]:
         pass
 
 
@@ -30,11 +30,11 @@ def trim_request(request: str) -> str: #todo doesn't work for mintaka #neigher f
 #####################################
 
 
-class ExtractorMintaka:
+class ExtractorMintaka: #todo uppdate for language and for filter, and for tags
     """
     Extracts data from the Mintaka1k benchmark
     """
-    def extractData(self, file_name: str, language: str) -> list[list]:
+    def extractData(self, file_name: str, language: str, extraction_filter: dict) -> list[list]:
         with open(file_name, 'r') as file:
             data = json.load(file)
     
@@ -56,31 +56,42 @@ class ExtractorQald:
     """
     Extracts data from the QALD-10 benchmark
     """
-    def extractData(self, file_name: str, language: str) -> list[list]:
+    def extractData(self, file_name: str, language: str, extraction_filter: dict) -> list[list]:
         with open(file_name, encoding='utf-8') as file:
             data = json.load(file)
         ids = []
         questions = []
-        sparql_requests = [] 
+        sparql_requests = []
         tags = []
         for item in data["questions"]:
-            if (not ONLY_BOOLEANS) or ("boolean" in item['answers'][0]):
-                ids.append(item['id'])
-                # Find the English question
-                english_question = None
-                for q in item["question"]:
-                    if q["language"] == language:
-                        english_question = q["string"]
-                        break  # Stop searching once found
-                questions.append(english_question)
-                request = item['query']['sparql']
-                request_trimmed = trim_request(request)
-                sparql_requests.append(request_trimmed)
-                # Add tags if they exist
-                if 'tags' in item:
-                    tags.append(item['tags'])
-                else:
-                    tags.append([])
+            # Check for boolean type if required
+            if ONLY_BOOLEANS and "boolean" not in item["answers"][0]:
+                continue
+
+            # Apply all filters from extraction_filter
+            passed = True
+            for key, condition in extraction_filter.items():
+                if key not in item or not condition(item[key]):
+                    passed = False
+                    break
+            if not passed:
+                continue
+
+            ids.append(item['id'])
+
+            # Find the language-specific question
+            question_in_language = None
+            for q in item["question"]:
+                if q["language"] == language:
+                    question_in_language = q["string"]
+                    break
+            questions.append(question_in_language)
+
+            request = item['query']['sparql']
+            request_trimmed = trim_request(request)
+            sparql_requests.append(request_trimmed)
+
+            tags.append(item.get('tags', []))
 
         return [ids, questions, sparql_requests, tags]
 
