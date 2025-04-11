@@ -116,7 +116,7 @@ function commands_chain_system_prompt_v2() {
 
 function commands_chain_system_prompt_the_most() {
   return `
-  ## Task: Generate knowledge graph query commands for Sparklis (SPARQL-based tool).
+  ## Task: Generate knowledge graph query commands for Sparklis (SPARQL-based tool) on a Wikidata endpoint.
 
   ## Format:
   1. Think step by step about what entities and relationships are needed.
@@ -129,13 +129,15 @@ function commands_chain_system_prompt_the_most() {
   - backwardProperty [property] → Reverse relation (e.g., "backwardProperty director" to find directors of a given film). Use this when moving from object to subject. The object does not need to have been specified in the previous command (for example, you can use "backwardProperty director" as your first command).
   - higherThan [number], lowerThan [constant number] → Value constraints (e.g., "forwardProperty weight; higherThan 10").
   - after [date], before [date] → Time constraints (e.g., "forwardProperty release date ; after 2000").
-  - asc; desc → Sort the results of the last command in ascending or descending order.
-  - limit [number] → Limit the number of results returned by the last command.
+  - asc; desc → Sort the results of the last command in ascending or descending order (number or date).
+  - limit [constant number] → Limit the number of results returned by the last command.
+  - offset [constant number] → Skip the first N results.
 
   ### ⚠️ Best Practice:
   **If you use "forwardProperty", try to start from a known entity whenever possible.** If the question includes a specific entity (e.g., "Tim Burton"), use it as the starting point instead of querying a general concept (e.g., "a human"). This helps create more precise queries.
   **If multiple entities share the same name (homonyms), using backwardProperty first helps disambiguate the entity by its relationship (e.g., "backwardProperty director; Burton" will have better chances to succeed than "Burton ; forwardProperty director" if several Burtons exist in the knowledge graph).**
   **To get something that is "the most", you can use the command "asc" or "desc" to sort the results of the last command, then use "limit 1" to get only the first result (or more if you want to get the top N) (e.g., "a human ; forwardProperty height; desc; limit 1" to get the tallest person).**
+  **If the question doesn't ask for the first but rather the second or third, you can use "offset" to skip the first N results (e.g., "a human ; forwardProperty height; desc; limit 1; offset 1" to get the second tallest person).**
 
   ## Examples:
   Q: At which school went Yayoi Kusama?

@@ -314,6 +314,38 @@ function step_change_or_add_limit(framework, query, limit) {
     return updatedQuery;
 }
 
+function step_remove_ordering_var_from_select(framework, query) {
+    framework.reasoning_text += "<br>Removing ordering variable from SELECT<br>";
+    const selectRegex = /SELECT\s+(DISTINCT\s+)?([^\n\r{]+)/i;
+    const orderRegex = /ORDER\s+BY\s+([^\n\r]+)/i;
+
+    const selectMatch = query.match(selectRegex);
+    const orderMatch = query.match(orderRegex);
+
+    if (!selectMatch || !orderMatch) return query;
+
+    const fullSelect = selectMatch[0];
+    const selectVars = selectMatch[2].trim().split(/\s+/);
+
+    const orderExpr = orderMatch[1];
+
+    // Try to extract the variable used in ORDER BY
+    const varMatch = orderExpr.match(/\?[\w\d_]+/g);
+    if (!varMatch || varMatch.length === 0) return query;
+
+    // We'll handle only the first ORDER BY variable for now
+    const orderingVar = varMatch[0];
+
+    // Only remove if there's more than one variable in SELECT
+    if (selectVars.length > 1 && selectVars.includes(orderingVar)) {
+        const updatedVars = selectVars.filter(v => v !== orderingVar);
+        const updatedSelect = `SELECT ${selectMatch[1] || ''}${updatedVars.join(' ')}`;
+        query = query.replace(fullSelect, updatedSelect);
+    }
+    return query;
+}
+
+
 /**
  * Function to query the results of the SPARQL query and parse them.
  * @param {*} framework 
@@ -441,6 +473,8 @@ class LLMFrameworkOneTheMost extends LLMFramework {
         if (this.sparql_query_limit_number) {
             //execute step
             this.sparql = await this.executeStep(step_change_or_add_limit, "Add/change limit", [this, this.sparql, this.sparql_query_limit_number]);
+            //remove the ordering variable from the select clause
+            this.sparql = await this.executeStep(step_remove_ordering_var_from_select, "Remove ordering variable from select", [this, this.sparql]);
         }
         await this.executeStep(step_get_results, "Get results", [this, place, this.sparql]);
     }
