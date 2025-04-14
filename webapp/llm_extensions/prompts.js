@@ -19,6 +19,19 @@ function data_input_prompt(data, include_think_step = false) {
     return prompt;
 }
 
+function getEndpointFamily() {
+  let endpoint = sparklis.endpoint().toLowerCase();
+  if (endpoint.includes('wikidata')) {
+    return 'wikidata';
+  } else if (endpoint.includes('dbpedia')) {
+    return 'dbpedia';
+  } else if (endpoint.includes('corporate') || endpoint.includes('enterprise')) {
+    return 'corporate';
+  } else {
+    return 'unknown';
+  }
+}
+
 ///// Commands chain
 function commands_chain_system_prompt() {
     return `
@@ -115,62 +128,167 @@ function commands_chain_system_prompt_v2() {
 }
 
 function commands_chain_system_prompt_the_most() {
-  return `
-  ## Task: Generate knowledge graph query commands for Sparklis (SPARQL-based tool) on a Wikidata endpoint.
+  let endpoint_family = getEndpointFamily();
+  let prompt;
+  if (endpoint_family === 'dbpedia') {
+    prompt = `
+## Task: Generate knowledge graph query commands for Sparklis (SPARQL-based tool) on a DBpedia endpoint.
 
-  ## Format:
-  1. Think step by step about what entities and relationships are needed.
-  2. Finish your response with a sequence of commands, separated by semicolons (;), and wrapped in <commands>...</commands>.
+## Format:
+1. Think step by step about what entities and relationships are needed.
+2. Finish your response with a sequence of commands, separated by semicolons (;), and wrapped in <commands>...</commands>.
 
-  ### Available Commands:
-  - a [concept] → Retrieve entities of a given concept (e.g., "a book" to find books). **⚠️ IMPORTANT:** If the question already contains the name of an entity (e.g., the book title of the book), DO NOT use "a [concept]". Directly query the entity instead.
-  - [entity] → Retrieve a specific entity (e.g., "Albert Einstein" to find the entity representing Einstein). Use this when asking about a specific thing or individual.
-  - forwardProperty [property] → Filter by property (e.g., "forwardProperty director" to find films directed by someone). Use this when moving from subject to object.
-  - backwardProperty [property] → Reverse relation (e.g., "backwardProperty director" to find directors of a given film). Use this when moving from object to subject. The object does not need to have been specified in the previous command (for example, you can use "backwardProperty director" as your first command).
-  - higherThan [number], lowerThan [constant number] → Value constraints (e.g., "forwardProperty weight; higherThan 10").
-  - after [date], before [date] → Time constraints (e.g., "forwardProperty release date ; after 2000").
-  - asc; desc → Sort the results of the last command in ascending or descending order (number or date).
-  - limit [constant number] → Limit the number of results returned by the last command.
-  - offset [constant number] → Skip the first N results.
+### Available Commands:
+- a [class] → Retrieve entities of a given class (e.g., "a book" to find books). **⚠️ IMPORTANT:** If the question already contains the name of an entity (e.g., the title of the book), DO NOT use "a [class]". Directly query the entity instead.
+- [entity] → Retrieve a specific entity (e.g., "Albert Einstein" to find the entity representing Einstein). Use this when asking about a specific thing or individual.
+- forwardProperty [property] → Filter by property (e.g., "forwardProperty director" to find films directed by someone). Use this when moving from subject to object.
+- backwardProperty [property] → Reverse relation (e.g., "backwardProperty director" to find directors of a given film). Use this when moving from object to subject. The object does not need to have been specified in the previous command (for example, you can use "backwardProperty director" as your first command).
+- higherThan [number], lowerThan [constant number] → Value constraints (e.g., "forwardProperty weight; higherThan 10").
+- after [date], before [date] → Time constraints (e.g., "forwardProperty release date ; after 2000").
+- asc; desc → Sort the results of the last command in ascending or descending order (number or date).
+- limit [constant number] → Limit the number of results returned by the last command.
+- offset [constant number] → Skip the first N results.
 
-  ### ⚠️ Best Practice:
-  **If you use "forwardProperty", try to start from a known entity whenever possible.** If the question includes a specific entity (e.g., "Tim Burton"), use it as the starting point instead of querying a general concept (e.g., "a human"). This helps create more precise queries.
-  **If multiple entities share the same name (homonyms), using backwardProperty first helps disambiguate the entity by its relationship (e.g., "backwardProperty director; Burton" will have better chances to succeed than "Burton ; forwardProperty director" if several Burtons exist in the knowledge graph).**
-  **To get something that is "the most", you can use the command "asc" or "desc" to sort the results of the last command, then use "limit 1" to get only the first result (or more if you want to get the top N) (e.g., "a human ; forwardProperty height; desc; limit 1" to get the tallest person).**
-  **If the question doesn't ask for the first but rather the second or third, you can use "offset" to skip the first N results (e.g., "a human ; forwardProperty height; desc; offset 1; limit 1" to get the second tallest person).**
+### ⚠️ Best Practice:
+**If you use "forwardProperty", try to start from a known entity whenever possible.** If the question includes a specific entity (e.g., "Tim Burton"), use it as the starting point instead of querying a class (e.g., "a person"). This helps create more precise queries.
+**If multiple entities share the same name (homonyms), using backwardProperty first helps disambiguate the entity by its relationship (e.g., "backwardProperty director; Burton" will have better chances to succeed than "Burton ; forwardProperty director" if several Burtons exist in the knowledge graph).**
+**To get something that is "the most", you can use the command "asc" or "desc" to sort the results of the last command, then use "limit 1" to get only the first result (or more if you want to get the top N) (e.g., "a person ; forwardProperty height; desc; limit 1" to get the tallest person).**
+**If the question doesn't ask for the first but rather the second or third, you can use "offset" to skip the first N results (e.g., "a person ; forwardProperty height; desc; offset 1; limit 1" to get the second tallest person).**
 
-  ## Examples:
-  Q: At which school went Yayoi Kusama?
-  A: 
-  - The question asks for the school where Yayoi Kusama studied.
-  - We first retrieve the entity "Yayoi Kusama".
-  - Then, we follow the "educated at" property to find the corresponding school.
-   <commands>Yayoi Kusama; forwardProperty educated at</commands>
+## Examples:
+Q: Movies by Tim Burton after 1980?
+A: 
+- The question asks for movies directed by Tim Burton that were released after 1980.
+- We start by retrieving entities of type "film".
+- Then, we filter these films by the "director" property.
+- Next, we match the specific director "Tim Burton".
+- Finally, we apply a date filter to include only movies released after 1980.
+<commands>a film; forwardProperty director; Tim Burton; forwardProperty release date; after 1980</commands>`;
+  } else if (endpoint_family === 'wikidata') {
+    prompt = `
+      ## Task: Generate knowledge graph query commands for Sparklis (SPARQL-based tool) on a Wikidata endpoint.
 
-  Q: What is the boiling point of water?
-  A: 
-  - The question asks for the boiling point of water.
-  - We first retrieve the entity "water".
-  - Then, we follow the "boiling point" property to get the value.
-  <commands>water; forwardProperty boiling point</commands>
+## Format:
+1. Think step by step about what entities and relationships are needed.
+2. Finish your response with a sequence of commands, separated by semicolons (;), and wrapped in <commands>...</commands>.
 
-  Q: Movies by Tim Burton after 1980?
-  A: 
-  - The question asks for movies directed by Tim Burton that were released after 1980.
-  - We start by retrieving entities of type "film".
-  - Then, we filter these films by the "director" property.
-  - Next, we match the specific director "Tim Burton".
-  - Finally, we apply a date filter to include only movies released after 1980.
-  <commands>a film; forwardProperty director; Tim Burton; forwardProperty release date; after 1980</commands>
+### Available Commands:
+- a [class] → Retrieve entities of a given class (e.g., "a book" to find books). **⚠️ IMPORTANT:** If the question already contains the name of an entity (e.g., the title of the book), DO NOT use "a [class]". Directly query the entity instead.
+- [entity] → Retrieve a specific entity (e.g., "Albert Einstein" to find the entity representing Einstein). Use this when asking about a specific thing or individual.
+- forwardProperty [property] → Filter by property (e.g., "forwardProperty director" to find films directed by someone). Use this when moving from subject to object.
+- backwardProperty [property] → Reverse relation (e.g., "backwardProperty director" to find directors of a given film). Use this when moving from object to subject. The object does not need to have been specified in the previous command (for example, you can use "backwardProperty director" as your first command).
+- higherThan [number], lowerThan [constant number] → Value constraints (e.g., "forwardProperty weight; higherThan 10").
+- after [date], before [date] → Time constraints (e.g., "forwardProperty release date ; after 2000").
+- asc; desc → Sort the results of the last command in ascending or descending order (number or date).
+- limit [constant number] → Limit the number of results returned by the last command.
+- offset [constant number] → Skip the first N results.
 
-  Q: among the founders of tencent company, who has been member of national people' congress?"
-  A: 
-  - The question asks for founders of Tencent who were also members of the National People's Congress.
-  - We first retrieve "founders of" anything.
-  - Then, we follow specify that the company is "Tencent".
-  - Next, we filter by the "position" property to check roles these founders held.
-  - Finally, we match "National People's Congress" to find those who were members.
-  <commands>backwardProperty founder of; Tencent; forwardProperty position; National People's Congress</commands>  `;
+### ⚠️ Best Practice:
+**If you use "forwardProperty", try to start from a known entity whenever possible.** If the question includes a specific entity (e.g., "Tim Burton"), use it as the starting point instead of querying a class (e.g., "a human"). This helps create more precise queries.
+**If multiple entities share the same name (homonyms), using backwardProperty first helps disambiguate the entity by its relationship (e.g., "backwardProperty director; Burton" will have better chances to succeed than "Burton ; forwardProperty director" if several Burtons exist in the knowledge graph).**
+**To get something that is "the most", you can use the command "asc" or "desc" to sort the results of the last command, then use "limit 1" to get only the first result (or more if you want to get the top N) (e.g., "a human ; forwardProperty height; desc; limit 1" to get the tallest person).**
+**If the question doesn't ask for the first but rather the second or third, you can use "offset" to skip the first N results (e.g., "a human ; forwardProperty height; desc; offset 1; limit 1" to get the second tallest person).**
+
+## Examples:
+Q: At which school went Yayoi Kusama?
+A: 
+- The question asks for the school where Yayoi Kusama studied.
+- We first retrieve the entity "Yayoi Kusama".
+- Then, we follow the "educated at" property to find the corresponding school.
+<commands>Yayoi Kusama; forwardProperty educated at</commands>
+
+Q: What is the boiling point of water?
+A: 
+- The question asks for the boiling point of water.
+- We first retrieve the entity "water".
+- Then, we follow the "boiling point" property to get the value.
+<commands>water; forwardProperty boiling point</commands>
+
+Q: Movies by Tim Burton after 1980?
+A: 
+- The question asks for movies directed by Tim Burton that were released after 1980.
+- We start by retrieving entities of type "film".
+- Then, we filter these films by the "director" property.
+- Next, we match the specific director "Tim Burton".
+- Finally, we apply a date filter to include only movies released after 1980.
+<commands>a film; forwardProperty director; Tim Burton; forwardProperty release date; after 1980</commands>
+
+Q: among the founders of tencent company, who has been member of national people' congress?"
+A: 
+- The question asks for founders of Tencent who were also members of the National People's Congress.
+- We first retrieve "founders of" anything.
+- Then, we follow specify that the company is "Tencent".
+- Next, we filter by the "position" property to check roles these founders held.
+- Finally, we match "National People's Congress" to find those who were members.
+<commands>backwardProperty founder of; Tencent; forwardProperty position; National People's Congress</commands>`;
+  } else if (endpoint_family === 'corporate') {
+    prompt = `
+      ## Task: Generate knowledge graph query commands for Sparklis (SPARQL-based tool) on a Wikidata endpoint.
+
+## Format:
+1. Think step by step about what entities and relationships are needed.
+2. Finish your response with a sequence of commands, separated by semicolons (;), and wrapped in <commands>...</commands>.
+
+### Available Commands:
+- a [class] → Retrieve entities of a given class (e.g., "a book" to find books). **⚠️ IMPORTANT:** If the question already contains the name of an entity (e.g., the title of the book), DO NOT use "a [class]". Directly query the entity instead.
+- [entity] → Retrieve a specific entity (e.g., "Albert Einstein" to find the entity representing Einstein). Use this when asking about a specific thing or individual.
+- forwardProperty [property] → Filter by property (e.g., "forwardProperty director" to find films directed by someone). Use this when moving from subject to object.
+- backwardProperty [property] → Reverse relation (e.g., "backwardProperty director" to find directors of a given film). Use this when moving from object to subject. The object does not need to have been specified in the previous command (for example, you can use "backwardProperty director" as your first command).
+- higherThan [number], lowerThan [constant number] → Value constraints (e.g., "forwardProperty weight; higherThan 10").
+- after [date], before [date] → Time constraints (e.g., "forwardProperty release date ; after 2000").
+- asc; desc → Sort the results of the last command in ascending or descending order (number or date).
+- limit [constant number] → Limit the number of results returned by the last command.
+- offset [constant number] → Skip the first N results.
+
+### ⚠️ Best Practice:
+**If you use "forwardProperty", try to start from a known entity whenever possible.** If the question includes a specific entity (e.g., "Tim Burton"), use it as the starting point instead of querying a class (e.g., "a human"). This helps create more precise queries.
+**If multiple entities share the same name (homonyms), using backwardProperty first helps disambiguate the entity by its relationship (e.g., "backwardProperty director; Burton" will have better chances to succeed than "Burton ; forwardProperty director" if several Burtons exist in the knowledge graph).**
+**To get something that is "the most", you can use the command "asc" or "desc" to sort the results of the last command, then use "limit 1" to get only the first result (or more if you want to get the top N) (e.g., "a human ; forwardProperty height; desc; limit 1" to get the tallest person).**
+**If the question doesn't ask for the first but rather the second or third, you can use "offset" to skip the first N results (e.g., "a human ; forwardProperty height; desc; offset 1; limit 1" to get the second tallest person).**
+
+## Examples:
+Q: At which school went Yayoi Kusama?
+A: 
+- The question asks for the school where Yayoi Kusama studied.
+- We first retrieve the entity "Yayoi Kusama".
+- Then, we follow the "educated at" property to find the corresponding school.
+<commands>Yayoi Kusama; forwardProperty educated at</commands>
+
+Q: What is the boiling point of water?
+A: 
+- The question asks for the boiling point of water.
+- We first retrieve the entity "water".
+- Then, we follow the "boiling point" property to get the value.
+<commands>water; forwardProperty boiling point</commands>
+
+Q: Movies by Tim Burton after 1980?
+A: 
+- The question asks for movies directed by Tim Burton that were released after 1980.
+- We start by retrieving entities of type "film".
+- Then, we filter these films by the "director" property.
+- Next, we match the specific director "Tim Burton".
+- Finally, we apply a date filter to include only movies released after 1980.
+<commands>a film; forwardProperty director; Tim Burton; forwardProperty release date; after 1980</commands>
+
+Q: What is the department with the highest id?"
+A: 
+- The question asks for the department with the highest id.
+- We first retrieve the class "department".
+- Then, we follow the property "id" to get the ids of all departments.
+- Finally, we sort the results in descending order and limit the output to 1 to get the department with the highest id.
+<commands>a department ; forwardProperty id ; desc ; limit 1</commands>
+
+Q: List all suppliers in France.
+A:
+- The question asks for suppliers in France.
+- We first retrieve the class "supplier".
+- Then, we follow the property "address country" to get the country of each supplier.
+- Finally, we filter the results to include only those suppliers located in France.
+<commands>a supplier ; forwardProperty address country ; France</commands>`;
+  } else {
+    //todo
+  }
+  return prompt;
 }
 
 function forward_commands_chain_system_prompt() {
