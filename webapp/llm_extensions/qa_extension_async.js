@@ -332,42 +332,60 @@ function basic_select_sugg_logic(kind, query, forest, pred, lexicon) {
 }
 
 async function count_references_select_sugg_logic(kind, query, forest, pred, lexicon) {
-    let best_item = null;
+    let best_items = [];
     let best_score = null;
 
+    // First pass: collect all suggestions with the highest score
     for (const tree of forest) {
         let item = tree.item;
-        if (pred(item.suggestion)) {
-            let score = get_score(lexicon, kind, query, item);
+        if (!pred(item.suggestion)) continue;
 
-			//add a bonus for the most referenced entities (but only do it for the best ones to avoid too much querying)
-			//this will allow to diferentiate between entities with the same name
-			if (
-				(score !== null && best_score === null)
-				|| (score !== null && (score >= (0.95 * best_score)))
-			) {
-				let uri = suggestion_uri(item.suggestion);
-				let id = uri.split("/").pop();
-				let references_result  = await sparklis.evalSparql(countReferencesQuery(id, "wikidata"));
-				let references_count = 0;
-				if (references_result?.rows?.[0]?.[0]?.number !== undefined) {
-					references_count = references_result.rows[0][0].number;
-				}
-				score += references_count * 0.00001;
-			} 
+        let score = get_score(lexicon, kind, query, item);
+        if (score === null || score <= 0) continue;
 
-            if (best_item === null
-                || best_score === null
-                || (score !== null && best_score !== null && score > best_score)) {
-                best_item = item;
-                best_score = score;
-            }
+        if (best_score === null || score > best_score) {
+            best_score = score;
+            best_items = [item];
+        } else if (score === best_score) {
+            best_items.push(item);
         }
     }
 
-    console.log("BEST SCORE", best_score);
-    return best_item.suggestion;
+    // If no best items, return null
+    if (best_items.length === 0) {
+        return null;
+    }
+
+    // If only one best item, return directly without further queries
+    if (best_items.length === 1) {
+        return best_items[0].suggestion;
+    }
+
+    // Second pass: among top scorers, select the one with most references
+    let most_referenced_item = null;
+    let max_references = -1;
+	console.log("counting references to determine best item among ", best_items.length, " items");
+    for (const item of best_items) {
+        let uri = suggestion_uri(item.suggestion);
+
+        let [objects_result, subjects_result] = await Promise.all([
+            sparklis.evalSparql(countObjectQuery(uri)),
+            sparklis.evalSparql(countSubjectQuery(uri))
+        ]);
+
+        let objects_count = objects_result?.rows?.[0]?.[0]?.number || 0;
+        let subjects_count = subjects_result?.rows?.[0]?.[0]?.number || 0;
+        let total_references = objects_count + subjects_count;
+
+        if (total_references > max_references) {
+            max_references = total_references;
+            most_referenced_item = item;
+        }
+    }
+
+    return most_referenced_item?.suggestion || null;
 }
+
 
 // computing score of item for suggestion choice
 function get_score(lexicon, kind, query, item) {
@@ -481,13 +499,14 @@ function isNumeric(str) {
 		   !isNaN(parseFloat(str)) // ...and ensure strings of whitespace fail
 }
 
-function countReferencesQuery(entity, source) {
-    if (source === "wikidata") {
-        return `SELECT (COUNT(*) AS ?count) WHERE {
-  				?subject ?predicate wd:${entity}. }`;
-    } else {
-        throw new Error("Unsupported source for countReferencesQuery: " + source);
-    }
+function countObjectQuery(entity_uri) {
+	return `SELECT (COUNT(*) AS ?number) WHERE {
+		?subject ?predicate <${entity_uri}> . }`;
+}
+
+function countSubjectQuery(entity_uri) {
+	return `SELECT (COUNT(*) AS ?number) WHERE {
+		<${entity_uri}> ?predicate ?object . }`;
 }
 
 // example steps
