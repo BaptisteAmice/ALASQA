@@ -271,15 +271,15 @@ function commands_chain_system_prompt_the_most_improved() {
 - a [class] → Retrieve entities of a given class (e.g., "a book" to find books). **⚠️ IMPORTANT:** If the question already contains the name of an entity (e.g., the title of the book), DO NOT use "a [class]". Directly query the entity instead.
 - [entity] → Retrieve a specific entity (e.g., "Albert Einstein" to find the entity representing Einstein). Use this when asking about a specific thing or individual.
 - property [property] → Retrieve a specific property (e.g., "property height" to find the height of an entity).
-- higherThan [number], lowerThan [constant number] → Value constraints (e.g., "forwardProperty weight; higherThan 10").
-- after [date], before [date] → Time constraints (e.g., "forwardProperty release date ; after 2000").
-- asc; desc → Sort the results of the last command in ascending or descending order (number or date).
+- higherThan [number], lowerThan [constant number] → Value constraints (e.g., "property weight; higherThan 10").
+- after [date], before [date] → Time constraints (e.g., "property release date ; after 2000").
+- asc [type], desc [type] → Sort the results of the last command in ascending or descending order according to the results of previous command and in the given type (number or date).
 - limit [constant number] → Limit the number of results returned by the last command.
 - offset [constant number] → Skip the first N results.
 
 ### ⚠️ Best Practice:
-**To get something that is "the most", you can use the command "asc" or "desc" to sort the results of the last command, then use "limit 1" to get only the first result (or more if you want to get the top N) (e.g., "a human ; property height; desc; limit 1" to get the tallest person).**
-**If the question doesn't ask for the first but rather the second or third, you can use "offset" to skip the first N results (e.g., "a human ; property height; desc; offset 1; limit 1" to get the second tallest person).**
+**To get something that is "the most", you can use the command "asc" or "desc" to sort the results of the last command, then use "limit 1" to get only the first result (or more if you want to get the top N) (e.g., "a human ; property height; desc number; limit 1" to get the tallest person).**
+**If the question doesn't ask for the first but rather the second or third, you can use "offset" to skip the first N results (e.g., "a human ; property birth date; asc date; offset 1; limit 1" to get the second oldest human).**
 
 ## Examples:
 Q: At which school went Yayoi Kusama?

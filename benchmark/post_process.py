@@ -39,7 +39,10 @@ command_list = [
     "up",
     "down",
     "goback",
-    "filter"
+    "filter",
+    "limit",
+    "offset",
+    "property"
 ]
 
 # List of recognizable error messages

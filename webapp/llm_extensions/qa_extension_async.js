@@ -94,6 +94,31 @@ function process_step(place, step) {
     } else if (step === "desc") {
 	let sugg = { type: "IncrOrder", order: { type: "DESC", conv: { targetType: "Double", forgetOriginalDatatype: false } } };
 	return apply_suggestion(place, "desc-order", sugg)
+	} else if ((match = /^asc\s+(.+)$/.exec(step))) {
+		if (match[1].toLowerCase() === "date") {
+			//todo temp
+			let sugg = { type: "IncrOrder", order: { type: "ASC", conv: { targetType: "Date", forgetOriginalDatatype: false } } };
+			return apply_suggestion(place, "asc-order", sugg)
+		} else {
+			let sugg = { type: "IncrOrder", order: { type: "ASC", conv: { targetType: "Double", forgetOriginalDatatype: false } } };
+			return apply_suggestion(place, "asc-order", sugg)
+		}
+	} else if ((match = /^desc\s+(.+)$/.exec(step))) {
+		if (match[1].toLowerCase() === "date") {
+			//todo temp
+			let sugg = { type: "IncrOrder", order: { type: "DESC", conv: { targetType: "Date", forgetOriginalDatatype: false } } };
+			return apply_suggestion(place, "desc-order", sugg)
+		} else {
+			let sugg = { type: "IncrOrder", order: { type: "DESC", conv: { targetType: "Double", forgetOriginalDatatype: false } } };
+			return apply_suggestion(place, "desc-order", sugg)
+		}
+
+	/*} else if (step === "foreach") {
+	console.log("aaaaaaaaaaa");
+	return  apply_suggestion(place, "foreach", "IncrForeach")*/
+	} else if (step === "countDistinct") {
+	let sugg = { type: "IncrAggreg", aggreg: "COUNT_DISTINCT" };
+	return  apply_suggestion(place, "count", sugg)
     } else if ((match = /^after\s+(.+)$/.exec(step))) {
 	LAST_INITIATED_COMMAND = "after";
 	let constr = { type: "After", kwd: match[1] };
