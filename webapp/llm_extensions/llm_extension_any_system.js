@@ -56,6 +56,9 @@ class LLMFramework {
 
         this.handleOffset = this.handleOffset.bind(this); // Bind the method to the class instance. JS needs it apparently.
         bus.addEventListener('offset', this.handleOffset);
+
+        this.handleTermCmdBackup= this.handleOffset.bind(this); // Bind the method to the class instance. JS needs it apparently.
+        bus.addEventListener('term_cmd_backup', this.handleTermCmdBackup);
     }
 
     /**
@@ -146,6 +149,13 @@ class LLMFramework {
         const { offset_number } = event.detail;
         console.log(`Handling offset task with offset = ${offset_number}`);
         this.sparql_query_offset_number = offset_number;
+    }
+
+    handleTermCmdBackup(event) {
+        const { message } = event.detail;
+        this.reasoning_text += "<br>" + message + "<br>";
+        this.errors += "Warning:" + message + ";";
+
     }
 }
 

@@ -1,6 +1,8 @@
 // reporting that this extension is active
 console.log("QA extension active");
 
+var LAST_INITIATED_COMMAND = null; //used in case of error, to know which command was initiated last (code to update for each command needing it
+
 // upon window load... create text field and ENTER handler
 window.addEventListener(
     'load',
@@ -23,6 +25,7 @@ window.addEventListener(
  * @returns 
  */
 async function process_question(qa) {
+	LAST_INITIATED_COMMAND = null;
     let question = qa.value;
     console.log("Question: " + question);
     let steps = question.split(/\s*;\s*/).filter(s => s !== '');
@@ -47,7 +50,21 @@ async function process_steps(qa, place, steps) {
 		})
 	    .catch(msg => {
 			console.log("QA search halted because " + msg);
-			return Promise.reject(msg); // Propagate error
+			//if the command that failed was trying to get a specific entity, we can instead try to match the corresponding string
+			if (LAST_INITIATED_COMMAND === "term" && steps[0].length >=3) {
+				//signal to add text to the reasoning and errors of the system
+				bus.dispatchEvent(new CustomEvent('term_cmd_backup', { detail: { message: "The command trying to get a specific entity failed. Now trying to match the corresponding term instead." } }));
+				console.log("Trying to match the term of the failed command.");
+				//add a "match" to the first command of qa
+				let first_step = steps[0];
+				let new_first_step = "match " + first_step;
+				steps[0] = new_first_step;
+				qa.value = steps.join(" ; "); // update qa field
+				return process_steps(qa, place, steps);
+			} else {
+				LAST_INITIATED_COMMAND = null; // reset the last initiated command
+				return Promise.reject(msg); // Propagate error
+			}
 	    })
     }
 }
@@ -57,6 +74,7 @@ async function process_steps(qa, place, steps) {
 // applying step to place, returning a promise of the next place
 function process_step(place, step) {
     console.log("Step: ", step);
+	LAST_INITIATED_COMMAND = step;
     let match;
     if (step === "up") {
 	return move_focus(place, move_up)
@@ -77,18 +95,22 @@ function process_step(place, step) {
 	let sugg = { type: "IncrOrder", order: { type: "DESC", conv: { targetType: "Double", forgetOriginalDatatype: false } } };
 	return apply_suggestion(place, "desc-order", sugg)
     } else if ((match = /^after\s+(.+)$/.exec(step))) {
+	LAST_INITIATED_COMMAND = "after";
 	let constr = { type: "After", kwd: match[1] };
 	let sugg = {type: "IncrConstr", constr: constr, filterType: "OnlyLiterals"};
 	return apply_suggestion(place, "after", sugg)
     } else if ((match = /^before\s+(.+)$/.exec(step))) {
+	LAST_INITIATED_COMMAND = "before";
 	let constr = { type: "Before", kwd: match[1] };
 	let sugg = {type: "IncrConstr", constr: constr, filterType: "OnlyLiterals"};
 	return apply_suggestion(place, "before", sugg)
     } else if ((match = /^from\s+(.+)\s+to\s+(.+)$/.exec(step))) {
+	LAST_INITIATED_COMMAND = "from to";
 	let constr = { type: "FromTo", kwdFrom: match[1], kwdTo: match[2] };
 	let sugg = {type: "IncrConstr", constr: constr, filterType: "OnlyLiterals"};
 	return apply_suggestion(place, "from-to", sugg)
     } else if ((match = /^higherThan\s*(.+)$/.exec(step))) {
+	LAST_INITIATED_COMMAND = "higher";
 	if (!isNumeric(match[1])) {
 		return Promise.reject("higherThan something that is not a number");
 	}
@@ -97,6 +119,7 @@ function process_step(place, step) {
 	let sugg = {type: "IncrConstr", constr: constr, filterType: "OnlyLiterals"};
 	return apply_suggestion(place, "higher-than", sugg)
     } else if ((match = /^lowerThan\s*(.+)$/.exec(step))) {
+	LAST_INITIATED_COMMAND = "lower";
 	if (!isNumeric(match[1])) {
 		return Promise.reject("lowerThan something that is not a number");
 	}
@@ -104,6 +127,7 @@ function process_step(place, step) {
 	let sugg = {type: "IncrConstr", constr: constr, filterType: "OnlyLiterals"};
 	return apply_suggestion(place, "lower-than", sugg)
     } else if ((match = /^between\s+(.+)\s+and\s+(.+)$/.exec(step))) {
+	LAST_INITIATED_COMMAND = "between";
 	if (!isNumeric(match[1]) || !isNumeric(match[2])) {
 		return Promise.reject("between something that is not a number");
 	}
@@ -112,6 +136,7 @@ function process_step(place, step) {
 	return apply_suggestion(place, "between", sugg)
 	
 	} else if ((match = /^match\s*(.+)$/.exec(step))) { // Regex or Wikidata search
+	LAST_INITIATED_COMMAND = "match";
 	return new Promise((resolve, reject) => {
 		get_constr("WikidataSearch", match[1]).
 		then(constr => 
@@ -129,6 +154,7 @@ function process_step(place, step) {
 	})	
 
 	} else if ((match = /^limit\s*(.+)$/.exec(step))) {
+	LAST_INITIATED_COMMAND = "limit";
 		if (!isNumeric(match[1])) {
 			return Promise.reject("limit something that is not a number");
 		}
@@ -154,6 +180,7 @@ function process_step(place, step) {
 		});
 
 		} else if ((match = /^offset\s*(.+)$/.exec(step))) {
+		LAST_INITIATED_COMMAND = "offset";
 		if (!isNumeric(match[1])) {
 			return Promise.reject("offset something that is not a number");
 		}
@@ -179,6 +206,7 @@ function process_step(place, step) {
 		});
 
 	} else if (step === "goback") { //todo marche pas 2 fois d'affilées
+		LAST_INITIATED_COMMAND = "goback";
 		return new Promise((resolve, reject) => {
 			try {
 				sparklis.back();
@@ -191,6 +219,7 @@ function process_step(place, step) {
 		});
 
 	} else if ((match = /^filter\s+(.+)$/.exec(step))) {
+		LAST_INITIATED_COMMAND = "filter";
 		let constr = { type: "MatchesAll", kwds: match[1].split(/\s+/) };
 		sparklis.setConceptConstr(constr);
 		sparklis.setTermConstr(constr);
@@ -198,12 +227,14 @@ function process_step(place, step) {
 		return Promise.resolve(sparklis.currentPlace());
 
     } else if ((match = /^a\s+(.+)\s*$/.exec(step))) {
+	LAST_INITIATED_COMMAND = "class";
 	return search_and_apply_suggestion(
 	    place, "class", match[1],
 	    (place,constr) => place.getConceptSuggestions(false,constr),
 	    sugg => suggestion_type(sugg) === "IncrType",
 	    sparklis.classLabels())
     } else if ((match = /^forwardProperty\s+(.+)$/.exec(step))) {
+	LAST_INITIATED_COMMAND = "fwd";
 	return search_and_apply_suggestion(
 	    place, "fwd property", match[1],
 	    (place,constr) => place.getConceptSuggestions(false,constr),
@@ -212,6 +243,7 @@ function process_step(place, step) {
 		|| suggestion_type(sugg) === "IncrPred" && sugg.arg === "S",
 	    sparklis.propertyLabels())
     } else if ((match = /^backwardProperty\s+(.+)$/.exec(step))) {
+	LAST_INITIATED_COMMAND = "bwd";
 	return search_and_apply_suggestion(
 	    place, "bwd property", match[1],
 	    (place,constr) => place.getConceptSuggestions(false,constr),
@@ -220,6 +252,7 @@ function process_step(place, step) {
 		|| suggestion_type(sugg) === "IncrPred" && sugg.arg === "O",
 	    sparklis.propertyLabels())
     } else {
+	LAST_INITIATED_COMMAND = "term";
 	return search_and_apply_suggestion(
 	    place, "term", step,
 	    (place,constr) => place.getTermSuggestions(false,constr),

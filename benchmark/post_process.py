@@ -52,6 +52,9 @@ error_messages = [
     "Error: error while parsing SPARQL results",
     "Error: condition shouldn't have matched",
 
+    # Backup from error messages
+    "trying to match the corresponding term instead",
+
     # Alert messages
     "The query was not understood by the SPARQL endpoint",
     "There was an error at the SPARQL endpoint",
