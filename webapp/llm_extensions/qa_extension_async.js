@@ -251,6 +251,17 @@ function process_step(place, step) {
 	    suggestion_type(sugg) === "IncrRel" && sugg.orientation === "Bwd"
 		|| suggestion_type(sugg) === "IncrPred" && sugg.arg === "O",
 	    sparklis.propertyLabels())
+	} else if ((match = /^property\s+(.+)$/.exec(step))) {
+		LAST_INITIATED_COMMAND = "property";
+		return search_and_apply_suggestion(
+			place, "fwd property", match[1],
+			(place,constr) => place.getConceptSuggestions(false,constr),
+			sugg =>
+			suggestion_type(sugg) === "IncrRel" && sugg.orientation === "Fwd"
+			|| suggestion_type(sugg) === "IncrPred" && sugg.arg === "S"
+			|| suggestion_type(sugg) === "IncrRel" && sugg.orientation === "Bwd"
+			|| suggestion_type(sugg) === "IncrPred" && sugg.arg === "O",
+			sparklis.propertyLabels())
     } else {
 	LAST_INITIATED_COMMAND = "term";
 	return search_and_apply_suggestion(

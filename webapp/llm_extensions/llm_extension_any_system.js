@@ -502,7 +502,7 @@ window.LLMFrameworkOneShotImproved = LLMFrameworkOneShotImproved; //to be able t
 window.LLMFrameworks.push(LLMFrameworkOneShotImproved.name); //to be able to access the class name
 
 
-class LLMFrameworkOneTheMost extends LLMFramework {
+class LLMFrameworkTheMost extends LLMFramework {
     constructor(question, question_id) {
         super(question, question_id, "count_references");
     }
@@ -535,8 +535,44 @@ class LLMFrameworkOneTheMost extends LLMFramework {
         await this.executeStep(step_get_results, "Get results", [this, place, this.sparql]);
     }
 }
-window.LLMFrameworkOneTheMost = LLMFrameworkOneTheMost; //to be able to access the class
-window.LLMFrameworks.push(LLMFrameworkOneTheMost.name); //to be able to access the class name
+window.LLMFrameworkTheMost = LLMFrameworkTheMost; //to be able to access the class
+window.LLMFrameworks.push(LLMFrameworkTheMost.name); //to be able to access the class name
+
+class LLMFrameworkTheMostImproved extends LLMFramework {
+    constructor(question, question_id) {
+        super(question, question_id, "count_references");
+    }
+    async answerQuestionLogic() {
+        // Call llm generation
+        let output_llm = await this.executeStep(step_generation, "LLM generation", 
+            [this, commands_chain_system_prompt_the_most_improved(),"commands_chain_system_prompt_the_most_improved", this.question]
+        );
+        // Extract the commands from the LLM output
+        let extracted_commands_list = await this.executeStep(step_extract_tags, "Extracted commands",
+             [this, output_llm, "commands"]
+        );
+        // Execute the commands, wait for place evaluation and get the results
+        let extracted_commands = extracted_commands_list.at(-1) || "";
+        await this.executeStep(step_execute_commands, "Commands execution", [this, extracted_commands]);
+        
+        //if the sparql query limit number is set, change the limit clause in the query
+        let place = sparklis.currentPlace();
+        this.sparql = place.sparql();
+        if (this.sparql_query_limit_number) {
+            //execute step
+            this.sparql = await this.executeStep(step_change_or_add_limit, "Add/change limit", [this, this.sparql, this.sparql_query_limit_number]);
+            //remove the ordering variable from the select clause
+            this.sparql = await this.executeStep(step_remove_ordering_var_from_select, "Remove ordering variable from select", [this, this.sparql]);
+        }
+        if (this.sparql_query_offset_number) {
+            //execute step
+            this.sparql = await this.executeStep(step_change_or_add_offset, "Add/change offset", [this, this.sparql, this.sparql_query_offset_number]);
+        }
+        await this.executeStep(step_get_results, "Get results", [this, place, this.sparql]);
+    }
+}
+window.LLMFrameworkTheMostImproved = LLMFrameworkTheMostImproved; //to be able to access the class
+window.LLMFrameworks.push(LLMFrameworkTheMostImproved.name); //to be able to access the class name
 
 
 /**
