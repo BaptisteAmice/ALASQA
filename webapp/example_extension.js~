@@ -1,2 +1,0 @@
-console.log("testing JS API");
-sparklis_custom.afterEndpointChange = function() { console.log("New endpoint: ", sparklis.endpoint()); };
