@@ -22,15 +22,15 @@ KNOWN_DATASETS = [
 ]
 
 @app.get("/")
-async def get_answer(question: str, dataset: str):
+def get_answer(question: str, dataset: str) -> dict:
     """
      Translate a natural language question into a SPARQL query for a given dataset.
     """
     if dataset not in KNOWN_DATASETS:
         raise fastapi.HTTPException(404, "Unknown dataset ...")
     
-    system_name = "sparklisllm-LLMFrameworkOneShotImproved" #todo change
-    response, error, steps_status, reasoning, driver = interactions.simulated_user(
+    system_name = "sparklisllm-LLMFrameworkTheMostImproved" #todo change
+    result, nl_query, error, steps_status, reasoning, driver = interactions.simulated_user(
         config.SPARKLIS_FILE,
         lambda driver: interactions.sparklisllm_question(driver, question, dataset, system_name)
     )
@@ -38,7 +38,7 @@ async def get_answer(question: str, dataset: str):
     return {
         "dataset": dataset,
         "question": question,
-        "query": response,
+        "query": result
     }
 
 # @app.get("/fetch")
@@ -46,7 +46,7 @@ async def get_answer(question: str, dataset: str):
 #     """
 #     Draft of the "/" endpoint. #todo
 #     """
-#     response, error, steps_status, reasoning, driver = interactions.simulated_user(
+#     result, nl_query, error, steps_status, reasoning, driver = interactions.simulated_user(
 #         config.SPARKLIS_FILE,
 #         lambda driver: interactions.sparklisllm_question(driver, question, endpoint_sparql, system_name)
 #     )
