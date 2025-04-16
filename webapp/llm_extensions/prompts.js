@@ -273,7 +273,7 @@ function commands_chain_system_prompt_the_most_improved() {
 - property [property] → Retrieve a specific property (e.g., "property height" to find the height of an entity).
 - higherThan [number], lowerThan [constant number] → Value constraints (e.g., "property weight; higherThan 10").
 - after [date], before [date] → Time constraints (e.g., "property release date ; after 2000").
-- groupBy count → Group on the subject of the relation of the last property command and for each of them count the number objects (e.g. property film director ; groupBy count).
+- groupBy count → Can only be used if a property as been called previously. Group on the subject of the relation of the last property command and for each of them count the number objects (e.g. property film director ; groupBy count).
 - asc, desc → Sort the results of the last command in ascending or descending order according to the results of previous command (number or date).
 - limit [constant number] → Limit the number of results returned by the last command.
 - offset [constant number] → Skip the first N results.
