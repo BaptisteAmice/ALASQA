@@ -1,6 +1,7 @@
 import json
 import logging
 import datetime
+import time
 import os
 from SPARQLWrapper import SPARQLWrapper, JSON
 from SPARQLWrapper.SPARQLExceptions import QueryBadFormed
@@ -203,7 +204,7 @@ def execute_query(sparql, query: str, query_index: int, query_type: str) -> tupl
                 if hasattr(e, "headers") and "Retry-After" in e.headers:
                     retry_after = int(e.headers["Retry-After"])
                 logging.warning(f"Query {query_index} ({query_type}) hit 429 Too Many Requests. Retrying after {retry_after} seconds.")
-                datetime.time.sleep(retry_after)
+                time.sleep(retry_after)
             else:
                 logging.error(f"Error executing query {query_index} ({query_type}): {e}")
                 return None, ERROR_PREFIX + query_type + " query execution failed."
