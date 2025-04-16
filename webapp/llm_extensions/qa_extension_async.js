@@ -95,33 +95,30 @@ function process_step(place, step) {
 	let sugg = { type: "IncrOrder", order: { type: "ASC", conv: { targetType: "Double", forgetOriginalDatatype: false } } };
 	console.log("previous step: ", previous_step);
 	if (previous_step && previous_step.toLowerCase().includes("date")) {
+		//sparklis doesn't allow to order by date, so we will edit the final sparql query to do it
 		bus.dispatchEvent(new CustomEvent('order_date', { detail: { order: 'asc' } }));
 	}
 	return apply_suggestion(place, "asc-order", sugg)
     } else if (step === "desc") {
 	if (previous_step && previous_step.toLowerCase().includes("date")) {
+		//sparklis doesn't allow to order by date, so we will edit the final sparql query to do it
 		bus.dispatchEvent(new CustomEvent('order_date', { detail: { order: 'desc' } }));
 	}
 	let sugg = { type: "IncrOrder", order: { type: "DESC", conv: { targetType: "Double", forgetOriginalDatatype: false } } };
 	return apply_suggestion(place, "desc-order", sugg)
-	} else if ((match = /^asc\s+(.+)$/.exec(step))) {
-		if (match[1].toLowerCase() === "date") {
-			bus.dispatchEvent(new CustomEvent('order_date', { detail: { order: 'asc' } }));
-			let sugg = { type: "IncrOrder", order: { type: "ASC", conv: { targetType: "Date", forgetOriginalDatatype: false } } };
-			return apply_suggestion(place, "asc-order", sugg)
-		} else {
-			let sugg = { type: "IncrOrder", order: { type: "ASC", conv: { targetType: "Double", forgetOriginalDatatype: false } } };
-			return apply_suggestion(place, "asc-order", sugg)
+	} else if ((match = /^groupBy\s+(.+)$/.exec(step))) {
+	LAST_INITIATED_COMMAND = "groupBy";
+	bus.dispatchEvent(new CustomEvent('groupby_action', { detail: { action: 'count' } }));
+	//Keep the current place and does nothing
+	return new Promise((resolve, reject) => {
+		try {
+			waitForEvaluation(sparklis.currentPlace()).then(() => {
+				resolve(sparklis.currentPlace());
+			});
+		} catch (error) {
+			reject(error);
 		}
-	} else if ((match = /^desc\s+(.+)$/.exec(step))) {
-		if (match[1].toLowerCase() === "date") {
-			bus.dispatchEvent(new CustomEvent('order_date', { detail: { order: 'desc' } }));
-			let sugg = { type: "IncrOrder", order: { type: "DESC", conv: { targetType: "Date", forgetOriginalDatatype: false } } };
-			return apply_suggestion(place, "desc-order", sugg)
-		} else {
-			let sugg = { type: "IncrOrder", order: { type: "DESC", conv: { targetType: "Double", forgetOriginalDatatype: false } } };
-			return apply_suggestion(place, "desc-order", sugg)
-		}
+	});
 
 	/*} else if (step === "foreach") {
 	console.log("aaaaaaaaaaa");

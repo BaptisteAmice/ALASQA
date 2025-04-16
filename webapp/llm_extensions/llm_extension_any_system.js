@@ -45,6 +45,7 @@ class LLMFramework {
         this.sparql_query_limit_number = null;
         this.sparql_query_offset_number = null;
         this.order_date = false;
+        this.group_by_action = null;
 
         this.question = question;
         this.question_id = question_id;
@@ -62,6 +63,9 @@ class LLMFramework {
 
         this.handleOrderDate = this.handleOrderDate.bind(this); // Bind the method to the class instance. JS needs it apparently.
         bus.addEventListener('order_date', this.handleOrderDate);
+
+        this.handleGroupbyAction = this.handleGroupbyAction.bind(this); // Bind the method to the class instance. JS needs it apparently.
+        bus.addEventListener('groupby_action', this.handleGroupbyAction);
     }
 
     /**
@@ -163,6 +167,12 @@ class LLMFramework {
     handleOrderDate(event) {
         console.log(`Handling order date task.`);
         this.order_date = true;
+    }
+
+    handleGroupbyAction(event) {
+        console.log(`Handling group by action.`);
+        const { action } = event.detail;
+        this.group_by_action = action;
     }
 }
 
@@ -340,6 +350,53 @@ function step_change_or_add_limit(framework, query, limit) {
     return updatedQuery;
 }
 
+function step_group_by_and_count(framework, query) {
+    framework.reasoning_text += "<br>Modifying query to group by and count<br>";
+
+    const prefixSection = query.match(/^(PREFIX[\s\S]*?)SELECT/i)?.[1] || '';
+    const selectVars = query.match(/SELECT\s+DISTINCT\s+(.*?)\s+WHERE/i)?.[1]?.trim().split(/\s+/) || [];
+    const whereMatch = query.match(/WHERE\s*{([\s\S]*?)}/i);
+    const limitMatch = query.match(/LIMIT\s+\d+/i)?.[0] || '';
+  
+    if (!whereMatch) return query;
+  
+    const whereContent = whereMatch[1].trim();
+    const triples = whereContent.split('.').map(t => t.trim()).filter(Boolean);
+  
+    const lastTriple = triples[triples.length - 1];
+    const tripleMatch = lastTriple.match(/(\?\w+)\s+[^\s]+\s+(?:\[.*?(\?\w+).*?\]|(\?\w+))/);
+    if (!tripleMatch) return query;
+  
+    const subjectVar = tripleMatch[1];
+    const groupByVars = [...new Set(selectVars.filter(v => v !== subjectVar))];
+  
+    const newSelect = [
+      ...groupByVars,
+      `(COUNT(DISTINCT ${subjectVar}) AS ?count)`
+    ].join(' ');
+  
+    const groupByClause = groupByVars.length ? `GROUP BY ${groupByVars.join(' ')}` : '';
+  
+    // Handle ORDER BY direction
+    let newOrderByClause = '';
+    const orderMatch = query.match(/ORDER\s+BY\s+(ASC|DESC)?\s*\((?:[^\)]+)\)/i);
+    if (orderMatch) {
+      const direction = orderMatch[1]?.toUpperCase() || ''; // ASC or DESC
+      newOrderByClause = direction ? `ORDER BY ${direction}(COUNT(DISTINCT ${subjectVar}))` : `ORDER BY ?count`;
+    }
+  
+    return `
+  ${prefixSection.trim()}
+  SELECT DISTINCT ${newSelect}
+  WHERE {
+    ${triples.map(t => `  ${t} .`).join('\n')}
+  }
+  ${groupByClause}
+  ${newOrderByClause}
+  ${limitMatch}
+  `.trim();
+}  
+
 /**
  * Function to add an OFFSET clause to the query (or change it if it already exists).
  * The OFFSET clause will appear before the LIMIT clause if one exists.
@@ -406,25 +463,36 @@ function step_remove_ordering_var_from_select(framework, query) {
     if (!selectMatch || !orderMatch) return query;
 
     const fullSelect = selectMatch[0];
-    const selectVars = selectMatch[2].trim().split(/\s+/);
+    const selectVarsRaw = selectMatch[2].trim();
 
     const orderExpr = orderMatch[1];
-
-    // Try to extract the variable used in ORDER BY
     const varMatch = orderExpr.match(/\?[\w\d_]+/g);
     if (!varMatch || varMatch.length === 0) return query;
 
-    // We'll handle only the first ORDER BY variable for now
     const orderingVar = varMatch[0];
 
-    // Only remove if there's more than one variable in SELECT
-    if (selectVars.length > 1 && selectVars.includes(orderingVar)) {
-        const updatedVars = selectVars.filter(v => v !== orderingVar);
-        const updatedSelect = `SELECT ${selectMatch[1] || ''}${updatedVars.join(' ')}`;
-        query = query.replace(fullSelect, updatedSelect);
-    }
+    // Split the SELECT clause by spaces, preserving COUNT expressions
+    // This regex captures:
+    // - Aggregates like COUNT(?var) AS ?count or COUNT(DISTINCT ?var) AS ?count
+    // - Simple variables like ?s ?p ?o
+    const selectParts = Array.from(selectVarsRaw.matchAll(/(COUNT\s*\(.*?\)\s+AS\s+\?\w+|\?\w+)/gi)).map(m => m[0]);
+
+    // If only one variable/expression is selected, we don't remove it
+    if (selectParts.length <= 1) return query;
+
+    const updatedSelectParts = selectParts.filter(part => {
+        // Remove this part if it contains the ordering variable
+        return !part.includes(orderingVar);
+    });
+
+    if (updatedSelectParts.length === selectParts.length) return query; // Nothing removed
+
+    const updatedSelect = `SELECT ${selectMatch[1] || ''}${updatedSelectParts.join(' ')}`;
+    query = query.replace(fullSelect, updatedSelect);
+
     return query;
 }
+
 
 
 /**
@@ -560,9 +628,15 @@ class LLMFrameworkTheMostImproved extends LLMFramework {
         let extracted_commands = extracted_commands_list.at(-1) || "";
         await this.executeStep(step_execute_commands, "Commands execution", [this, extracted_commands]);
         
-        //if the sparql query limit number is set, change the limit clause in the query
+        //get the current sparql query from the place
         let place = sparklis.currentPlace();
         this.sparql = place.sparql();
+
+        //if an action for group by is defined modify the query (done before step_remove_ordering_var_from_select)
+        if (this.group_by_action) {
+            this.sparql = await this.executeStep(step_group_by_and_count, "Group by and count", [this, this.sparql]);
+        }
+        //if the sparql query limit number is set, change the limit clause in the query
         if (this.sparql_query_limit_number) {
             //execute step
             this.sparql = await this.executeStep(step_change_or_add_limit, "Add/change limit", [this, this.sparql, this.sparql_query_limit_number]);
@@ -575,6 +649,7 @@ class LLMFrameworkTheMostImproved extends LLMFramework {
         if (this.order_date) {
             this.sparql = await this.executeStep(step_change_order_type_to_date, "Change order type to date", [this, this.sparql]);
         }
+        console.log("sparql after modification", this.sparql);
         await this.executeStep(step_get_results, "Get results", [this, place, this.sparql]);
     }
 }

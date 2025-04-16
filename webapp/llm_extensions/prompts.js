@@ -273,6 +273,7 @@ function commands_chain_system_prompt_the_most_improved() {
 - property [property] → Retrieve a specific property (e.g., "property height" to find the height of an entity).
 - higherThan [number], lowerThan [constant number] → Value constraints (e.g., "property weight; higherThan 10").
 - after [date], before [date] → Time constraints (e.g., "property release date ; after 2000").
+- groupBy count → Group on the subject of the relation of the last property command and for each of them count the number objects (e.g. property film director ; groupBy count).
 - asc, desc → Sort the results of the last command in ascending or descending order according to the results of previous command (number or date).
 - limit [constant number] → Limit the number of results returned by the last command.
 - offset [constant number] → Skip the first N results.
@@ -280,6 +281,7 @@ function commands_chain_system_prompt_the_most_improved() {
 ### ⚠️ Best Practice:
 **To get something that is "the most", you can use the command "asc" or "desc" to sort the results of the last command, then use "limit 1" to get only the first result (or more if you want to get the top N) (e.g., "a human ; property height; desc; limit 1" to get the tallest person).**
 **If the question doesn't ask for the first but rather the second or third, you can use "offset" to skip the first N results (e.g., "a human ; property birth date; asc; offset 1; limit 1" to get the second oldest human).**
+**It is also possible to use it combined with "groupBy count". For example, "property film director ; a movie; groupBy count ; desc; limit 1" will give the director with the most films.**
 
 ## Examples:
 Q: At which school went Yayoi Kusama?
