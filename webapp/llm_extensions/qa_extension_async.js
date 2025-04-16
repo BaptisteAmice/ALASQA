@@ -2,6 +2,7 @@
 console.log("QA extension active");
 
 var LAST_INITIATED_COMMAND = null; //used in case of error, to know which command was initiated last (code to update for each command needing it
+var previous_step = null; //used to store the previous command, to be able to go back to it if needed
 
 // upon window load... create text field and ENTER handler
 window.addEventListener(
@@ -25,7 +26,8 @@ window.addEventListener(
  * @returns 
  */
 async function process_question(qa) {
-	LAST_INITIATED_COMMAND = null;
+	LAST_INITIATED_COMMAND = null; // reset the previous command
+	previous_step = null; // reset the previous step
     let question = qa.value;
     console.log("Question: " + question);
     let steps = question.split(/\s*;\s*/).filter(s => s !== '');
@@ -43,6 +45,7 @@ async function process_steps(qa, place, steps) {
 	let first_step = steps[0];
 	return process_step(place, first_step)
 	    .then(next_place => {
+			previous_step = first_step; // store the previous command
 			let next_steps = steps.slice(1);
 			qa.value = next_steps.join(" ; "); // update qa field
 			sparklis.setCurrentPlace(next_place); // update Sparklis view
@@ -90,13 +93,20 @@ function process_step(place, step) {
 	return apply_suggestion(place, "maybe", "IncrMaybe")
     } else if (step === "asc") {
 	let sugg = { type: "IncrOrder", order: { type: "ASC", conv: { targetType: "Double", forgetOriginalDatatype: false } } };
+	console.log("previous step: ", previous_step);
+	if (previous_step && previous_step.toLowerCase().includes("date")) {
+		bus.dispatchEvent(new CustomEvent('order_date', { detail: { order: 'asc' } }));
+	}
 	return apply_suggestion(place, "asc-order", sugg)
     } else if (step === "desc") {
+	if (previous_step && previous_step.toLowerCase().includes("date")) {
+		bus.dispatchEvent(new CustomEvent('order_date', { detail: { order: 'desc' } }));
+	}
 	let sugg = { type: "IncrOrder", order: { type: "DESC", conv: { targetType: "Double", forgetOriginalDatatype: false } } };
 	return apply_suggestion(place, "desc-order", sugg)
 	} else if ((match = /^asc\s+(.+)$/.exec(step))) {
 		if (match[1].toLowerCase() === "date") {
-			//todo temp
+			bus.dispatchEvent(new CustomEvent('order_date', { detail: { order: 'asc' } }));
 			let sugg = { type: "IncrOrder", order: { type: "ASC", conv: { targetType: "Date", forgetOriginalDatatype: false } } };
 			return apply_suggestion(place, "asc-order", sugg)
 		} else {
@@ -105,7 +115,7 @@ function process_step(place, step) {
 		}
 	} else if ((match = /^desc\s+(.+)$/.exec(step))) {
 		if (match[1].toLowerCase() === "date") {
-			//todo temp
+			bus.dispatchEvent(new CustomEvent('order_date', { detail: { order: 'desc' } }));
 			let sugg = { type: "IncrOrder", order: { type: "DESC", conv: { targetType: "Date", forgetOriginalDatatype: false } } };
 			return apply_suggestion(place, "desc-order", sugg)
 		} else {

@@ -44,7 +44,7 @@ class LLMFramework {
         this.steps_status = {};    
         this.sparql_query_limit_number = null;
         this.sparql_query_offset_number = null;
-
+        this.order_date = false;
 
         this.question = question;
         this.question_id = question_id;
@@ -57,8 +57,11 @@ class LLMFramework {
         this.handleOffset = this.handleOffset.bind(this); // Bind the method to the class instance. JS needs it apparently.
         bus.addEventListener('offset', this.handleOffset);
 
-        this.handleTermCmdBackup= this.handleOffset.bind(this); // Bind the method to the class instance. JS needs it apparently.
+        this.handleTermCmdBackup = this.handleOffset.bind(this); // Bind the method to the class instance. JS needs it apparently.
         bus.addEventListener('term_cmd_backup', this.handleTermCmdBackup);
+
+        this.handleOrderDate = this.handleOrderDate.bind(this); // Bind the method to the class instance. JS needs it apparently.
+        bus.addEventListener('order_date', this.handleOrderDate);
     }
 
     /**
@@ -155,7 +158,11 @@ class LLMFramework {
         const { message } = event.detail;
         this.reasoning_text += "<br>" + message + "<br>";
         this.errors += "Warning:" + message + ";";
+    }
 
+    handleOrderDate(event) {
+        console.log(`Handling order date task.`);
+        this.order_date = true;
     }
 }
 
@@ -366,6 +373,28 @@ function step_change_or_add_offset(framework, query, offset) {
     return updatedQuery;
 }
 
+function step_change_order_type_to_date(framework, query) {
+    framework.reasoning_text += "<br>Changing order type to date<br>";
+
+    //look for ORDER BY ASC(xsd:???(???)) or ORDER BY DESC(xsd:???(???))
+    const orderRegex = /ORDER\s+BY\s+(ASC|DESC)\s*\(\s*([^\s]+)\s*\(\s*([^\s]+)\s*\)\s*\)/i;
+    const orderMatch = query.match(orderRegex);
+
+    // If no match is found, return the original query
+    if (!orderMatch) return query;
+
+    // Change the type to xsd:date in the order clause of the query
+    const orderType = orderMatch[2].replace(/xsd:\w+/i, "xsd:date");
+    const orderVar = orderMatch[3];
+    const orderDirection = orderMatch[1].toUpperCase(); // ASC or DESC
+
+
+    const updatedOrder = `ORDER BY ${orderDirection}(${orderType}(${orderVar}))`;
+    const updatedQuery = query.replace(orderRegex, updatedOrder);
+
+    return updatedQuery;
+}
+
 function step_remove_ordering_var_from_select(framework, query) {
     framework.reasoning_text += "<br>Removing ordering variable from SELECT<br>";
     const selectRegex = /SELECT\s+(DISTINCT\s+)?([^\n\r{]+)/i;
@@ -541,8 +570,10 @@ class LLMFrameworkTheMostImproved extends LLMFramework {
             this.sparql = await this.executeStep(step_remove_ordering_var_from_select, "Remove ordering variable from select", [this, this.sparql]);
         }
         if (this.sparql_query_offset_number) {
-            //execute step
             this.sparql = await this.executeStep(step_change_or_add_offset, "Add/change offset", [this, this.sparql, this.sparql_query_offset_number]);
+        }
+        if (this.order_date) {
+            this.sparql = await this.executeStep(step_change_order_type_to_date, "Change order type to date", [this, this.sparql]);
         }
         await this.executeStep(step_get_results, "Get results", [this, place, this.sparql]);
     }
