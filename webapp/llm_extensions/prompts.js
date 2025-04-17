@@ -279,6 +279,7 @@ function commands_chain_system_prompt_the_most_improved() {
 - offset [constant number] → Skip the first N results.
 
 ### ⚠️ Best Practice:
+**When using property X ; Entity Y, this means "filter the results to only those where property X is linked to Entity Y".**
 **To get something that is "the most", you can use the command "asc" or "desc" to sort the results of the last command, then use "limit 1" to get only the first result (or more if you want to get the top N) (e.g., "a human ; property height; desc; limit 1" to get the tallest person).**
 **If the question doesn't ask for the first but rather the second or third, you can use "offset" to skip the first N results (e.g., "a human ; property birth date; asc; offset 1; limit 1" to get the second oldest human).**
 **It is also possible to use it combined with "groupBy count". For example, "property film director ; a movie; groupBy count ; desc; limit 1" will give the director with the most films.**
@@ -311,10 +312,10 @@ Q: among the founders of tencent company, who has been member of national people
 A: 
 - The question asks for founders of Tencent who were also members of the National People's Congress.
 - We first search for Tencent.
-- Then, we follow the "founder of" property to find the founders.
+- Then, we follow the "founder" property to find the founders.
 - Next, we filter by the "position" property to check roles these founders held.
 - Finally, we match "National People's Congress" to find those who were members.
-<commands>tencent ; property founder of ; property position ; National People's Congress</commands>`;
+<commands>tencent ; property founder ; property position ; National People's Congress</commands>`;
   } else if (endpoint_family === 'corporate') {
     prompt = ``;
   } else {

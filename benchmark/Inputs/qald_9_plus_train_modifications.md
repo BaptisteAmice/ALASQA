@@ -8,11 +8,16 @@ traitemant auto
 - This uses COUNT, GROUP BY, and ORDER BY → an aggregation query.
 
 
+# Ambiguity between entity and relation
+first death cause maybe????
+
 # Question already missing in input file
 6,.....
 todo
 
 # Weird
+Peak 17400 (Q123374100) higher than everest?
+
 
 Question 1: List all boardgames by GMT.
 Question 290: List all games by GMT.
