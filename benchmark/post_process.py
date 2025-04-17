@@ -1193,19 +1193,27 @@ def make_pdf_report(files_names: list[str], core_files_names: list[str], questio
     #todo put in a function and have the id/text of representative question
     #print average f1 score for each question group (based on alldata)
     average_f1_score_per_question_group = []
+
     for question_group_ids in question_groups_ids:
         f1_scores_group = []
         for question_id in question_group_ids:
-            #only append the f1 score if not None
+            # only append the f1 score if not None
             if question_id in all_data and all_data[question_id]["F1Score"] is not None:
                 f1_scores_group.append(all_data[question_id]["F1Score"])
-        if f1_scores_group:
-            average_f1_score_per_question_group.append(sum(f1_scores_group) / len(f1_scores_group))
-        else:
-            average_f1_score_per_question_group.append(None)
+
+        f1_mean = sum(f1_scores_group) / len(f1_scores_group) if f1_scores_group else None
+
+        average_f1_score_per_question_group.append({
+            "representative_question": "todo",
+            "questions": question_group_ids,
+            #"f1scores": f1_scores_group,
+            "f1scoremean": f1_mean
+        })
+
     print("NB of question groups:", len(question_groups_ids))
-    print("Average f1 score per question group:")
-    print(average_f1_score_per_question_group)
+    print("Average F1 score per question group:")
+    for group_info in average_f1_score_per_question_group:
+        print(group_info)
 
 
     # Unvalid data

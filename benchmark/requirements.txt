@@ -1,7 +1,7 @@
 # Python 3.12.9
 
 # API
-fastapi[standard]==0.115.8
+fastapi[standard]==0.115.12
 
 # SPARQL requests
 sparqlwrapper==2.0.0
@@ -21,6 +21,8 @@ networkx==3.4.2
 scikit-learn==1.6.1
 Distance==0.1.3
 
+# text2sparql challenge
+text2sparql-client==0.1.1 # has a dependency to fastapi
 
 # Temp for testing
 openai

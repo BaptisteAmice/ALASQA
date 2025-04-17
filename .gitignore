@@ -4,8 +4,10 @@
 # Ignore experimental files
 experiments/
 
-# Ignore post-process results
+# Ignore post-process results and other output files
 *.pdf
+question_similarity.txt
+responses.db
 
 # Ignore temporary files
 ~$*
