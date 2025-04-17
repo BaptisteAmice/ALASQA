@@ -42,7 +42,8 @@ command_list = [
     "filter",
     "limit",
     "offset",
-    "property"
+    "property",
+    "groupBy"
 ]
 
 # List of recognizable error messages
@@ -77,6 +78,11 @@ cmd_error_messages = [
     "lowerThan something that is not a number",
     "limit something that is not a number",
     "bus is not defined",
+    "command:property",
+    "command:limit",
+    "command:offset",
+    "command:a",
+    "command:groupBy"
 ]
 
 step_names = {} # Global variable to store the names of the steps (need to call find_first_non_done_step to set it)
@@ -1099,6 +1105,7 @@ def plot_table_commands_failed(rows: dict):
     Arguments:
         rows (dict): Dictionary where key is the row name and value is the data for that row.
     """
+    nb_questions = len(rows)
 
     # Create the table headers
     table_headers = cmd_error_messages + ["Commands completed"]
@@ -1123,17 +1130,30 @@ def plot_table_commands_failed(rows: dict):
     fig, ax = plt.subplots(figsize=(12, 15))
     ax.axis("off")
 
-    #put cells with a number above 10 in red
-    ax.table(
+    #put cells with a number above 10% of question number in red
+    table = ax.table(
         cellText=table_data,
         colLabels=table_headers,
         rowLabels=list(rows.keys()),
         loc="center",
         cellLoc="center",
-        cellColours=[["#FF9999" if cell > 10 else "#FFFFFF" for cell in row] for row in table_data],
+        cellColours=[["#FF9999" if cell > (nb_questions/10) else "#FFFFFF" for cell in row] for row in table_data],
     )
 
     ax.set_title("Table of Commands and System Errors", fontsize=14)
+    # Disable auto font size
+    table.auto_set_font_size(False)
+    # Set font size for each cell
+    for (row, col), cell in table.get_celld().items():
+        if row == 0:
+            cell.set_fontsize(4)  # smaller font for column headers
+            # If the header cell contains more than 3 words, insert line breaks
+            words = cell.get_text().get_text().split()
+            if len(words) > 3:
+                new_text = "\n".join([" ".join(words[i:i+3]) for i in range(0, len(words), 3)])
+                cell.get_text().set_text(new_text)
+        else:
+            cell.set_fontsize(12)  # larger font for regular cells
 
     if pp:
         pp.savefig(fig)
@@ -1151,7 +1171,7 @@ def failed_cmd_id_histogram(filtered_data):
 
 
 
-def make_pdf_report(files_names: list[str], core_files_names: list[str]):
+def make_pdf_report(files_names: list[str], core_files_names: list[str], question_groups_ids: list[list]):
     """
     Generate all the plots and tables for the given files.
     """
@@ -1169,6 +1189,24 @@ def make_pdf_report(files_names: list[str], core_files_names: list[str]):
     all_data = load_and_filter_data(file_name, {})
     table_data.append([len(all_data)])
     tree_data["All questions"] = {"count": len(all_data), "children": {}}
+
+    #todo put in a function and have the id/text of representative question
+    #print average f1 score for each question group (based on alldata)
+    average_f1_score_per_question_group = []
+    for question_group_ids in question_groups_ids:
+        f1_scores_group = []
+        for question_id in question_group_ids:
+            #only append the f1 score if not None
+            if question_id in all_data and all_data[question_id]["F1Score"] is not None:
+                f1_scores_group.append(all_data[question_id]["F1Score"])
+        if f1_scores_group:
+            average_f1_score_per_question_group.append(sum(f1_scores_group) / len(f1_scores_group))
+        else:
+            average_f1_score_per_question_group.append(None)
+    print("NB of question groups:", len(question_groups_ids))
+    print("Average f1 score per question group:")
+    print(average_f1_score_per_question_group)
+
 
     # Unvalid data
     # constraints_invalid = {
@@ -1367,14 +1405,17 @@ def make_pdf_report(files_names: list[str], core_files_names: list[str]):
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.realpath(__file__))
     core_files = [
-        script_dir + "/BestOutputs/QALD9/QALD-9-plus_sparklisllm-LLMFrameworkOneShot_20250403_233916.json",
-        script_dir + "/BestOutputs/QALD9/QALD-9-plus_sparklisllm-LLMFrameworkOneShot_20250404_022249.json",
-        script_dir + "/BestOutputs/QALD9/QALD-9-plus_sparklisllm-LLMFrameworkOneShot_20250404_050920.json",
+        script_dir + "/BestOutputs/QALD9/QALD-9-plus_sparklisllm-LLMFrameworkOneShotForwardScoringReferences_20250403_100325.json",
+        script_dir + "/BestOutputs/QALD9/QALD-9-plus_sparklisllm-LLMFrameworkOneShotForwardScoringReferences_20250403_131636.json",
+        script_dir + "/BestOutputs/QALD9/QALD-9-plus_sparklisllm-LLMFrameworkOneShotForwardScoringReferences_20250414_174132.json"
     ]
 
     input_files = [
-        script_dir + "/BestOutputs/QALD9/QALD-9-plus_sparklisllm-LLMFrameworkOneShotForwardScoringReferences_20250403_100325.json",
-        script_dir + "/BestOutputs/QALD9/QALD-9-plus_sparklisllm-LLMFrameworkOneShotForwardScoringReferences_20250403_131636.json",
+        script_dir + "/BestOutputs/QALD9/QALD-9-plus_sparklisllm-LLMFrameworkTheMostImproved_20250416_223114.json",
+        script_dir + "/BestOutputs/QALD9/QALD-9-plus_sparklisllm-LLMFrameworkTheMostImproved_20250416_230826.json",
+        script_dir + "/BestOutputs/QALD9/QALD-9-plus_sparklisllm-LLMFrameworkTheMostImproved_20250416_235014.json",
     ]
 
-    make_pdf_report(input_files, core_files)
+    question_groups_ids = [  [    "1",    "178",    "249",    "290"  ],  [    "8",    "126",    "196",    "255"  ],  [    "9",    "286"  ],  [    "11",    "41",    "51",    "59",    "71",    "94",    "118",    "403"  ],  [    "16",    "22",    "407"  ],  [    "34"  ],  [    "36",    "48",    "80",    "102",    "112",    "122",    "163",    "253"  ],  [    "43",    "3",    "17",    "23",    "72",    "82",    "100",    "125",    "139",    "150",    "162",    "167",    "263",    "318",    "326"  ],  [    "50",    "56",    "106",    "140",    "258"  ],  [    "54",    "20",    "29",    "64",    "97",    "113",    "145",    "161",    "171",    "181",    "183",    "204",    "213",    "231",    "334",    "347",    "412"  ],  [    "63"  ],  [    "85",    "60",    "76",    "90",    "144",    "157",    "168",    "262",    "284",    "362",    "382"  ],  [    "86",    "33",    "40",    "69",    "179"  ],  [    "87",    "2",    "19",    "37",    "99",    "129",    "152",    "191",    "200",    "210",    "241",    "350",    "356",    "365",    "391",    "413"  ],  [    "108",    "25"  ],  [    "119"  ],  [    "131",    "314"  ],  [    "134",    "62",    "338"  ],  [    "136"  ],  [    "137",    "12",    "114",    "199",    "321",    "378"  ],  [    "141",    "55"  ],  [    "147"  ],  [    "148",    "116",    "174",    "305",    "336"  ],  [    "158"  ],  [    "160"  ],  [    "164",    "24",    "46",    "143"  ],  [    "169"  ],  [    "172",    "4",    "115",    "247",    "297",    "369"  ],  [    "182"  ],  [    "186",    "31",    "190",    "202",    "311"  ],  [    "193",    "104",    "107",    "166",    "180",    "211",    "223",    "235",    "266",    "267",    "268",    "274",    "343",    "344",    "358",    "361"  ],  [    "198"  ],  [    "216",    "217",    "230",    "278",    "288"  ],  [    "225",    "256",    "324",    "351"  ],  [    "227",    "245",    "376"  ],  [    "234",    "10",    "52",    "65",    "93",    "120",    "149",    "151",    "233",    "236",    "280",    "283",    "291",    "303",    "317",    "353",    "354",    "370",    "372",    "380",    "386",    "393",    "409"  ],  [    "238",    "67",    "132",    "194",    "215",    "285",    "299"  ],  [    "239",    "35",    "89",    "92",    "105",    "138",    "177",    "214",    "218",    "219",    "226",    "254",    "270",    "275",    "302",    "325",    "337",    "359",    "368",    "388",    "405",    "411"  ],  [    "265",    "5",    "15",    "27",    "53",    "66",    "75",    "170",    "184",    "192",    "197",    "209",    "212",    "220",    "222",    "229",    "232",    "259",    "264",    "271",    "300",    "306",    "315",    "320",    "330",    "379",    "381",    "396",    "397",    "398"  ],  [    "279",    "84",    "110",    "121",    "123",    "133",    "224",    "269",    "332",    "340",    "349",    "408"  ],  [    "281"  ],  [    "282",    "14",    "70",    "124",    "153",    "221",    "248"  ],  [    "294",    "95",    "203",    "205",    "243",    "257",    "273",    "292",    "346",    "395",    "406"  ],  [    "296",    "42",    "61",    "78",    "91",    "101",    "103",    "175",    "185",    "260",    "313",    "367",    "402"  ],  [    "307",    "58",    "127",    "142",    "187",    "327",    "385"  ],  [    "310",    "81",    "309",    "355",    "364"  ],  [    "328"  ],  [    "335",    "21",    "195"  ],  [    "342",    "44",    "244",    "329"  ],  [    "345"  ],  [    "348",    "7",    "38",    "45",    "74",    "77",    "237",    "252",    "333",    "339"  ],  [    "363",    "156",    "287",    "304",    "312"  ],  [    "375",    "130",    "308",    "374"  ],  [    "390"  ],  [    "400",    "39",    "154",    "155",    "165",    "188",    "189",    "201",    "207",    "251",    "289",    "293",    "301",    "357"  ]]
+
+    make_pdf_report(input_files, core_files, question_groups_ids)

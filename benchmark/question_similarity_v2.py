@@ -17,31 +17,49 @@ def levenshtein(texts):
     return _similarity
 
 
-def text_clustering(texts, similarity=levenshtein, word_level=False):
+def text_clustering(texts, similarity=levenshtein, word_level=False, max_iterations=1_000):
     '''Text Clustering'''
     # similarity
-    if word_level: texts = [t.split() for t in texts]
-    _similarity = levenshtein(texts)
+    ids, sentences = zip(*texts)
+    if word_level:
+        sentences = [s.split() for s in sentences]
+    _similarity = similarity(sentences)
     _affprop = AffinityPropagation(affinity="precomputed", damping=0.5, verbose=True,
-        random_state=0, max_iter=1_000, convergence_iter=10)
+        random_state=0, max_iter=max_iterations, convergence_iter=10)
     _affprop.fit(_similarity)
     return _affprop, _similarity
 
 
 def print_clusters(affprop, texts):
-    '''Print clusters'''
+    '''Print clusters and return list of ID groups'''
     texts = np.asarray(texts)
     clusters = np.unique(affprop.labels_)
     print(f'\n~ Number of texts:: {texts.shape[0]}')
     print(f'~ Number of clusters:: {clusters.shape[0]}')
-    if clusters.shape[0] < 2: return 'Only few clusters - Stopped'
+    if clusters.shape[0] < 2:
+        print("Only few clusters - Stopped")
+        return []
+
+    cluster_id_lists = []
+
     for cluster_id in clusters:
-        exemplar = texts[affprop.cluster_centers_indices_[cluster_id]]
-        cluster = np.unique(texts[np.nonzero(affprop.labels_==cluster_id)])
-        cluster_str = '";\n  "'.join(cluster)
-        print(f'\n# Cluster ({cluster_id}) with ({len(cluster)}) elements')
-        print(f'Exemplar:: {exemplar}')
-        print(f'\nOthers::\n  "{cluster_str}"')
+        exemplar_index = affprop.cluster_centers_indices_[cluster_id]
+        exemplar_id, exemplar_text = texts[exemplar_index]
+        print(f'\n# Cluster ({cluster_id}) with ({sum(affprop.labels_ == cluster_id)}) elements')
+        print(f'Exemplar:: (ID: {exemplar_id}) {exemplar_text}')
+
+        current_cluster_ids = [exemplar_id]
+
+        for i, (qid, qtext) in enumerate(texts):
+            if affprop.labels_[i] == cluster_id and i != exemplar_index:
+                print(f'  ID: {qid} | {qtext}')
+                current_cluster_ids.append(qid)
+
+        cluster_id_lists.append(current_cluster_ids)
+
+    print("\nCluster ID Lists:")
+    print(json.dumps(cluster_id_lists, indent=2))  # formatted list of lists
+    return cluster_id_lists
 
 
 input_file = "./benchmark/Inputs/qald_9_plus_train_wikidata_patched.json"
@@ -55,14 +73,14 @@ for question in data["questions"]:
     q1_list = question["question"]
     q1 = next((q["string"] for q in q1_list if q["language"] == "en"), None)
     if q1:
-        texts.append(q1)
+        texts.append((question["id"], q1))
 
-
-#texts = [["apple"], ["banana"], ["apple", "pie"]]
 print("character level")
-affprop_char_level, _ = text_clustering(texts, similarity=levenshtein, word_level=False)
+affprop_char_level, _ = text_clustering(texts, similarity=levenshtein, word_level=False,
+                                        max_iterations=5_000)
 print("word level")
-affprop_word_level, _ = text_clustering(texts, similarity=levenshtein, word_level=True)
+affprop_word_level, _ = text_clustering(texts, similarity=levenshtein, word_level=True,
+                                        max_iterations=1_000)
 print("writing to file")
 
 #redirect print in a file
