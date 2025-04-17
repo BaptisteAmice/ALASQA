@@ -657,6 +657,42 @@ window.LLMFrameworkTheMostImproved = LLMFrameworkTheMostImproved; //to be able t
 window.LLMFrameworks.push(LLMFrameworkTheMostImproved.name); //to be able to access the class name
 
 
+class PassCommands extends LLMFramework {
+    constructor(question, question_id) {
+        super(question, question_id, "count_references");
+    }
+    async answerQuestionLogic() {
+        let extracted_commands = this.question;
+        await this.executeStep(step_execute_commands, "Commands execution", [this, extracted_commands]);
+        
+        //get the current sparql query from the place
+        let place = sparklis.currentPlace();
+        this.sparql = place.sparql();
+
+        //if an action for group by is defined modify the query (done before step_remove_ordering_var_from_select)
+        if (this.group_by_action) {
+            this.sparql = await this.executeStep(step_group_by_and_count, "Group by and count", [this, this.sparql]);
+        }
+        //if the sparql query limit number is set, change the limit clause in the query
+        if (this.sparql_query_limit_number) {
+            //execute step
+            this.sparql = await this.executeStep(step_change_or_add_limit, "Add/change limit", [this, this.sparql, this.sparql_query_limit_number]);
+            //remove the ordering variable from the select clause
+            this.sparql = await this.executeStep(step_remove_ordering_var_from_select, "Remove ordering variable from select", [this, this.sparql]);
+        }
+        if (this.sparql_query_offset_number) {
+            this.sparql = await this.executeStep(step_change_or_add_offset, "Add/change offset", [this, this.sparql, this.sparql_query_offset_number]);
+        }
+        if (this.order_date) {
+            this.sparql = await this.executeStep(step_change_order_type_to_date, "Change order type to date", [this, this.sparql]);
+        }
+        console.log("sparql after modification", this.sparql);
+        await this.executeStep(step_get_results, "Get results", [this, place, this.sparql]);
+    }
+}
+window.PassCommands = PassCommands; //to be able to access the class
+window.LLMFrameworks.push(PassCommands.name); //to be able to access the class name
+
 /**
  * Prompt is simplified with less commands
  */
