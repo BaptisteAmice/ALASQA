@@ -46,32 +46,31 @@ async function process_steps(qa, place, steps) {
     } else {
 	let first_step = steps[0];
 	return process_step(place, first_step)
-	    .then(next_place => {
-			LAST_RESOLVED_COMMAND = LAST_INITIATED_COMMAND;
-			previous_step = first_step; // store the previous command
+	    .then(async next_place => {
+			//cancel the last class or match command if it doesn't have any results
+			if (LAST_INITIATED_COMMAND === "class" || LAST_INITIATED_COMMAND === "match") {
+				//if the last command got a class but doesn't have any results, we will just cancel it
+				console.log("zemfoihbzeiufb", next_place.results());
+				await waitForEvaluation(next_place);
+				if (next_place.results().rows.length > 0) {
+					LAST_RESOLVED_COMMAND = LAST_INITIATED_COMMAND;
+					previous_step = first_step; // store the previous command
+					sparklis.setCurrentPlace(next_place); // update Sparklis view
+				} else {
+					//Ignore the command
+					console.log("Ignoring the command "+ LAST_INITIATED_COMMAND + " because it doesn't have any results."); 
+				}
+			} else {
+				LAST_RESOLVED_COMMAND = LAST_INITIATED_COMMAND;
+				previous_step = first_step; // store the previous command
+				sparklis.setCurrentPlace(next_place); // update Sparklis view
+			}
 			let next_steps = steps.slice(1);
 			qa.value = next_steps.join(" ; "); // update qa field
-			sparklis.setCurrentPlace(next_place); // update Sparklis view
 			return process_steps(qa, next_place, next_steps); // continue with next steps from there
 		})
 	    .catch(msg => {
 			console.log("QA search halted because " + msg);
-
-			//if the last command got a class but doesn't have any results, we will just cancel it
-			if (LAST_RESOLVED_COMMAND === "class") {
-				console.log("The resulting class of the previous command doesn't have any entity in it. Cancelling the command.");
-				//call the back command
-				sparklis.back();
-				place = sparklis.currentPlace(); // get the current place again
-				return process_steps(qa, place, steps);
-			} //if the last command was a match but doesn't have any results, we will just cancel it
-			else if (LAST_RESOLVED_COMMAND === "match") { 
-				console.log("The resulting match of the previous command doesn't have any entity or literal in it. Cancelling the command.");
-				//call the back command
-				sparklis.back();
-				place = sparklis.currentPlace(); // get the current place again
-				return process_steps(qa, place, steps);
-			} 
 
 			//if the command that failed was trying to get a specific entity, we can instead try to match the corresponding string
 			if (LAST_INITIATED_COMMAND === "term" && steps[0].length >=3) {
@@ -403,8 +402,8 @@ async function select_sugg(kind, query, forest, pred, lexicon) {
 	} else {
 		// using basic logic
 		console.log("using basic select_sugg_logic");
-		//return await count_references_select_sugg_logic(kind, query, forest, pred, lexicon);
-		return basic_select_sugg_logic(kind, query, forest, pred, lexicon);
+		return await count_references_select_sugg_logic(kind, query, forest, pred, lexicon);
+		//return basic_select_sugg_logic(kind, query, forest, pred, lexicon);
 	}
 }
 
