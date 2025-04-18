@@ -258,20 +258,19 @@ function commands_chain_system_prompt_the_most_improved() {
   let endpoint_family = getEndpointFamily();
   let prompt;
   if (endpoint_family === 'dbpedia') {
-    prompt = `
-## Task: Generate knowledge graph query commands for Sparklis (SPARQL-based tool) on a DBpedia endpoint.
+    prompt = `## Task: Generate knowledge graph query commands for Sparklis (SPARQL-based tool) on a DBpedia endpoint.
 
 ## Format:
 1. Think step by step about what entities and relationships are needed.
 2. Finish your response with a sequence of commands, separated by semicolons (;), and wrapped in <commands>...</commands>.
 
 ### Available Commands:
-- a [class] → Retrieve entities of a given class (e.g., "a book" to find books). **⚠️ IMPORTANT:** If the question already contains the name of an entity (e.g., the title of the book), DO NOT use "a [class]". Directly query the entity instead.
+- a [class] → Retrieve entities of a given class (e.g., "a book" to find books).
 - [entity] → Retrieve a specific entity (e.g., "Albert Einstein" to find the entity representing Einstein). Use this when asking about a specific thing or individual.
 - property [property] → Retrieve a specific property (e.g., "property height" to find the height of an entity).
 - higherThan [number], lowerThan [constant number] → Value constraints (e.g., "property weight; higherThan 10").
 - after [date], before [date] → Time constraints (e.g., "property release date ; after 2000").
-- groupBy count → Can only be used if a property as been called previously. Group on the subject of the relation of the last property command and for each of them count the number objects (e.g. property film director ; groupBy count).
+- groupBy count → Can only be used if a property as been called previously. Group on the subject of the relation of the last property command and for each of them count the number objects (e.g. a movie ; property film director ; groupBy count).
 - asc, desc → Sort the results of the last command in ascending or descending order according to the results of previous command (number or date).
 - limit [constant number] → Limit the number of results returned by the last command.
 - offset [constant number] → Skip the first N results.
@@ -280,7 +279,7 @@ function commands_chain_system_prompt_the_most_improved() {
 **When using property X ; Entity Y, this means "filter the results to only those where property X is linked to Entity Y".**
 **To get something that is "the most", you can use the command "asc" or "desc" to sort the results of the last command, then use "limit 1" to get only the first result (or more if you want to get the top N) (e.g., "a person ; property height; desc; limit 1" to get the tallest person).**
 **If the question doesn't ask for the first but rather the second or third, you can use "offset" to skip the first N results (e.g., "a person ; property birth date; asc; offset 1; limit 1" to get the second oldest human).**
-**It is also possible to use it combined with "groupBy count". For example, "property film director ; a movie; groupBy count ; desc; limit 1" will give the director with the most films.**
+**It is also possible to use it combined with "groupBy count". For example, "a film; property director ; groupBy count ; desc; limit 1" will give the director with the most films.**
 
 ## Examples:
 Q: Movies by Tim Burton after 1980?
@@ -290,7 +289,22 @@ A:
 - Then, we filter these films by the "director" property.
 - Next, we match the specific director "Tim Burton".
 - Finally, we apply a date filter to include only movies released after 1980.
-<commands>a film; property director; Tim Burton; property release date; after 1980</commands>`;
+<commands>a film; property director; Tim Burton; property release date; after 1980</commands>
+
+Q: Was ist die Hauptstadt von Deutschland?
+A:
+- In english, this question is: What is the capital of Germany?
+- We have to find the country "germany".
+- Then we have to find its property "capital".
+<commands>a country ; Germany; property capital</commands>
+
+Q: Who wrote the book The pillars of the Earth?
+A:
+- The question asks for the author of the book "The pillars of the Earth".
+- We start by retrieving entities of type "book".
+- Then, we filter these books by the title "The pillars of the Earth".
+- Finally, we retrieve the property "author" to find the author of the book.
+<commands>a book ; The pillars of the Earth; property author</commands>`;
   } else if (endpoint_family === 'wikidata') {
     prompt = `
 ## Task: Generate knowledge graph query commands for Sparklis (SPARQL-based tool) on a Wikidata endpoint.
@@ -314,7 +328,7 @@ A:
 **When using property X ; Entity Y, this means "filter the results to only those where property X is linked to Entity Y".**
 **To get something that is "the most", you can use the command "asc" or "desc" to sort the results of the last command, then use "limit 1" to get only the first result (or more if you want to get the top N) (e.g., "a human ; property height; desc; limit 1" to get the tallest person).**
 **If the question doesn't ask for the first but rather the second or third, you can use "offset" to skip the first N results (e.g., "a human ; property birth date; asc; offset 1; limit 1" to get the second oldest human).**
-**It is also possible to use it combined with "groupBy count". For example, "property film director ; a movie; groupBy count ; desc; limit 1" will give the director with the most films.**
+**It is also possible to use it combined with "groupBy count". For example, "a movie ; property film director ; groupBy count ; desc; limit 1" will give the director with the most films.**
 
 ## Examples:
 Q: At which school went Yayoi Kusama?
@@ -348,10 +362,52 @@ A:
 - Next, we filter by the "position" property to check roles these founders held.
 - Finally, we match "National People's Congress" to find those who were members.
 <commands>tencent ; property founder ; property position ; National People's Congress</commands>`;
-  } else if (endpoint_family === 'corporate') {
-    prompt = ``;
-  } else {
-    //todo
+  } else if (endpoint_family === 'corporate' || true) {
+    prompt = `## Task: Generate knowledge graph query commands for Sparklis (a SPARQL-based tool) on a domain-specific knowledge graph representing a corporate setting.
+
+## Format:
+1. Think step by step about what entities and relationships are needed.
+2. Finish your response with a sequence of commands, separated by semicolons (;), and wrapped in <commands>...</commands>.
+
+### Available Commands:
+- a [class] → Retrieve entities of a given class (e.g., "a supplier" to find suppliers).
+- [entity] → Retrieve a specific entity (e.g., "Adolphina Hoch" to find the entity representing Adolphina Hoch). Use this when asking about a specific thing or individual.
+- property [property] → Retrieve a specific property (e.g., "property email" to find the email of an entity).
+- higherThan [number], lowerThan [constant number] → Value constraints (e.g., "a price ; property amount; higherThan 2").
+- after [date], before [date] → Time constraints (e.g., "property release date ; after 2000").
+- groupBy count → Can only be used if a property as been called previously. Group on the subject of the relation of the last property command and for each of them count the number objects (e.g. a supplier ; property address country ; groupBy count).
+- asc, desc → Sort the results of the last command in ascending or descending order according to the results of previous command (number or date).
+- limit [constant number] → Limit the number of results returned by the last command.
+- offset [constant number] → Skip the first N results.
+
+### ⚠️ Best Practice:
+**When using property X ; Entity Y, this means "filter the results to only those where property X is linked to Entity Y".**
+**To get something that is "the most", you can use the command "asc" or "desc" to sort the results of the last command, then use "limit 1" to get only the first result (or more if you want to get the top N) (e.g., "a department ; property id ; asc ; limit 1" to get the department with the smallest id).**
+**If the question doesn't ask for the first but rather the second or third, you can use "offset" to skip the first N results (e.g., "a department ; property id ; asc ; limit 1; offset 1" to get the department with the second smallest id).**
+**It is also possible to use it combined with "groupBy count". For example, "a department ; property member ; groupBy count ; desc ; limit 1" will give the department with the most members.**
+
+## Examples:
+Q: List all suppliers in France.
+A:
+- The question asks for suppliers in France.
+- We first retrieve the class "supplier".
+- Then, we follow the property "address country" to get the country of each supplier.
+- Finally, we filter the results to include only those suppliers located in France.
+<commands>a supplier ; forwardProperty address country ; France</commands>
+
+Q: Was ist die Hauptstadt von Deutschland?
+A:
+- In english, this question is: What is the capital of Germany?
+- We have to find the country "germany".
+- Then we have to find its property "capital".
+<commands>a country ; Germany; property capital</commands>
+
+Q: What are the areas of expertise of Jarvis Jans?
+A:
+- The question asks for the areas of expertise of Jarvis Jans.
+- We start by retrieving the entity corresponding to "Jarvis Jans".
+- Then, we search for the property "area of expertise" associated with this entity.
+<commands>Jarvis Jans ; property area of expertise</commands>`;
   }
   return prompt;
 }
