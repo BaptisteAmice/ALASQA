@@ -667,7 +667,7 @@ class LLMFrameworkText2Sparql extends LLMFramework {
         super(question, question_id, "count_references");
     }
     async answerQuestionLogic() {
-        const startTime = Date.now();
+        const startTime = performance.now();
         ////////////////////////// GET QUESTION TYPE
         // Call llm generation
         let output_llm_type = await this.executeStep(step_generation, "LLM generation", 
@@ -699,9 +699,10 @@ class LLMFrameworkText2Sparql extends LLMFramework {
         } else {
             ////////////////////////// TRY ANSWERING WITH SPARKLIS
             let got_a_response = false;
-            let elapsedTime = (Date.now() - startTime) / 1000; // time in seconds
+            let elapsedTime = (performance.now() - startTime) / 1000; // time in seconds
             let i = 1;
             while (!got_a_response && elapsedTime < 80) {
+                console.log("elapsed time", elapsedTime);
                 this.reasoning_text += "<br>Try " + i + "<br>";
                 // Call llm generation
                 let output_llm = await this.executeStep(step_generation, "LLM generation", 
@@ -756,7 +757,7 @@ class LLMFrameworkText2Sparql extends LLMFramework {
                 got_a_response = (this.sparql != "" && this.sparql != undefined && this.sparql != null)
                                 && (this.result_text != "" && this.result_text != undefined && this.result_text != null
                                 && results_array.length > 0);
-                elapsedTime = (Date.now() - startTime) / 1000; 
+                elapsedTime = (performance.now() - startTime) / 1000; 
                 console.log("result text a", this.result_text);
                 i++;
             }
