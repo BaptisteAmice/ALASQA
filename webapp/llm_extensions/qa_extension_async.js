@@ -2,6 +2,7 @@
 console.log("QA extension active");
 
 var LAST_INITIATED_COMMAND = null; //used in case of error, to know which command was initiated last (code to update for each command needing it
+var LAST_RESOLVED_COMMAND = null; //used in case of error, to know which command was resolved last (code to update for each command needing it
 var previous_step = null; //used to store the previous command, to be able to go back to it if needed
 
 // upon window load... create text field and ENTER handler
@@ -27,6 +28,7 @@ window.addEventListener(
  */
 async function process_question(qa) {
 	LAST_INITIATED_COMMAND = null; // reset the previous command
+	LAST_RESOLVED_COMMAND = null; // reset the previous command
 	previous_step = null; // reset the previous step
     let question = qa.value;
     console.log("Question: " + question);
@@ -45,6 +47,7 @@ async function process_steps(qa, place, steps) {
 	let first_step = steps[0];
 	return process_step(place, first_step)
 	    .then(next_place => {
+			LAST_RESOLVED_COMMAND = LAST_INITIATED_COMMAND;
 			previous_step = first_step; // store the previous command
 			let next_steps = steps.slice(1);
 			qa.value = next_steps.join(" ; "); // update qa field
@@ -53,6 +56,23 @@ async function process_steps(qa, place, steps) {
 		})
 	    .catch(msg => {
 			console.log("QA search halted because " + msg);
+
+			//if the last command got a class but doesn't have any results, we will just cancel it
+			if (LAST_RESOLVED_COMMAND === "class") {
+				console.log("The resulting class of the previous command doesn't have any entity in it. Cancelling the command.");
+				//call the back command
+				sparklis.back();
+				place = sparklis.currentPlace(); // get the current place again
+				return process_steps(qa, place, steps);
+			} //if the last command was a match but doesn't have any results, we will just cancel it
+			else if (LAST_RESOLVED_COMMAND === "match") { 
+				console.log("The resulting match of the previous command doesn't have any entity or literal in it. Cancelling the command.");
+				//call the back command
+				sparklis.back();
+				place = sparklis.currentPlace(); // get the current place again
+				return process_steps(qa, place, steps);
+			} 
+
 			//if the command that failed was trying to get a specific entity, we can instead try to match the corresponding string
 			if (LAST_INITIATED_COMMAND === "term" && steps[0].length >=3) {
 				//signal to add text to the reasoning and errors of the system
