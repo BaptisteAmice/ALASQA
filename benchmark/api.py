@@ -29,7 +29,7 @@ def get_answer(question: str, dataset: str) -> dict:
     if dataset not in KNOWN_DATASETS:
         raise fastapi.HTTPException(404, "Unknown dataset ...")
     
-    system_name = "sparklisllm-LLMFrameworkTheMostImproved" #todo change
+    system_name = "sparklisllm-LLMFrameworkText2Sparql"
     result, nl_query, error, steps_status, reasoning, driver = interactions.simulated_user(
         config.SPARKLIS_FILE,
         lambda driver: interactions.sparklisllm_question(driver, question, dataset, system_name)

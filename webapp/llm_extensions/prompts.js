@@ -266,7 +266,7 @@ function commands_chain_system_prompt_the_most_improved() {
 
 ### Available Commands:
 - a [class] → Retrieve entities of a given class (e.g., "a book" to find books).
-- [entity] → Retrieve a specific entity (e.g., "Albert Einstein" to find the entity representing Einstein). Use this when asking about a specific thing or individual.
+- [entity] → Retrieve a specific entity (e.g., "Albert Einstein" to find the entity representing Einstein). Use this when asking about a specific thing or individual. A good practice is to first query for the class of the entity and then filter by the specific name (e.g., "a person ; Albert Einstein").
 - property [property] → Retrieve a specific property (e.g., "property height" to find the height of an entity).
 - higherThan [number], lowerThan [constant number] → Value constraints (e.g., "property weight; higherThan 10").
 - after [date], before [date] → Time constraints (e.g., "property release date ; after 2000").
@@ -276,7 +276,6 @@ function commands_chain_system_prompt_the_most_improved() {
 - offset [constant number] → Skip the first N results.
 
 ### ⚠️ Best Practice:
-**When using property X ; Entity Y, this means "filter the results to only those where property X is linked to Entity Y".**
 **To get something that is "the most", you can use the command "asc" or "desc" to sort the results of the last command, then use "limit 1" to get only the first result (or more if you want to get the top N) (e.g., "a person ; property height; desc; limit 1" to get the tallest person).**
 **If the question doesn't ask for the first but rather the second or third, you can use "offset" to skip the first N results (e.g., "a person ; property birth date; asc; offset 1; limit 1" to get the second oldest human).**
 **It is also possible to use it combined with "groupBy count". For example, "a film; property director ; groupBy count ; desc; limit 1" will give the director with the most films.**
@@ -383,7 +382,7 @@ A:
 ### ⚠️ Best Practice:
 **When using property X ; Entity Y, this means "filter the results to only those where property X is linked to Entity Y".**
 **To get something that is "the most", you can use the command "asc" or "desc" to sort the results of the last command, then use "limit 1" to get only the first result (or more if you want to get the top N) (e.g., "a department ; property id ; asc ; limit 1" to get the department with the smallest id).**
-**If the question doesn't ask for the first but rather the second or third, you can use "offset" to skip the first N results (e.g., "a department ; property id ; asc ; limit 1; offset 1" to get the department with the second smallest id).**
+**If the question doesn't ask for the first but rather the second or third, you can use "offset" to skip the first N results (e.g., "a department ; property id ; asc ; offset 1; limit 1;" to get the department with the second smallest id).**
 **It is also possible to use it combined with "groupBy count". For example, "a department ; property member ; groupBy count ; desc ; limit 1" will give the department with the most members.**
 
 ## Examples:

@@ -174,6 +174,13 @@ class LLMFramework {
         const { action } = event.detail;
         this.group_by_action = action;
     }
+
+    resetQueryAlterationsVariables() {
+        this.sparql_query_limit_number = null;
+        this.sparql_query_offset_number = null;
+        this.order_date = false;
+        this.group_by_action = null;
+    }
 }
 
 /**
@@ -655,6 +662,114 @@ class LLMFrameworkTheMostImproved extends LLMFramework {
 window.LLMFrameworkTheMostImproved = LLMFrameworkTheMostImproved; //to be able to access the class
 window.LLMFrameworks.push(LLMFrameworkTheMostImproved.name); //to be able to access the class name
 
+class LLMFrameworkText2Sparql extends LLMFramework {
+    constructor(question, question_id) {
+        super(question, question_id, "count_references");
+    }
+    async answerQuestionLogic() {
+        const startTime = Date.now();
+        ////////////////////////// GET QUESTION TYPE
+        // Call llm generation
+        let output_llm_type = await this.executeStep(step_generation, "LLM generation", 
+            [this, prompt_is_boolean_expected(),"prompt_is_boolean_expected", this.question]
+        )
+        // Extract the commands from the LLM output
+        let extracted_type_list = await this.executeStep(step_extract_tags, "Extracted question type",
+             [this, output_llm_type, "answer"]
+        );
+        // Execute the commands, wait for place evaluation and get the results
+        let extracted_type = extracted_type_list.at(-1) || "";
+         //////////////////////////// IF BOOLEAN QUESTION JUST USE THE LLM
+         if (extracted_type == "boolean") {
+            let output = await this.executeStep(step_generation, "LLM generation", 
+                [this, direct_boolean_answering_prompt(),"direct_boolean_answering_prompt", this.question]
+            );
+            let extracted_bool_list = await this.executeStep(step_extract_tags, "Extracted SPARQL", [this, output, "answer"]);
+            let extracted_bool = extracted_bool_list.at(-1) || "";
+            let bool_query = "";
+
+            //make a query always true or false depending on the answer of the LLM
+            //the response is based on the LLM knowledge anyway, so it won't be persistent
+            if (extracted_bool == "true") {
+                bool_query = "ASK WHERE {}";
+            } else {
+                bool_query = "ASK WHERE { FILTER(false) }";
+            } 
+            this.sparql = bool_query;
+        } else {
+            ////////////////////////// TRY ANSWERING WITH SPARKLIS
+            let got_a_response = false;
+            let elapsedTime = (Date.now() - startTime) / 1000; // time in seconds
+            let i = 1;
+            while (!got_a_response && elapsedTime < 80) {
+                this.reasoning_text += "<br>Try " + i + "<br>";
+                // Call llm generation
+                let output_llm = await this.executeStep(step_generation, "LLM generation", 
+                    [this, commands_chain_system_prompt_the_most_improved(),"commands_chain_system_prompt_the_most_improved", this.question]
+                );
+                // Extract the commands from the LLM output
+                let extracted_commands_list = await this.executeStep(step_extract_tags, "Extracted commands",
+                    [this, output_llm, "commands"]
+                );
+                // Execute the commands, wait for place evaluation and get the results
+                let extracted_commands = extracted_commands_list.at(-1) || "";
+                await this.executeStep(step_execute_commands, "Commands execution", [this, extracted_commands]);
+                
+                //get the current sparql query from the place
+                let place = sparklis.currentPlace();
+                this.sparql = place.sparql();
+
+                //if an action for group by is defined modify the query (done before step_remove_ordering_var_from_select)
+                if (this.group_by_action) {
+                    this.sparql = await this.executeStep(step_group_by_and_count, "Group by and count", [this, this.sparql]);
+                }
+                //if the sparql query limit number is set, change the limit clause in the query
+                if (this.sparql_query_limit_number) {
+                    //execute step
+                    this.sparql = await this.executeStep(step_change_or_add_limit, "Add/change limit", [this, this.sparql, this.sparql_query_limit_number]);
+                    //remove the ordering variable from the select clause
+                    this.sparql = await this.executeStep(step_remove_ordering_var_from_select, "Remove ordering variable from select", [this, this.sparql]);
+                }
+                if (this.sparql_query_offset_number) {
+                    this.sparql = await this.executeStep(step_change_or_add_offset, "Add/change offset", [this, this.sparql, this.sparql_query_offset_number]);
+                }
+                if (this.order_date) {
+                    this.sparql = await this.executeStep(step_change_order_type_to_date, "Change order type to date", [this, this.sparql]);
+                }
+                console.log("sparql after modification", this.sparql);
+
+                //only wait for the results if the query is not empty
+                let results_array = [];
+                if (this.sparql != "" && this.sparql != undefined && this.sparql != null) {
+                    await this.executeStep(step_get_results, "Get results", [this, place, this.sparql]);
+                    try {//todo mieux gérer cas où resulttext est vide
+                        results_array = JSON.parse(this.result_text);
+                    } catch (e) {
+                        results_array = [];
+                    }
+                }
+
+                //reset the variables to avoid side effects for the next queries
+                this.resetQueryAlterationsVariables();
+
+                //got a response if the query is not empty and has a response
+                got_a_response = (this.sparql != "" && this.sparql != undefined && this.sparql != null)
+                                && (this.result_text != "" && this.result_text != undefined && this.result_text != null
+                                && results_array.length > 0);
+                elapsedTime = (Date.now() - startTime) / 1000; 
+                console.log("result text a", this.result_text);
+                i++;
+            }
+
+            ////////////////////////// LAST TRY TO SAVE THE RESPONSE
+            if (!got_a_response) {
+                
+            }
+        }      
+    }
+}
+window.LLMFrameworkText2Sparql = LLMFrameworkText2Sparql; //to be able to access the class
+window.LLMFrameworks.push(LLMFrameworkText2Sparql.name); //to be able to access the class name
 
 class PassCommands extends LLMFramework {
     constructor(question, question_id) {
