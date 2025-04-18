@@ -512,7 +512,6 @@ async function step_get_results(framework, place, overidding_sparql = null) {
     }
     let results;
     try { 
-        sparql = removePrefixes(sparql); //todo temp patch because of wikidata endpoint for which the prefixes are duplicated when requested by the LLM (only difference is that the event is automatically activated)
         results = await getResultsWithLabels(sparql);
     } catch (e) {
         //catch error thrown by wikidata endpoint
