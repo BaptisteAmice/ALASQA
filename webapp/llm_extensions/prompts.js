@@ -607,10 +607,13 @@ function direct_boolean_answering_prompt() {
   return `Given a natural language question, answer by true or false.
   Think step by step, then put your answer in <answer>...</answer> tags.
 
-  Example:
+  Examples:
   - **Q:** Was Shaquille O'Neal a basketball player?
   - **A:** Yes, he was a basketball player. <answer>true</answer>
-  `;
+  - **Q:** Does the Isar flow into a lake?
+  - **A:** No, the Isar doesn't flow into a lake — it originates in the mountains, passes by or through artificial lakes, and ends in the Danube River. <answer>false</answer>
+  - **Q:** Is the capital of France Paris?
+  - **A:** Yes, the capital of France is Paris. <answer>true</answer>`;
 }
 
 ///// BOOLEAN HANDLING
