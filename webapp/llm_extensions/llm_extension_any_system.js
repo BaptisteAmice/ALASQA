@@ -620,7 +620,6 @@ window.LLMFrameworks.push(LLMFrameworkTheMost.name); //to be able to access the 
 class LLMFrameworkTheMostImproved extends LLMFramework {
     constructor(question, question_id) {
         super(question, question_id, "count_references");
-        this.max_retry_time = 8 * 60; // seconds
     }
     async answerQuestionLogic() {
         // Call llm generation
@@ -670,18 +669,22 @@ class LLMFrameworkText2Sparql extends LLMFramework {
     async answerQuestionLogic() {
         const startTime = performance.now();
         ////////////////////////// GET QUESTION TYPE
-        // Call llm generation
-        let output_llm_type = await this.executeStep(step_generation, "LLM generation", 
-            [this, prompt_is_boolean_expected(),"prompt_is_boolean_expected", this.question]
-        )
-        // Extract the commands from the LLM output
-        let extracted_type_list = await this.executeStep(step_extract_tags, "Extracted question type",
-             [this, output_llm_type, "answer"]
-        );
-        // Execute the commands, wait for place evaluation and get the results
-        let extracted_type = extracted_type_list.at(-1) || "";
-         //////////////////////////// IF BOOLEAN QUESTION JUST USE THE LLM
-         if (extracted_type == "boolean") {
+        let endpoint_is_corporate = getEndpointFamily() == "corporate";
+        let extracted_type = "";
+        if (!endpoint_is_corporate) {
+            // Call llm generation
+            let output_llm_type = await this.executeStep(step_generation, "LLM generation", 
+                [this, prompt_is_boolean_expected(),"prompt_is_boolean_expected", this.question]
+            )
+            // Extract the commands from the LLM output
+            let extracted_type_list = await this.executeStep(step_extract_tags, "Extracted question type",
+                [this, output_llm_type, "answer"]
+            );
+            // Execute the commands, wait for place evaluation and get the results
+            extracted_type = extracted_type_list.at(-1) || "";
+        }
+        //////////////////////////// IF BOOLEAN QUESTION JUST USE THE LLM
+        if (!endpoint_is_corporate && extracted_type == "boolean") {
             let output = await this.executeStep(step_generation, "LLM generation", 
                 [this, direct_boolean_answering_prompt(),"direct_boolean_answering_prompt", this.question]
             );
@@ -702,7 +705,7 @@ class LLMFrameworkText2Sparql extends LLMFramework {
             let got_a_response = false;
             let elapsedTime = (performance.now() - startTime) / 1000; // time in seconds
             let i = 1;
-            while (!got_a_response && elapsedTime < this.max_retry_time) {
+            while (!got_a_response && elapsedTime < (8 * 60)) {
                 console.log("elapsed time", elapsedTime);
                 this.reasoning_text += "<br>Try " + i + "<br>";
                 // Call llm generation
