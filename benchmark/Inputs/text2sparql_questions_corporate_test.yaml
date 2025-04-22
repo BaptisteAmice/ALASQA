@@ -1,5 +1,5 @@
 dataset:
-  id: http://localhost:3030/corporate/sparql
+  id: https://text2sparql.aksw.org/2025/corporate/
 questions:
 
   - question:

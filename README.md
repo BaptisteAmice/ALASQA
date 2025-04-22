@@ -37,8 +37,15 @@ fastapi dev api.py
 lm studio
 use gpu (vulkan for example)
 
-fuseki
-http://localhost:3030/enterprise/sparql
+
+to test text2sparql script you have to host graphes locally 
+for example with fuseki create
+http://localhost:3030/corporate/sparql
+and 
+http://localhost:3030/dbpedia/sparql
+
+fuseki doc:
+https://jena.apache.org/documentation/fuseki2/
 
 
 ## License

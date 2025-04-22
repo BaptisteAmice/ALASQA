@@ -18,9 +18,7 @@ app.mount("/static", StaticFiles(directory=script_dir+"/../webapp/"), name="stat
 KNOWN_DATASETS = [
     "https://text2sparql.aksw.org/2025/dbpedia/",
     "https://text2sparql.aksw.org/2025/corporate/",
-    "https://query.wikidata.org/sparql",
-    "http://localhost:3030/enterprise/sparql",
-    "http://localhost:3030/corporate/sparql"
+    "https://query.wikidata.org/sparql/"
 ]
 
 @app.get("/")
@@ -30,6 +28,13 @@ def get_answer(question: str, dataset: str) -> dict:
     """
     if dataset not in KNOWN_DATASETS:
         raise fastapi.HTTPException(404, "Unknown dataset ...")
+    else:
+        # text2sparql are just identifiers for the datasets
+        # we have to translate them to a real service
+        if dataset == "https://text2sparql.aksw.org/2025/dbpedia/":
+            dataset = "http://localhost:3030/dbpedia/sparql"
+        elif dataset == "https://text2sparql.aksw.org/2025/corporate/":
+            dataset = "http://localhost:3030/corporate/sparql"
     
     system_name = "sparklisllm-LLMFrameworkText2Sparql"
     result, nl_query, error, steps_status, reasoning, driver = interactions.simulated_user(
