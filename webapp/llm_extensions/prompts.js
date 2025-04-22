@@ -612,8 +612,8 @@ function direct_boolean_answering_prompt() {
   - **A:** Yes, he was a basketball player. <answer>true</answer>
   - **Q:** Does the Isar flow into a lake?
   - **A:** No, the Isar doesn't flow into a lake — it originates in the mountains, passes by or through artificial lakes, and ends in the Danube River. <answer>false</answer>
-  - **Q:** Is the capital of France Paris?
-  - **A:** Yes, the capital of France is Paris. <answer>true</answer>`;
+  - **Q:** Ist die Hauptstadt von Frankreich Paris?
+  - **A:** This question translate to "Is the capital of France Paris?". Yes, the capital of France is Paris. <answer>true</answer>`;
 }
 
 ///// BOOLEAN HANDLING
@@ -632,6 +632,7 @@ function prompt_is_boolean_expected() {
     - What is the boiling point of water? → <answer>non-boolean</answer>
     - Did Tom Brady win a Super Bowl before 2005? → <answer>boolean</answer>
     - Do all of batman's partner speak english as native language? → <answer>boolean</answer>
+    - In welcher Abteilung ist Frau Müller? → <answer>non-boolean</answer>
     - Which pope succeeded John Paul II? → <answer>non-boolean</answer>
 
     Now, analyze the following question accordingly:
