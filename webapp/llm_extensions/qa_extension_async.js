@@ -83,6 +83,19 @@ async function process_steps(qa, place, steps) {
 				steps[0] = new_first_step;
 				qa.value = steps.join(" ; "); // update qa field
 				return process_steps(qa, place, steps);
+			} //if poperty failed, we can try to get the property without constraint
+			else if (LAST_INITIATED_COMMAND === "property") {
+				//todo trouver tt les property, trouver leur labels -> tester distance edition
+				//-> si fail temps
+
+				//signal to add text to the reasoning and errors of the system
+				console.log("Property failed. Now trying to get the property without constraint.");
+				//add a "propertyWithoutConstraint" to the first command of qa
+				let first_step = steps[0];
+				let new_first_step = "propertyWithoutConstraint " + first_step;
+				steps[0] = new_first_step;
+				qa.value = steps.join(" ; "); // update qa field
+				return process_steps(qa, place, steps);
 			} else {
 				LAST_INITIATED_COMMAND = null; // reset the last initiated command
 				return Promise.reject(msg); // Propagate error
@@ -313,6 +326,17 @@ function process_step(place, step) {
 			|| suggestion_type(sugg) === "IncrRel" && sugg.orientation === "Bwd"
 			|| suggestion_type(sugg) === "IncrPred" && sugg.arg === "O",
 			sparklis.propertyLabels())
+		} else if ((match = /^propertyWithoutConstraint\s+(.+)$/.exec(step))) {
+			LAST_INITIATED_COMMAND = "propertyWithoutConstraint";
+			return search_and_apply_suggestion(
+				place, "fwd property", match[1],
+				(place,constr) => place.getConceptSuggestions(false,"True"),
+				sugg =>
+				suggestion_type(sugg) === "IncrRel" && sugg.orientation === "Fwd"
+				|| suggestion_type(sugg) === "IncrPred" && sugg.arg === "S"
+				|| suggestion_type(sugg) === "IncrRel" && sugg.orientation === "Bwd"
+				|| suggestion_type(sugg) === "IncrPred" && sugg.arg === "O",
+				sparklis.propertyLabels())
     } else {
 	LAST_INITIATED_COMMAND = "term";
 	return search_and_apply_suggestion(
