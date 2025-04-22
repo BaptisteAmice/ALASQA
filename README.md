@@ -37,6 +37,9 @@ fastapi dev api.py
 lm studio
 use gpu (vulkan for example)
 
+fuseki
+http://localhost:3030/enterprise/sparql
+
 
 ## License
 For open source projects, say how it is licensed.

@@ -18,7 +18,9 @@ app.mount("/static", StaticFiles(directory=script_dir+"/../webapp/"), name="stat
 KNOWN_DATASETS = [
     "https://text2sparql.aksw.org/2025/dbpedia/",
     "https://text2sparql.aksw.org/2025/corporate/",
-    "https://query.wikidata.org/sparql"
+    "https://query.wikidata.org/sparql",
+    "http://localhost:3030/enterprise/sparql",
+    "http://localhost:3030/corporate/sparql"
 ]
 
 @app.get("/")
