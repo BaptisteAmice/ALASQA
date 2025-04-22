@@ -629,11 +629,11 @@ function prompt_is_boolean_expected() {
     You must absolutely end your question with <answer>boolean</answer> or <answer>non-boolean</answer>.
 
     Examples:
-    - What is the boiling point of water? → <answer>non-boolean</answer>
-    - Did Tom Brady win a Super Bowl before 2005? → <answer>boolean</answer>
-    - Do all of batman's partner speak english as native language? → <answer>boolean</answer>
-    - In welcher Abteilung ist Frau Müller? → <answer>non-boolean</answer>
-    - Which pope succeeded John Paul II? → <answer>non-boolean</answer>
+    - What is the boiling point of water? → The question is asking for a specific value, not a yes/no question. → <answer>non-boolean</answer>
+    - Did Tom Brady win a Super Bowl before 2005? → The question is asking for a yes/no answer based on a specific event. → <answer>boolean</answer>
+    - Do all of batman's partner speak english as native language? → The question is asking for a yes/no answer based on either or not every batman's partner speaks english as native language. → <answer>boolean</answer>
+    - In welcher Abteilung ist Frau Müller? → The question is asking for a specific department, not a yes/no question. → <answer>non-boolean</answer>
+    - Which pope succeeded John Paul II? → The question is asking for a specific name, not a yes/no question. → <answer>non-boolean</answer>
 
     Now, analyze the following question accordingly:
     `;

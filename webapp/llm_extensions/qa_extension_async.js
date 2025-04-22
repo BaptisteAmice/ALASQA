@@ -4,6 +4,7 @@ console.log("QA extension active");
 var LAST_INITIATED_COMMAND = null; //used in case of error, to know which command was initiated last (code to update for each command needing it
 var LAST_RESOLVED_COMMAND = null; //used in case of error, to know which command was resolved last (code to update for each command needing it
 var previous_step = null; //used to store the previous command, to be able to go back to it if needed
+var temp_patch_needed = false; //used to know if a temporary patch is needed (code to update for each command needing it
 
 // upon window load... create text field and ENTER handler
 window.addEventListener(
@@ -59,6 +60,8 @@ async function process_steps(qa, place, steps) {
 				} else {
 					//Ignore the command
 					console.log("Ignoring the command "+ LAST_INITIATED_COMMAND + " because it doesn't have any results."); 
+					//a temp patch is needed because (a boardgame; property publisher; GMT Games) doesn't work well
+					temp_patch_needed = true; // signal that a temporary patch is needed
 				}
 			} else {
 				LAST_RESOLVED_COMMAND = LAST_INITIATED_COMMAND;
@@ -83,7 +86,8 @@ async function process_steps(qa, place, steps) {
 				steps[0] = new_first_step;
 				qa.value = steps.join(" ; "); // update qa field
 				return process_steps(qa, place, steps);
-			} //if poperty failed, we can try to get the property without constraint
+			//todo disabled for the moment because it doesn't work well
+			/*} //if poperty failed, we can try to get the property without constraint
 			else if (LAST_INITIATED_COMMAND === "property") {
 				//todo trouver tt les property, trouver leur labels -> tester distance edition
 				//-> si fail temps
@@ -95,11 +99,18 @@ async function process_steps(qa, place, steps) {
 				let new_first_step = "propertyWithoutConstraint " + first_step;
 				steps[0] = new_first_step;
 				qa.value = steps.join(" ; "); // update qa field
-				return process_steps(qa, place, steps);
-			} else {
-				LAST_INITIATED_COMMAND = null; // reset the last initiated command
-				return Promise.reject(msg); // Propagate error
+				return process_steps(qa, place, steps);*/
+			} 
+
+			if (temp_patch_needed) {
+				temp_patch_needed = false; // reset the temporary patch needed flag
+				console.log("Temporary patch is used to prevent error after going back.");
+				return process_question(qa); // retry the question
 			}
+			
+			// default case if no save are possible
+			LAST_INITIATED_COMMAND = null; // reset the last initiated command
+			return Promise.reject(msg); // Propagate error
 	    })
     }
 }
