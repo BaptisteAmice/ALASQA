@@ -632,6 +632,7 @@ function prompt_is_boolean_expected() {
     - What is the boiling point of water? → <answer>non-boolean</answer>
     - Did Tom Brady win a Super Bowl before 2005? → <answer>boolean</answer>
     - Do all of batman's partner speak english as native language? → <answer>boolean</answer>
+    - Which pope succeeded John Paul II? → <answer>non-boolean</answer>
 
     Now, analyze the following question accordingly:
     `;
