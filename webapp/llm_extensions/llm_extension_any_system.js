@@ -620,6 +620,7 @@ window.LLMFrameworks.push(LLMFrameworkTheMost.name); //to be able to access the 
 class LLMFrameworkTheMostImproved extends LLMFramework {
     constructor(question, question_id) {
         super(question, question_id, "count_references");
+        this.max_retry_time = 8 * 60; // seconds
     }
     async answerQuestionLogic() {
         // Call llm generation
@@ -701,7 +702,7 @@ class LLMFrameworkText2Sparql extends LLMFramework {
             let got_a_response = false;
             let elapsedTime = (performance.now() - startTime) / 1000; // time in seconds
             let i = 1;
-            while (!got_a_response && elapsedTime < 80) {
+            while (!got_a_response && elapsedTime < this.max_retry_time) {
                 console.log("elapsed time", elapsedTime);
                 this.reasoning_text += "<br>Try " + i + "<br>";
                 // Call llm generation
