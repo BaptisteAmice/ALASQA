@@ -32,9 +32,9 @@ def get_answer(question: str, dataset: str) -> dict:
         # text2sparql are just identifiers for the datasets
         # we have to translate them to a real service
         if dataset == "https://text2sparql.aksw.org/2025/dbpedia/":
-            dataset = "http://localhost:3030/dbpedia/sparql"
+            dataset = "https://desktop-47kug2k.tail6a5b76.ts.net:3131/dbpedia/sparql"
         elif dataset == "https://text2sparql.aksw.org/2025/corporate/":
-            dataset = "http://localhost:3030/corporate/sparql"
+            dataset = "https://desktop-47kug2k.tail6a5b76.ts.net:3131/corporate/sparql"
     
     system_name = "sparklisllm-LLMFrameworkText2Sparql"
     result, nl_query, error, steps_status, reasoning, driver = interactions.simulated_user(
