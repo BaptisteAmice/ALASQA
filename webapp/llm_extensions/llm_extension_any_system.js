@@ -670,18 +670,26 @@ class LLMFrameworkText2Sparql extends LLMFramework {
         const startTime = performance.now();
         ////////////////////////// GET QUESTION TYPE
         let endpoint_is_corporate = getEndpointFamily() == "corporate";
-        let extracted_type = "";
-        if (!endpoint_is_corporate) {
-            // Call llm generation
-            let output_llm_type = await this.executeStep(step_generation, "LLM generation", 
-                [this, prompt_is_boolean_expected(),"prompt_is_boolean_expected", this.question]
-            )
-            // Extract the commands from the LLM output
-            let extracted_type_list = await this.executeStep(step_extract_tags, "Extracted question type",
-                [this, output_llm_type, "answer"]
-            );
-            // Execute the commands, wait for place evaluation and get the results
-            extracted_type = extracted_type_list.at(-1) || "";
+        let extracted_type = "tocheck";
+        if (!endpoint_is_corporate) { //we won't use llm knowledge if we are in a corporate endpoint
+            //we will test number_bool_tests times that the expected result is a boolean
+            let max_number_bool_tests = 2;
+            let current_number_bool_tests = 0;
+            while (current_number_bool_tests < max_number_bool_tests 
+                && (extracted_type == "tocheck" || extracted_type == "boolean")) {
+                    this.reasoning_text += "<br>Try to get the question type (" + current_number_bool_tests + ")<br>";
+                // Call llm generation
+                let output_llm_type = await this.executeStep(step_generation, "LLM generation", 
+                    [this, prompt_is_boolean_expected(),"prompt_is_boolean_expected", this.question]
+                )
+                // Extract the commands from the LLM output
+                let extracted_type_list = await this.executeStep(step_extract_tags, "Extracted question type",
+                    [this, output_llm_type, "answer"]
+                );
+                // Execute the commands, wait for place evaluation and get the results
+                extracted_type = extracted_type_list.at(-1) || "";
+                current_number_bool_tests++;
+            }
         }
         //////////////////////////// IF BOOLEAN QUESTION JUST USE THE LLM
         if (!endpoint_is_corporate && extracted_type == "boolean") {
