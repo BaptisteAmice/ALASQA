@@ -171,11 +171,15 @@ function process_step(place, step) {
 	return  apply_suggestion(place, "count", sugg)
     } else if ((match = /^after\s+(.+)$/.exec(step))) {
 	LAST_INITIATED_COMMAND = "after";
+	//remove quotes from the string (the llm sometimes adds them)
+	match[1] = match[1].replace(/['"]+/g, '');
 	let constr = { type: "After", kwd: match[1] };
 	let sugg = {type: "IncrConstr", constr: constr, filterType: "OnlyLiterals"};
 	return apply_suggestion(place, "after", sugg)
     } else if ((match = /^before\s+(.+)$/.exec(step))) {
 	LAST_INITIATED_COMMAND = "before";
+	//remove quotes from the string (the llm sometimes adds them)
+	match[1] = match[1].replace(/['"]+/g, '');
 	let constr = { type: "Before", kwd: match[1] };
 	let sugg = {type: "IncrConstr", constr: constr, filterType: "OnlyLiterals"};
 	return apply_suggestion(place, "before", sugg)
@@ -186,6 +190,8 @@ function process_step(place, step) {
 	return apply_suggestion(place, "from-to", sugg)
     } else if ((match = /^higherThan\s*(.+)$/.exec(step))) {
 	LAST_INITIATED_COMMAND = "higher";
+	//remove quotes from the string (the llm sometimes adds them)
+	match[1] = match[1].replace(/['"]+/g, '');
 	if (!isNumeric(match[1])) {
 		return Promise.reject("higherThan something that is not a number");
 	}
@@ -195,6 +201,8 @@ function process_step(place, step) {
 	return apply_suggestion(place, "higher-than", sugg)
     } else if ((match = /^lowerThan\s*(.+)$/.exec(step))) {
 	LAST_INITIATED_COMMAND = "lower";
+	//remove quotes from the string (the llm sometimes adds them)
+	match[1] = match[1].replace(/['"]+/g, '');
 	if (!isNumeric(match[1])) {
 		return Promise.reject("lowerThan something that is not a number");
 	}
@@ -212,6 +220,8 @@ function process_step(place, step) {
 	
 	} else if ((match = /^match\s*(.+)$/.exec(step))) { // Regex or Wikidata search
 	LAST_INITIATED_COMMAND = "match";
+	//remove quotes from the string (the llm sometimes adds them)
+	match[1] = match[1].replace(/['"]+/g, '');
 	return new Promise((resolve, reject) => {
 		get_constr("WikidataSearch", match[1]).
 		then(constr => 
@@ -230,6 +240,8 @@ function process_step(place, step) {
 
 	} else if ((match = /^limit\s*(.+)$/.exec(step))) {
 	LAST_INITIATED_COMMAND = "limit";
+		//remove quotes from the string (the llm sometimes adds them)
+		match[1] = match[1].replace(/['"]+/g, '');
 		if (!isNumeric(match[1])) {
 			return Promise.reject("limit something that is not a number");
 		}
@@ -256,6 +268,8 @@ function process_step(place, step) {
 
 		} else if ((match = /^offset\s*(.+)$/.exec(step))) {
 		LAST_INITIATED_COMMAND = "offset";
+		//remove quotes from the string (the llm sometimes adds them)
+		match[1] = match[1].replace(/['"]+/g, '');
 		if (!isNumeric(match[1])) {
 			return Promise.reject("offset something that is not a number");
 		}
@@ -295,6 +309,8 @@ function process_step(place, step) {
 
 	} else if ((match = /^filter\s+(.+)$/.exec(step))) {
 		LAST_INITIATED_COMMAND = "filter";
+		//remove quotes from the string (the llm sometimes adds them)
+		match[1] = match[1].replace(/['"]+/g, '');
 		let constr = { type: "MatchesAll", kwds: match[1].split(/\s+/) };
 		sparklis.setConceptConstr(constr);
 		sparklis.setTermConstr(constr);
@@ -303,6 +319,8 @@ function process_step(place, step) {
 
     } else if ((match = /^a\s+(.+)\s*$/.exec(step))) {
 	LAST_INITIATED_COMMAND = "class";
+	//remove quotes from the string (the llm sometimes adds them)
+	match[1] = match[1].replace(/['"]+/g, '');
 	return search_and_apply_suggestion(
 	    place, "class", match[1],
 	    (place,constr) => place.getConceptSuggestions(false,constr),
@@ -310,6 +328,8 @@ function process_step(place, step) {
 	    sparklis.classLabels())
     } else if ((match = /^forwardProperty\s+(.+)$/.exec(step))) {
 	LAST_INITIATED_COMMAND = "fwd";
+	//remove quotes from the string (the llm sometimes adds them)
+	match[1] = match[1].replace(/['"]+/g, '');
 	return search_and_apply_suggestion(
 	    place, "fwd property", match[1],
 	    (place,constr) => place.getConceptSuggestions(false,constr),
@@ -319,6 +339,8 @@ function process_step(place, step) {
 	    sparklis.propertyLabels())
     } else if ((match = /^backwardProperty\s+(.+)$/.exec(step))) {
 	LAST_INITIATED_COMMAND = "bwd";
+	//remove quotes from the string (the llm sometimes adds them)
+	match[1] = match[1].replace(/['"]+/g, '');
 	return search_and_apply_suggestion(
 	    place, "bwd property", match[1],
 	    (place,constr) => place.getConceptSuggestions(false,constr),
@@ -328,6 +350,8 @@ function process_step(place, step) {
 	    sparklis.propertyLabels())
 	} else if ((match = /^property\s+(.+)$/.exec(step))) {
 		LAST_INITIATED_COMMAND = "property";
+		//remove quotes from the string (the llm sometimes adds them)
+		match[1] = match[1].replace(/['"]+/g, '');
 		return search_and_apply_suggestion(
 			place, "fwd property", match[1],
 			(place,constr) => place.getConceptSuggestions(false,constr),
@@ -339,6 +363,8 @@ function process_step(place, step) {
 			sparklis.propertyLabels())
 		} else if ((match = /^propertyWithoutConstraint\s+(.+)$/.exec(step))) {
 			LAST_INITIATED_COMMAND = "propertyWithoutConstraint";
+			//remove quotes from the string (the llm sometimes adds them)
+			match[1] = match[1].replace(/['"]+/g, '');
 			return search_and_apply_suggestion(
 				place, "fwd property", match[1],
 				(place,constr) => place.getConceptSuggestions(false,"True"),
@@ -350,6 +376,8 @@ function process_step(place, step) {
 				sparklis.propertyLabels())
     } else {
 	LAST_INITIATED_COMMAND = "term";
+	//remove quotes from the string (the llm sometimes adds them)
+	step = step.replace(/['"]+/g, '');
 	return search_and_apply_suggestion(
 	    place, "term", step,
 	    (place,constr) => place.getTermSuggestions(false,constr),
