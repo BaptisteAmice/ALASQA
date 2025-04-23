@@ -47,6 +47,13 @@ http://localhost:3030/dbpedia/sparql
 fuseki doc:
 https://jena.apache.org/documentation/fuseki2/
 
+then expose for example with tailscale 
+tailscale funnel 8000
+
+.\fuseki-server.bat (on windows)
+(needs https to be callable)
+tailscale funnel --https 3131 3030
+
 
 ## License
 For open source projects, say how it is licensed.
