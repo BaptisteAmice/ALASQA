@@ -37,9 +37,11 @@ def get_answer(question: str, dataset: str) -> dict:
             dataset = "https://desktop-47kug2k.tail6a5b76.ts.net:3131/corporate/sparql"
     
     system_name = "sparklisllm-LLMFrameworkText2Sparql"
-    result, nl_query, error, steps_status, reasoning, driver = interactions.simulated_user(
+    driver = interactions.get_new_driver(is_headless=True) #todo change
+    result, nl_query, error, steps_status, reasoning, _ = interactions.simulated_user(
         config.SPARKLIS_FILE,
-        lambda driver: interactions.sparklisllm_question(driver, question, dataset, system_name)
+        lambda drv: interactions.sparklisllm_question(drv, question, dataset, system_name),
+        driver=driver
     )
     driver.close() # should close the page after the api request
     return {

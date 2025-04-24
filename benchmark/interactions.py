@@ -7,9 +7,14 @@ from selenium.webdriver.support.ui import Select
 import logging
 import config
 
-# Options for the browser
-options = Options()
-#options.headless = True #to not open the browser #do not seems to work
+def get_new_driver(is_headless:bool=False) -> webdriver.Firefox:
+    # Options for the browser
+    options = Options()
+    if is_headless:
+        #options.headless = True #to not open the browser #do not seems to work
+        options.add_argument("--headless")  # Run in headless mode
+    driver = webdriver.Firefox(options=options)
+    return driver
 
 def simulated_user(url: str, interactions, driver: webdriver.Firefox = None) -> tuple[str, str, str, str, webdriver.Firefox]:
     """
@@ -21,7 +26,7 @@ def simulated_user(url: str, interactions, driver: webdriver.Firefox = None) -> 
     """
     # Create a new driver if none is provided
     if driver is None:
-        driver = webdriver.Firefox(options=options)
+        driver = get_new_driver(is_headless=False)
     driver.get(url)
     result, nl_query, error, steps_status, reasoning = interactions(driver)
     return result, nl_query, error, steps_status, reasoning, driver
