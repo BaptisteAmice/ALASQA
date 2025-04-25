@@ -134,19 +134,10 @@ async function process_step(place, step) {
     } else if (step === "maybe") {
 	return apply_suggestion(place, "maybe", "IncrMaybe")
     } else if (step === "asc") {
-	let sugg = { type: "IncrOrder", order: { type: "ASC", conv: { targetType: "Double", forgetOriginalDatatype: false } } };
-	console.log("previous step: ", previous_step);
-	if (previous_step && previous_step.toLowerCase().includes("date")) {
-		//sparklis doesn't allow to order by date, so we will edit the final sparql query to do it
-		bus.dispatchEvent(new CustomEvent('order_date', { detail: { order: 'asc' } }));
-	}
+	let sugg = { type: "IncrOrder", order: { type: "ASC", conv: null } };
 	return apply_suggestion(place, "asc-order", sugg)
     } else if (step === "desc") {
-	if (previous_step && previous_step.toLowerCase().includes("date")) {
-		//sparklis doesn't allow to order by date, so we will edit the final sparql query to do it
-		bus.dispatchEvent(new CustomEvent('order_date', { detail: { order: 'desc' } }));
-	}
-	let sugg = { type: "IncrOrder", order: { type: "DESC", conv: { targetType: "Double", forgetOriginalDatatype: false } } };
+	let sugg = { type: "IncrOrder", order: { type: "DESC", conv: null } };
 	return apply_suggestion(place, "desc-order", sugg)
 	} else if ((match = /^groupBy\s+(.+)$/.exec(step))) {
 	LAST_INITIATED_COMMAND = "groupBy";
