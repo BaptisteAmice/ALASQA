@@ -32,6 +32,19 @@ function getEndpointFamily() {
   }
 }
 
+function synonyms_system_prompt() {
+  return `Given a word or a group of words, return a list of at most 5 possible class or entity names that may be used to represent this concept in a structured knowledge graph. These should include synonyms, spelling variations (e.g., American vs. British English), plural or singular forms, and semantically equivalent terms that might appear in ontologies or datasets. The terms should be ordered by probability of relevance, with the most likely matches first. Output the list in <answer>...</answer> tags.
+
+Examples:
+Q: organization
+A: <answer>organisation; institution; firm; nonprofit; NGO</answer>
+Q: human
+A: <answer>person; human being; individual; people; homo sapiens</answer>
+Q: comic series
+A: <answer>comic book series; comics; graphic novel series</answer>
+`;
+}
+
 function commands_chain_system_prompt_v2() {
   return `
   ## Task: Generate knowledge graph query commands for Sparklis (SPARQL-based tool).
@@ -364,53 +377,66 @@ A:
   } else if (endpoint_family === 'corporate' || true) {
     prompt = `## Task: Generate knowledge graph query commands for Sparklis (a SPARQL-based tool) on a domain-specific knowledge graph representing a corporate setting.
 
+## Vocabulary:
+**classes**: BillOfMaterial, BomPart, Department, Employee, Hardware, Manager, Price, ProductCategory, Service, Supplier
+**properties**: hasBomPart, name, hasPart, quantity, compatibleProduct, depth_mm, hasCategory, hasProductManager, hasSupplier, height_mm, id, price, reliabilityIndex, weight_g, width_mm, responsibleFor, eligibleFor, addressText, areaOfExpertise, email, hasManager, memberOf, phone, addressCountry, addressCountryCode, addressLocality, amount, currency, country, lat, long
+
 ## Format:
 1. Think step by step about what entities and relationships are needed.
 2. Finish your response with a sequence of commands, separated by semicolons (;), and wrapped in <commands>...</commands>.
 
 ### Available Commands:
-- a [class] → Retrieve entities of a given class (e.g., "a supplier" to find suppliers).
+- a [class] → Retrieve entities of a given class (e.g., "a Supplier" to find suppliers).
 - [entity] → Retrieve a specific entity (e.g., "Adolphina Hoch" to find the entity representing Adolphina Hoch). Use this when asking about a specific thing or individual.
 - property [property] → Retrieve a specific property (e.g., "property email" to find the email of an entity).
-- higherThan [number], lowerThan [constant number] → Value constraints (e.g., "a price ; property amount; higherThan 2").
-- after [date], before [date] → Time constraints (e.g., "property release date ; after 2000").
-- groupBy count → Can only be used if a property as been called previously. Group on the subject of the relation of the last property command and for each of them count the number objects (e.g. a supplier ; property address country ; groupBy count).
+- higherThan [number], lowerThan [constant number] → Value constraints (e.g., "a Price ; property amount; higherThan 2").
+- groupBy count → Can only be used if a property as been called previously. Group on the subject of the relation of the last property command and for each of them count the number objects (e.g. a Supplier ; property addressCountry ; groupBy count).
 - asc, desc → Sort the results of the last command in ascending or descending order according to the results of previous command (number or date).
 - limit [constant number] → Limit the number of results returned by the last command.
 - offset [constant number] → Skip the first N results.
 
 ### ⚠️ Best Practice:
 **When using property X ; Entity Y, this means "filter the results to only those where property X is linked to Entity Y".**
-**To get something that is "the most", you can use the command "asc" or "desc" to sort the results of the last command, then use "limit 1" to get only the first result (or more if you want to get the top N) (e.g., "a department ; property id ; asc ; limit 1" to get the department with the smallest id).**
-**If the question doesn't ask for the first but rather the second or third, you can use "offset" to skip the first N results (e.g., "a department ; property id ; asc ; offset 1; limit 1;" to get the department with the second smallest id).**
-**It is also possible to use it combined with "groupBy count". For example, "a department ; property member ; groupBy count ; desc ; limit 1" will give the department with the most members.**
+**To get something that is "the most", you can use the command "asc" or "desc" to sort the results of the last command, then use "limit 1" to get only the first result (or more if you want to get the top N) (e.g., "a Department ; property id ; asc ; limit 1" to get the department with the smallest id).**
+**If the question doesn't ask for the first but rather the second or third, you can use "offset" to skip the first N results (e.g., "a Department ; property id ; asc ; offset 1; limit 1;" to get the department with the second smallest id).**
+**It is also possible to use it combined with "groupBy count". For example, "a Department ; property member ; groupBy count ; desc ; limit 1" will give the department with the most members.**
 
 ## Examples:
 Q: List all suppliers in France.
 A:
 - The question asks for suppliers in France.
-- We first retrieve the class "supplier".
-- Then, we follow the property "address country" to get the country of each supplier.
+- We first retrieve the class "Supplier".
+- Then, we follow the property "country" to get the country of each supplier.
 - Finally, we filter the results to include only those suppliers located in France.
-<commands>a supplier ; forwardProperty address country ; France</commands>
+<commands>a Supplier ; forwardProperty country ; France</commands>
 
-Q: Was ist die Hauptstadt von Deutschland?
+Q: Wie ist die Telefonnummer des Managers von Arnelle Gerber?
 A:
-- In english, this question is: What is the capital of Germany?
-- We have to find the country "germany".
-- Then we have to find its property "capital".
-<commands>a country ; Germany; property capital</commands>
+- In english, this question is: What is the phone number of the manager of Arnelle Gerber?
+- We first retrieve the entity matching the name "Arnelle Gerber".
+- Then, we follow the property "hasManager" to find the manager of this entity.
+- Finally, we retrieve the property "phone" to get the phone number of the manager.
+<commands>property name ; Arnelle Gerber ; property hasManager ; property phone</commands>
+
+Q: List the bills of material of AeroVibe Matrix.
+A:
+- The question asks for the Bill of Material (BOM) of AeroVibe Matrix.
+- We first look for the list of BOMs.
+- Then, we filter the results by the name "AeroVibe Matrix".
+- Finally, we retrieve the property "bomPart" to get the specific BOM part associated with AeroVibe Matrix.
+<commands>a BillOfMaterial; property name ; AeroVibe Matrix ; property hasBomPart</commands>
 
 Q: What are the areas of expertise of Jarvis Jans?
 A:
 - The question asks for the areas of expertise of Jarvis Jans.
-- We start by retrieving the entity corresponding to "Jarvis Jans".
-- Then, we search for the property "area of expertise" associated with this entity.
-<commands>Jarvis Jans ; property area of expertise</commands>`;
+- We first try to find a match for the name "Jarvis Jans".
+- Then, we search for the property "areaOfExpertise" associated with this entity.
+<commands>property name ; Jarvis Jans ; property areaOfExpertise</commands>`;
   }
   return prompt;
 }
-
+//BillOfMaterial of AeroVibe Matrix
+//a BillOfMaterial; property name ; AeroVibe Matrix
 function forward_commands_chain_system_prompt() {
     return `
     ## Task: Generate knowledge graph query commands for Sparklis (SPARQL-based tool).

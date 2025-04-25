@@ -85,6 +85,17 @@ async function process_steps(qa, place, steps) {
 				steps[0] = new_first_step;
 				qa.value = steps.join(" ; "); // update qa field
 				return process_steps(qa, place, steps);
+
+
+			} else if (LAST_INITIATED_COMMAND === "property" || (
+				LAST_INITIATED_COMMAND === "up" && place.focusPath().length > 1)) {
+				//execute up and then retry the command
+				console.log("Property failed. Now trying to go up and retry the command.");
+				//add a new step "up" before the current one
+				steps.unshift("up");
+				console.log("Steps after adding up: ", steps);
+				return process_steps(qa, place, steps);
+			
 			//todo disabled for the moment because it doesn't work well
 			/*} //if poperty failed, we can try to get the property without constraint
 			else if (LAST_INITIATED_COMMAND === "property") {
