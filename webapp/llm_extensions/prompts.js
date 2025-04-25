@@ -379,7 +379,7 @@ A:
 
 ## Vocabulary:
 **classes**: BillOfMaterial, BomPart, Department, Employee, Hardware, Manager, Price, ProductCategory, Service, Supplier
-**properties**: hasBomPart, name, hasPart, quantity, compatibleProduct, depth_mm, hasCategory, hasProductManager, hasSupplier, height_mm, id, price, reliabilityIndex, weight_g, width_mm, responsibleFor, eligibleFor, addressText, areaOfExpertise, email, hasManager, memberOf, phone, addressCountry, addressCountryCode, addressLocality, amount, currency, country, lat, long
+**properties**: hasBomPart, name, hasPart, quantity, compatibleProduct, depth_mm, hasCategory, hasProductManager, hasSupplier, height_mm, id, price, reliabilityIndex, weight_g, width_mm, responsibleFor, eligibleFor, addressText, areaOfExpertise, email, hasManager, memberOf, phone, addressCountry, addressCountryCode, addressLocality, amount, currency, country, lat, long, label
 
 ## Format:
 1. Think step by step about what entities and relationships are needed.

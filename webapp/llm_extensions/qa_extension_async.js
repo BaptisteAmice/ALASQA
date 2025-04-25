@@ -87,8 +87,10 @@ async function process_steps(qa, place, steps) {
 				return process_steps(qa, place, steps);
 
 
-			} else if (LAST_INITIATED_COMMAND === "property" || (
-				LAST_INITIATED_COMMAND === "up" && place.focusPath().length > 1)) {
+			} else if (place.focusPath().length > 1
+				&& (LAST_INITIATED_COMMAND === "property" || 
+					LAST_INITIATED_COMMAND === "up")
+				) {
 				//execute up and then retry the command
 				console.log("Property failed. Now trying to go up and retry the command.");
 				//add a new step "up" before the current one
