@@ -51,7 +51,6 @@ async function process_steps(qa, place, steps) {
 			//cancel the last class or match command if it doesn't have any results
 			if (LAST_INITIATED_COMMAND === "class" || LAST_INITIATED_COMMAND === "match") {
 				//if the last command got a class but doesn't have any results, we will just cancel it
-				console.log("zemfoihbzeiufb", next_place.results());
 				await waitForEvaluation(next_place);
 				if (next_place.results().rows.length > 0) {
 					LAST_RESOLVED_COMMAND = LAST_INITIATED_COMMAND;
@@ -118,7 +117,7 @@ async function process_steps(qa, place, steps) {
 /* processing a single step */
 
 // applying step to place, returning a promise of the next place
-function process_step(place, step) {
+async function process_step(place, step) {
     console.log("Step: ", step);
 	LAST_INITIATED_COMMAND = step;
     let match;
@@ -223,8 +222,23 @@ function process_step(place, step) {
 	//remove quotes from the string (the llm sometimes adds them)
 	match[1] = match[1].replace(/['"]+/g, '');
 	return new Promise((resolve, reject) => {
-		get_constr("WikidataSearch", match[1]).
-		then(constr => 
+		let input_wikidata = document.getElementById("input-wikidata-mode");
+		if (input_wikidata.checked) {
+			get_constr("WikidataSearch", match[1]).
+			then(constr => 
+				place.onEvaluated(() => {
+					let sugg = {type: "IncrConstr", constr: constr, filterType: "Mixed"};
+					apply_suggestion(place, "match", sugg)
+					.then(next_place => {
+						resolve(next_place);
+					})
+					.catch(msg => {
+						reject(msg);
+					})
+				}
+			))
+		} else {
+			let constr = { type: "MatchesAll", kwds: match[1].split(/\s+/) };
 			place.onEvaluated(() => {
 				let sugg = {type: "IncrConstr", constr: constr, filterType: "Mixed"};
 				apply_suggestion(place, "match", sugg)
@@ -234,8 +248,8 @@ function process_step(place, step) {
 				.catch(msg => {
 					reject(msg);
 				})
-			}
-		))
+			})
+		}
 	})	
 
 	} else if ((match = /^limit\s*(.+)$/.exec(step))) {
@@ -326,6 +340,17 @@ function process_step(place, step) {
 	    (place,constr) => place.getConceptSuggestions(false,constr),
 	    sugg => suggestion_type(sugg) === "IncrType",
 	    sparklis.classLabels())
+
+	} else if ((match = /^classWithoutConstraint\s+(.+)\s*$/.exec(step))) {
+		LAST_INITIATED_COMMAND = "classWithoutConstraint";
+		//remove quotes from the string (the llm sometimes adds them)
+		match[1] = match[1].replace(/['"]+/g, '');
+		return search_and_apply_suggestion(
+			place, "class", match[1],
+			(place,constr) => place.getConceptSuggestions(false,"True"),
+			sugg => suggestion_type(sugg) === "IncrType",
+			sparklis.classLabels())
+			
     } else if ((match = /^forwardProperty\s+(.+)$/.exec(step))) {
 	LAST_INITIATED_COMMAND = "fwd";
 	//remove quotes from the string (the llm sometimes adds them)
@@ -348,8 +373,8 @@ function process_step(place, step) {
 	    suggestion_type(sugg) === "IncrRel" && sugg.orientation === "Bwd"
 		|| suggestion_type(sugg) === "IncrPred" && sugg.arg === "O",
 	    sparklis.propertyLabels())
-	} else if ((match = /^property\s+(.+)$/.exec(step))) {
-		LAST_INITIATED_COMMAND = "property";
+	} else if ((match = /^propertyWithoutPriority\s+(.+)$/.exec(step))) { //depends on the first direction the property is found in
+		LAST_INITIATED_COMMAND = "propertyWithoutPriority";
 		//remove quotes from the string (the llm sometimes adds them)
 		match[1] = match[1].replace(/['"]+/g, '');
 		return search_and_apply_suggestion(
@@ -361,7 +386,41 @@ function process_step(place, step) {
 			|| suggestion_type(sugg) === "IncrRel" && sugg.orientation === "Bwd"
 			|| suggestion_type(sugg) === "IncrPred" && sugg.arg === "O",
 			sparklis.propertyLabels())
-		} else if ((match = /^propertyWithoutConstraint\s+(.+)$/.exec(step))) {
+	} else if ((match = /^property\s+(.+)$/.exec(step))) { //forward property first, then backward property
+		LAST_INITIATED_COMMAND = "property";
+		//remove quotes from the string (the llm sometimes adds them)
+		match[1] = match[1].replace(/['"]+/g, '');
+		const primaryFilter = sugg =>
+			suggestion_type(sugg) === "IncrRel" && sugg.orientation === "Fwd" ||
+			suggestion_type(sugg) === "IncrPred" && sugg.arg === "S";
+	
+		const fallbackFilter = sugg =>
+			suggestion_type(sugg) === "IncrRel" && sugg.orientation === "Bwd" ||
+			suggestion_type(sugg) === "IncrPred" && sugg.arg === "O";
+	
+		let result = null;
+		try {
+			result = await search_and_apply_suggestion(
+				place, "fwd property", match[1],
+				(place, constr) => place.getConceptSuggestions(false, constr),
+				primaryFilter,
+				sparklis.propertyLabels()
+			);
+		} catch (error) {
+			console.log("No forward property found, trying backward property.");
+		}
+		
+	
+		if (!result || result.length === 0) {
+			result = search_and_apply_suggestion(
+				place, "bwd property", match[1],
+				(place, constr) => place.getConceptSuggestions(false, constr),
+				fallbackFilter,
+				sparklis.propertyLabels()
+			);
+		}
+		return result;
+		} else if ((match = /^propertyWithoutConstraint\s+(.+)$/.exec(step))) { //todo priority order??
 			LAST_INITIATED_COMMAND = "propertyWithoutConstraint";
 			//remove quotes from the string (the llm sometimes adds them)
 			match[1] = match[1].replace(/['"]+/g, '');
