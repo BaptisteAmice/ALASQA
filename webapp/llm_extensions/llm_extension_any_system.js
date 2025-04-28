@@ -706,7 +706,7 @@ class LLMFrameworkText2Sparql extends LLMFramework {
             if (extracted_bool == "true") {
                 bool_query = "ASK WHERE {}";
             } else {
-                bool_query = "ASK WHERE { FILTER(false) }";
+                bool_query = "ASK WHERE { BIND(false AS ?x) FILTER(?x) }";
             } 
             this.sparql = bool_query;
         } else {
@@ -936,7 +936,7 @@ class LLMFrameworkDirectBoolean extends LLMFramework {
         if (extracted_bool == "true") {
             bool_query = "ASK WHERE {}";
         } else if(extracted_bool == "false") {
-            bool_query = "ASK WHERE { FILTER(false) }";
+            bool_query = "ASK WHERE { BIND(false AS ?x) FILTER(?x) }";
         } 
         this.sparql = bool_query;
     }
@@ -975,7 +975,7 @@ class LLMFrameworkScoreAtAllCost extends LLMFramework { //todo tester
             if (extracted_bool == "true") {
                 bool_query = "ASK WHERE {}";
             } else {
-                bool_query = "ASK WHERE { FILTER(false) }";
+                bool_query = "ASK WHERE { BIND(false AS ?x) FILTER(?x) }";
             } 
             this.sparql = bool_query;
         } else {
@@ -998,7 +998,7 @@ class LLMFrameworkScoreAtAllCost extends LLMFramework { //todo tester
         if (this.sparql == "") {
             this.reasoning_text += "<br>SPARQL query is empty, trying to get another result<br>";
             //todo temp solution
-            this.sparql = "ASK WHERE { FILTER(false) }";
+            this.sparql = "ASK WHERE { BIND(false AS ?x) FILTER(?x) }";
         } 
     }
 }
