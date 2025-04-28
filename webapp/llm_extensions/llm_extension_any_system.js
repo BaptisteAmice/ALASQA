@@ -680,7 +680,7 @@ class LLMFrameworkText2Sparql extends LLMFramework {
                     this.reasoning_text += "<br>Try to get the question type (" + current_number_bool_tests + ")<br>";
                 // Call llm generation
                 let output_llm_type = await this.executeStep(step_generation, "LLM generation", 
-                    [this, prompt_is_boolean_expected(),"prompt_is_boolean_expected", this.question]
+                    [this, prompt_is_boolean_expected(),"prompt_is_boolean_expected", question_user_prompt(this.question)]
                 )
                 // Extract the commands from the LLM output
                 let extracted_type_list = await this.executeStep(step_extract_tags, "Extracted question type",
@@ -693,6 +693,7 @@ class LLMFrameworkText2Sparql extends LLMFramework {
         }
         //////////////////////////// IF BOOLEAN QUESTION JUST USE THE LLM
         if (!endpoint_is_corporate && extracted_type == "boolean") {
+            //todo try it several times
             let output = await this.executeStep(step_generation, "LLM generation", 
                 [this, direct_boolean_answering_prompt(),"direct_boolean_answering_prompt", this.question]
             );
@@ -776,7 +777,7 @@ class LLMFrameworkText2Sparql extends LLMFramework {
 
             ////////////////////////// LAST TRY TO SAVE THE RESPONSE
             if (!got_a_response) {
-                
+                //todo
             }
         }      
     }

@@ -267,6 +267,11 @@ A:
   return prompt;
 }
 
+function question_user_prompt(question) {
+  return `## Question: 
+  ${question}`
+}
+
 function commands_chain_system_prompt_the_most_improved() {
   let endpoint_family = getEndpointFamily();
   let prompt;
