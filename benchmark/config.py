@@ -16,7 +16,7 @@ logging.basicConfig(
 )
 
 # time constraint for a single question (in seconds)
-SYSTEM_TIMEOUT = 5000
+SYSTEM_TIMEOUT = 600
 
 # Number of queries executed between each save for a benchmark evaluation
 BATCH_SIZE = 1
@@ -41,12 +41,12 @@ NB_TESTS = 3
 
 # Input json file containing the benchmark
 #BENCHMARK_FILE = script_dir + '/Inputs/' + 'qald_10_patched.json'
-BENCHMARK_FILE = script_dir + '/Inputs/' + 'qald_9_plus_train_wikidata_patched.json'
+BENCHMARK_FILE = script_dir + '/Inputs/' + 'qald_9_plus_train_dbpedia.json'
 
 # Name of the tested benchmark (MINTAKA1K | QALD10 | QALD9_PLUS)
 BENCHMARK_NAME = benchmark_extraction.QALD9_PLUS
 # Filter on the extracted questions of the benchmark (e.g., {} to get all questions, {"tags": lambda x: x is not None and "aggregation" in x} to get only the questions with the tag "aggregation" in a QALD benchmark)
-BENCHMARK_QUESTIONS_FILTER = {"tags": lambda x: x is not None and "the most" in x}
+BENCHMARK_QUESTIONS_FILTER = {}#{"tags": lambda x: x is not None and "the most" in x}
 
 # Separating the language in 2 variable enable different approaches (e.g., reasoning in the question language if the 2 are the same, or translating the question in the system language)
 # Language in which the question of the benchmark are extracted
@@ -55,10 +55,10 @@ LANGUAGE_QUESTIONS = 'en'
 LANGUAGE_SPARKLIS = 'en'
 
 # Name of the tested system
-TESTED_SYSTEM = 'sparklisllm-LLMFrameworkOneShotForwardScoringReferences' # dummy | sparklisllm-[specific_system_name]
+TESTED_SYSTEM = 'sparklisllm-LLMFrameworkText2Sparql' # dummy | sparklisllm-[specific_system_name]
 
 # SPARQL endpoint, only used in scripts and not by the API
-#SPARQL_ENDPOINT = 'https://dbpedia.org/sparql'
-SPARQL_ENDPOINT = 'https://query.wikidata.org/sparql'
+SPARQL_ENDPOINT = 'https://dbpedia.org/sparql'
+#SPARQL_ENDPOINT = 'https://query.wikidata.org/sparql'
 #SPARQL_ENDPOINT = 'https://skynet.coypu.org/wikidata/'
 #SPARQL_ENDPOINT = 'invalid/endpoint' #todo erreur specifique?
