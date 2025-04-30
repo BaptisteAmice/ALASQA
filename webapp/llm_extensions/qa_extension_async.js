@@ -32,11 +32,22 @@ async function process_question(qa) {
 	LAST_RESOLVED_COMMAND = null; // reset the previous command
 	previous_step = null; // reset the previous step
     let question = qa.value;
+	question = correct_command_chain_syntax(question); //patch malformed command chain syntax
     console.log("Question: " + question);
     let steps = question.split(/\s*;\s*/).filter(s => s !== '');
     console.log("Steps: " + steps);
     let place = sparklis.currentPlace();
     return await process_steps(qa, place, steps);
+}
+
+function correct_command_chain_syntax(steps_string) {
+	/**
+	 * Corrects malformed command chain syntax.
+	 */
+	// Remove the spaces at the start of the string
+	let patched_steps_string = steps_string.replace(/^\s+/, '');
+
+	return patched_steps_string;
 }
 
 // starting from place, apply sequence of steps as far as possible
