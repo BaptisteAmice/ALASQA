@@ -6,6 +6,8 @@ var LAST_RESOLVED_COMMAND = null; //used in case of error, to know which command
 var previous_step = null; //used to store the previous command, to be able to go back to it if needed
 var temp_patch_needed = false; //used to know if a temporary patch is needed (code to update for each command needing it
 
+var last_suggestion_score = 0; //used to store the last suggestion score
+
 // upon window load... create text field and ENTER handler
 window.addEventListener(
     'load',
@@ -28,6 +30,7 @@ window.addEventListener(
  * @returns 
  */
 async function process_question(qa) {
+	qa.disabled = true; // disable the input field to prevent multiple submissions
 	LAST_INITIATED_COMMAND = null; // reset the previous command
 	LAST_RESOLVED_COMMAND = null; // reset the previous command
 	previous_step = null; // reset the previous step
@@ -37,7 +40,18 @@ async function process_question(qa) {
     let steps = question.split(/\s*;\s*/).filter(s => s !== '');
     console.log("Steps: " + steps);
     let place = sparklis.currentPlace();
-    return await process_steps(qa, place, steps);
+
+	let commands_algo = "depth_first_search";
+	let final_place;
+	switch (commands_algo) {
+		case "depth_first_search":
+			final_place =  await depth_first_search(qa, steps, place, number_of_top_sugg_considered = 3);
+		case "none":
+		default:
+    		final_place = await process_steps(qa, place, steps);
+	}
+	qa.disabled = false; // re-enable the input field
+	return final_place;
 }
 
 function correct_command_chain_syntax(steps_string) {
@@ -46,6 +60,9 @@ function correct_command_chain_syntax(steps_string) {
 	 */
 	// Remove the spaces at the start of the string
 	let patched_steps_string = steps_string.replace(/^\s+/, '');
+
+	// Remove quotes from the string (the LLM sometimes adds them)
+	patched_steps_string = patched_steps_string.replace(/['"]+/g, '');
 
 	return patched_steps_string;
 }
@@ -141,7 +158,7 @@ async function process_steps(qa, place, steps) {
 /* processing a single step */
 
 // applying step to place, returning a promise of the next place
-async function process_step(place, step) {
+async function process_step(place, step, target_suggestion_ranking = 1) {
     console.log("Step: ", step);
 	LAST_INITIATED_COMMAND = step;
     let match;
@@ -185,15 +202,11 @@ async function process_step(place, step) {
 	return  apply_suggestion(place, "count", sugg)
     } else if ((match = /^after\s+(.+)$/.exec(step))) {
 	LAST_INITIATED_COMMAND = "after";
-	//remove quotes from the string (the llm sometimes adds them)
-	match[1] = match[1].replace(/['"]+/g, '');
 	let constr = { type: "After", kwd: match[1] };
 	let sugg = {type: "IncrConstr", constr: constr, filterType: "OnlyLiterals"};
 	return apply_suggestion(place, "after", sugg)
     } else if ((match = /^before\s+(.+)$/.exec(step))) {
 	LAST_INITIATED_COMMAND = "before";
-	//remove quotes from the string (the llm sometimes adds them)
-	match[1] = match[1].replace(/['"]+/g, '');
 	let constr = { type: "Before", kwd: match[1] };
 	let sugg = {type: "IncrConstr", constr: constr, filterType: "OnlyLiterals"};
 	return apply_suggestion(place, "before", sugg)
@@ -204,8 +217,6 @@ async function process_step(place, step) {
 	return apply_suggestion(place, "from-to", sugg)
     } else if ((match = /^higherThan\s*(.+)$/.exec(step))) {
 	LAST_INITIATED_COMMAND = "higher";
-	//remove quotes from the string (the llm sometimes adds them)
-	match[1] = match[1].replace(/['"]+/g, '');
 	if (!isNumeric(match[1])) {
 		return Promise.reject("higherThan something that is not a number");
 	}
@@ -215,8 +226,6 @@ async function process_step(place, step) {
 	return apply_suggestion(place, "higher-than", sugg)
     } else if ((match = /^lowerThan\s*(.+)$/.exec(step))) {
 	LAST_INITIATED_COMMAND = "lower";
-	//remove quotes from the string (the llm sometimes adds them)
-	match[1] = match[1].replace(/['"]+/g, '');
 	if (!isNumeric(match[1])) {
 		return Promise.reject("lowerThan something that is not a number");
 	}
@@ -234,8 +243,6 @@ async function process_step(place, step) {
 	
 	} else if ((match = /^match\s*(.+)$/.exec(step))) { // Regex or Wikidata search
 	LAST_INITIATED_COMMAND = "match";
-	//remove quotes from the string (the llm sometimes adds them)
-	match[1] = match[1].replace(/['"]+/g, '');
 	return new Promise((resolve, reject) => {
 		let input_wikidata = document.getElementById("input-wikidata-mode");
 		if (input_wikidata.checked) {
@@ -269,8 +276,6 @@ async function process_step(place, step) {
 
 	} else if ((match = /^limit\s*(.+)$/.exec(step))) {
 	LAST_INITIATED_COMMAND = "limit";
-		//remove quotes from the string (the llm sometimes adds them)
-		match[1] = match[1].replace(/['"]+/g, '');
 		if (!isNumeric(match[1])) {
 			return Promise.reject("limit something that is not a number");
 		}
@@ -297,8 +302,6 @@ async function process_step(place, step) {
 
 		} else if ((match = /^offset\s*(.+)$/.exec(step))) {
 		LAST_INITIATED_COMMAND = "offset";
-		//remove quotes from the string (the llm sometimes adds them)
-		match[1] = match[1].replace(/['"]+/g, '');
 		if (!isNumeric(match[1])) {
 			return Promise.reject("offset something that is not a number");
 		}
@@ -338,8 +341,6 @@ async function process_step(place, step) {
 
 	} else if ((match = /^filter\s+(.+)$/.exec(step))) {
 		LAST_INITIATED_COMMAND = "filter";
-		//remove quotes from the string (the llm sometimes adds them)
-		match[1] = match[1].replace(/['"]+/g, '');
 		let constr = { type: "MatchesAll", kwds: match[1].split(/\s+/) };
 		sparklis.setConceptConstr(constr);
 		sparklis.setTermConstr(constr);
@@ -348,50 +349,40 @@ async function process_step(place, step) {
 
     } else if ((match = /^a\s+(.+)\s*$/.exec(step))) {
 	LAST_INITIATED_COMMAND = "class";
-	//remove quotes from the string (the llm sometimes adds them)
-	match[1] = match[1].replace(/['"]+/g, '');
 	return search_and_apply_suggestion(
 	    place, "class", match[1],
 	    (place,constr) => place.getConceptSuggestions(false,constr),
 	    sugg => suggestion_type(sugg) === "IncrType",
-	    sparklis.classLabels())
+	    sparklis.classLabels(), target_suggestion_ranking)
 
 	} else if ((match = /^classWithoutConstraint\s+(.+)\s*$/.exec(step))) {
 		LAST_INITIATED_COMMAND = "classWithoutConstraint";
-		//remove quotes from the string (the llm sometimes adds them)
-		match[1] = match[1].replace(/['"]+/g, '');
 		return search_and_apply_suggestion(
 			place, "class", match[1],
 			(place,constr) => place.getConceptSuggestions(false,"True"),
 			sugg => suggestion_type(sugg) === "IncrType",
-			sparklis.classLabels())
+			sparklis.classLabels(), target_suggestion_ranking)
 			
     } else if ((match = /^forwardProperty\s+(.+)$/.exec(step))) {
 	LAST_INITIATED_COMMAND = "fwd";
-	//remove quotes from the string (the llm sometimes adds them)
-	match[1] = match[1].replace(/['"]+/g, '');
 	return search_and_apply_suggestion(
 	    place, "fwd property", match[1],
 	    (place,constr) => place.getConceptSuggestions(false,constr),
 	    sugg =>
 	    suggestion_type(sugg) === "IncrRel" && sugg.orientation === "Fwd"
 		|| suggestion_type(sugg) === "IncrPred" && sugg.arg === "S",
-	    sparklis.propertyLabels())
+	    sparklis.propertyLabels(), target_suggestion_ranking)
     } else if ((match = /^backwardProperty\s+(.+)$/.exec(step))) {
 	LAST_INITIATED_COMMAND = "bwd";
-	//remove quotes from the string (the llm sometimes adds them)
-	match[1] = match[1].replace(/['"]+/g, '');
 	return search_and_apply_suggestion(
 	    place, "bwd property", match[1],
 	    (place,constr) => place.getConceptSuggestions(false,constr),
 	    sugg =>
 	    suggestion_type(sugg) === "IncrRel" && sugg.orientation === "Bwd"
 		|| suggestion_type(sugg) === "IncrPred" && sugg.arg === "O",
-	    sparklis.propertyLabels())
+	    sparklis.propertyLabels(), target_suggestion_ranking)
 	} else if ((match = /^propertyWithoutPriority\s+(.+)$/.exec(step))) { //depends on the first direction the property is found in
 		LAST_INITIATED_COMMAND = "propertyWithoutPriority";
-		//remove quotes from the string (the llm sometimes adds them)
-		match[1] = match[1].replace(/['"]+/g, '');
 		return search_and_apply_suggestion(
 			place, "fwd property", match[1],
 			(place,constr) => place.getConceptSuggestions(false,constr),
@@ -400,11 +391,9 @@ async function process_step(place, step) {
 			|| suggestion_type(sugg) === "IncrPred" && sugg.arg === "S"
 			|| suggestion_type(sugg) === "IncrRel" && sugg.orientation === "Bwd"
 			|| suggestion_type(sugg) === "IncrPred" && sugg.arg === "O",
-			sparklis.propertyLabels())
+			sparklis.propertyLabels(), target_suggestion_ranking)
 	} else if ((match = /^property\s+(.+)$/.exec(step))) { //forward property first, then backward property
 		LAST_INITIATED_COMMAND = "property";
-		//remove quotes from the string (the llm sometimes adds them)
-		match[1] = match[1].replace(/['"]+/g, '');
 		const primaryFilter = sugg =>
 			suggestion_type(sugg) === "IncrRel" && sugg.orientation === "Fwd" ||
 			suggestion_type(sugg) === "IncrPred" && sugg.arg === "S";
@@ -419,7 +408,8 @@ async function process_step(place, step) {
 				place, "fwd property", match[1],
 				(place, constr) => place.getConceptSuggestions(false, constr),
 				primaryFilter,
-				sparklis.propertyLabels()
+				sparklis.propertyLabels(),
+				target_suggestion_ranking
 			);
 		} catch (error) {
 			console.log("No forward property found, trying backward property.");
@@ -431,14 +421,13 @@ async function process_step(place, step) {
 				place, "bwd property", match[1],
 				(place, constr) => place.getConceptSuggestions(false, constr),
 				fallbackFilter,
-				sparklis.propertyLabels()
+				sparklis.propertyLabels(),
+				target_suggestion_ranking
 			);
 		}
 		return result;
 		} else if ((match = /^propertyWithoutConstraint\s+(.+)$/.exec(step))) { //todo priority order??
 			LAST_INITIATED_COMMAND = "propertyWithoutConstraint";
-			//remove quotes from the string (the llm sometimes adds them)
-			match[1] = match[1].replace(/['"]+/g, '');
 			return search_and_apply_suggestion(
 				place, "fwd property", match[1],
 				(place,constr) => place.getConceptSuggestions(false,"True"),
@@ -447,16 +436,14 @@ async function process_step(place, step) {
 				|| suggestion_type(sugg) === "IncrPred" && sugg.arg === "S"
 				|| suggestion_type(sugg) === "IncrRel" && sugg.orientation === "Bwd"
 				|| suggestion_type(sugg) === "IncrPred" && sugg.arg === "O",
-				sparklis.propertyLabels())
+				sparklis.propertyLabels(), target_suggestion_ranking)
     } else {
 	LAST_INITIATED_COMMAND = "term";
-	//remove quotes from the string (the llm sometimes adds them)
-	step = step.replace(/['"]+/g, '');
 	return search_and_apply_suggestion(
 	    place, "term", step,
 	    (place,constr) => place.getTermSuggestions(false,constr),
 	    sugg => suggestion_type(sugg) === "IncrTerm" && sugg.term.type === "uri",
-	    sparklis.termLabels())
+	    sparklis.termLabels(), target_suggestion_ranking)
     }
 }
 
@@ -476,7 +463,7 @@ function apply_suggestion(place, kind, sugg) {
     })
 }
     
-function search_and_apply_suggestion(place, kind, query, getSuggestions, filterSuggestion, lexicon) {
+function search_and_apply_suggestion(place, kind, query, getSuggestions, filterSuggestion, lexicon, target_suggestion_ranking) {
     return new Promise((resolve, reject) => {
 	get_constr(kind, query)
 	    .then(constr => {
@@ -487,7 +474,7 @@ function search_and_apply_suggestion(place, kind, query, getSuggestions, filterS
 			    let forest = res.forest;
 			    console.log("got suggestions for constraint");
 			    //console.log(forest);
-			    let best_sugg = await select_sugg(kind, query, forest, filterSuggestion, lexicon);
+			    let best_sugg = await select_sugg(kind, query, forest, filterSuggestion, lexicon, target_suggestion_ranking);
 			    if (!best_sugg) {
 				reject("no suggestion found");
 			    } else {
@@ -529,45 +516,60 @@ function get_constr(kind, query) {
 }
 
 // selecting the most frequent suggestion satisfying pred
-async function select_sugg(kind, query, forest, pred, lexicon) {
+async function select_sugg(kind, query, forest, pred, lexicon, target_suggestion_ranking) {
 	if (window.select_sugg_logic) {
 		// using custom logic
 		console.log("using custom select_sugg_logic", window.select_sugg_logic);
 		if (window.select_sugg_logic == "count_references") {
-			return await count_references_select_sugg_logic(kind, query, forest, pred, lexicon);
+			return await count_references_select_sugg_logic(kind, query, forest, pred, lexicon, target_suggestion_ranking);
 		}
 	} else {
 		// using basic logic
 		console.log("using basic select_sugg_logic");
-		return await count_references_select_sugg_logic(kind, query, forest, pred, lexicon);
-		//return basic_select_sugg_logic(kind, query, forest, pred, lexicon);
+		return await count_references_select_sugg_logic(kind, query, forest, pred, lexicon, target_suggestion_ranking);
+		//return basic_select_sugg_logic(kind, query, forest, pred, lexicon, target_suggestion_ranking);
 	}
 }
 
-function basic_select_sugg_logic(kind, query, forest, pred, lexicon) {
-    var best_item = null;
-    var best_score = null;
-    forest.forEach(function(tree) {
-	let item = tree.item;
-	if (pred(item.suggestion)) {
-	    let score = get_score(lexicon, kind, query, item);
-	    if (best_item === null
-		|| best_score === null
-		|| (score !== null && best_score !== null
-		    && score > best_score)) {
-		best_item = item;
-		best_score = score;
-	    }
-	}
+function basic_select_sugg_logic(kind, query, forest, pred, lexicon, target_suggestion_ranking) {
+    const rank = Math.max(target_suggestion_ranking || 1, 1); // ensure it's at least 1
+    const top_items = [];
+
+    forest.forEach(tree => {
+        const item = tree.item;
+        if (pred(item.suggestion)) {
+            const score = get_score(lexicon, kind, query, item);
+            if (score !== null) {
+                // Insert in descending order (simple insertion sort logic)
+                let inserted = false;
+                for (let i = 0; i < top_items.length; i++) {
+                    if (score > top_items[i].score) {
+                        top_items.splice(i, 0, { item, score });
+                        inserted = true;
+                        break;
+                    }
+                }
+                if (!inserted && top_items.length < rank) {
+                    top_items.push({ item, score });
+                }
+
+                // Keep only top N
+                if (top_items.length > rank) {
+                    top_items.pop();
+                }
+            }
+        }
     });
-    return best_item.suggestion;
+
+	last_suggestion_score = top_items.length >= rank ? top_items[rank - 1].score : 0;
+	// Return the (rank-1)th item, or null if not available
+    return top_items.length >= rank ? top_items[rank - 1].item.suggestion : null;
 }
 
-async function count_references_select_sugg_logic(kind, query, forest, pred, lexicon) {
-    let best_items = [];
-    let best_score = null;
+async function count_references_select_sugg_logic(kind, query, forest, pred, lexicon, target_suggestion_ranking) {
+    let all_items = [];
 
-    // First pass: collect all suggestions with the highest score
+    // First pass: collect all items with a valid score
     for (const tree of forest) {
         let item = tree.item;
         if (!pred(item.suggestion)) continue;
@@ -575,31 +577,16 @@ async function count_references_select_sugg_logic(kind, query, forest, pred, lex
         let score = get_score(lexicon, kind, query, item);
         if (score === null || score <= 0) continue;
 
-        if (best_score === null || score > best_score) {
-            best_score = score;
-            best_items = [item];
-        } else if (score === best_score) {
-            best_items.push(item);
-        }
+        all_items.push({ item, score });
     }
 
-    // If no best items, return null
-    if (best_items.length === 0) {
+    if (all_items.length === 0) {
         return null;
     }
 
-    // If only one best item, return directly without further queries
-    if (best_items.length === 1) {
-        return best_items[0].suggestion;
-    }
-
-    // Second pass: among top scorers, select the one with most references
-    let most_referenced_item = null;
-    let max_references = -1;
-	console.log("counting references to determine best item among ", best_items.length, " items");
-    for (const item of best_items) {
+    // Function to count total references (objects + subjects)
+    async function get_total_references(item) {
         let uri = suggestion_uri(item.suggestion);
-
         let [objects_result, subjects_result] = await Promise.all([
             sparklis.evalSparql(countObjectQuery(uri)),
             sparklis.evalSparql(countSubjectQuery(uri))
@@ -607,17 +594,132 @@ async function count_references_select_sugg_logic(kind, query, forest, pred, lex
 
         let objects_count = objects_result?.rows?.[0]?.[0]?.number || 0;
         let subjects_count = subjects_result?.rows?.[0]?.[0]?.number || 0;
-        let total_references = objects_count + subjects_count;
-
-        if (total_references > max_references) {
-            max_references = total_references;
-            most_referenced_item = item;
-        }
+        return objects_count + subjects_count;
     }
 
-    return most_referenced_item?.suggestion || null;
+    // Compute reference counts for each item
+    for (const obj of all_items) {
+        obj.referenceCount = await get_total_references(obj.item);
+    }
+
+    // Sort items: first by score desc, then by referenceCount desc
+    all_items.sort((a, b) => {
+        if (a.score !== b.score) {
+            return b.score - a.score;
+        } else {
+            return b.referenceCount - a.referenceCount;
+        }
+    });
+
+    // Select top-N candidates
+    let ranking_items = [];
+    let i = 0;
+    while (ranking_items.length < target_suggestion_ranking && i < all_items.length) {
+        ranking_items.push(all_items[i]);
+        i++;
+    }
+
+    console.log("Ranking items: ", ranking_items);
+    last_suggestion_score = ranking_items.length >= target_suggestion_ranking
+        ? ranking_items[target_suggestion_ranking - 1].score
+        : 0;
+
+    return ranking_items.length >= target_suggestion_ranking
+        ? ranking_items[target_suggestion_ranking - 1].item.suggestion
+        : null;
 }
 
+
+
+class SparklisState {
+	constructor(place, remaining_commands, score, number_of_top_sugg_considered) {
+		this.place = place;
+		this.remaining_commands = remaining_commands;
+		this.score = score;
+		this.number_of_top_sugg_considered = number_of_top_sugg_considered;
+		this.children = []; // children states
+		this.evaluated = false;
+	}
+
+	/**
+	 * Evaluates the current state by executing the first command and creating its children.
+	 * Executes the command and gets the top k suggestions.
+	 * Each suggestion corresponds to a new child state.
+	 * Child states have the same command chain as the parent state, but with the first command removed.
+	 */
+	async evaluate() {
+		console.log("Evaluating state: ", this.place, " with remaining commands: ", this.remaining_commands);
+		let steps = this.remaining_commands;
+		if (steps.length > 0) {
+			let first_step = steps[0];
+			console.log("First step: ", first_step);
+			for (let i = 1; i <= this.number_of_top_sugg_considered; i++) {
+				await process_step(this.place, first_step, i)
+					.then(async next_place => {
+						await waitForEvaluation(next_place);
+						let new_child = new SparklisState(
+							next_place, // current place
+							steps.slice(1), // remaining commands
+							this.score + last_suggestion_score, // score of the current place + last suggestion score
+							this.number_of_top_sugg_considered // number of top suggestions considered
+						);
+						this.children.push(new_child); // add child to the list of children
+					}).catch(msg => {
+						console.log("Error while processing step: ", msg);
+						//todo regarder ce qu'on sauve
+						//term -> match?
+						//property->up?
+						//match/class->cancel if no result?
+						
+					});
+					sparklis.setCurrentPlace(this.place); // update Sparklis view
+			}
+		} else {
+			console.log("No more steps to execute.");
+		}
+		this.evaluated = true; // mark as evaluated
+	}
+}
+
+/**
+ * Performs a depth-first search to find the best place based on the given commands.
+ * @param {SparklisPlace} place - The current place in the Sparklis application.
+ * @param {Array} commands - The list of commands to process.
+ * @param {number} number_of_top_sugg_considered - The number of top suggestions to consider for each command.
+ */
+async function depth_first_search(qa, commands, place, number_of_top_sugg_considered = 3) {
+	let initial_state = new SparklisState(place, 
+		commands, 
+		0,
+		number_of_top_sugg_considered
+	);
+
+	let stack = [initial_state];
+	let best_state = initial_state; // keep track of the best state
+	let best_score = initial_state.score; // keep track of the best score
+	
+	while (stack.length > 0) {     
+		let curr = stack.pop();
+		if (!curr.evaluated) {
+			await curr.evaluate();
+			qa.value = curr.remaining_commands.join(" ; "); // update qa field
+			console.log("state evaluated: ", curr);
+			//console.log("Evaluated state: ", curr.place, " with score: ", curr.score);
+			if (curr.score > best_score) { 
+				console.log("New best state found: ", curr.place, " with score: ", curr.score);
+				best_state = curr; // update best state
+				best_score = curr.score; // update best score
+			}
+			for (let child of curr.children) {
+				stack.push(child);
+			}
+		}
+	}
+
+	//set the best state as the current place
+	sparklis.setCurrentPlace(best_state.place); // update Sparklis view
+	return best_state.place; // return the best place
+}
 
 // computing score of item for suggestion choice
 function get_score(lexicon, kind, query, item) {
