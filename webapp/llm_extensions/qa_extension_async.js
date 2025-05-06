@@ -660,8 +660,17 @@ class SparklisState {
 				await process_step(this.place, first_step, i)
 					.then(async next_place => {
 						await waitForEvaluation(next_place);
+						//if the last command got a class but doesn't have any results, we will just cancel it and pass through it
+						if ((LAST_INITIATED_COMMAND === "class" || LAST_INITIATED_COMMAND === "match")
+							&& next_place.results().rows.length == 0) {
+							//replace the next place by the current place
+							next_place = this.place; // keep the current place
+							last_suggestion_score = 0; // reset the last suggestion score
+							//useful if supposed members of a class aren't actually members of the said class
+						}
+
 						let new_child = new SparklisState(
-							next_place, // current place
+							next_place,
 							steps.slice(1), // remaining commands
 							this.score + last_suggestion_score, // score of the current place + last suggestion score
 							this.number_of_top_sugg_considered // number of top suggestions considered
@@ -672,8 +681,6 @@ class SparklisState {
 						//todo regarder ce qu'on sauve
 						//term -> match?
 						//property->up?
-						//match/class->cancel if no result?
-
 					});
 					sparklis.setCurrentPlace(this.place); // update Sparklis view
 			}
