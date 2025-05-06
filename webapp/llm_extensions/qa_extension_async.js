@@ -46,6 +46,7 @@ async function process_question(qa) {
 	switch (commands_algo) {
 		case "depth_first_search":
 			final_place =  await depth_first_search(qa, steps, place, number_of_top_sugg_considered = 3);
+			break;
 		case "none":
 		default:
     		final_place = await process_steps(qa, place, steps);
@@ -569,63 +570,62 @@ function basic_select_sugg_logic(kind, query, forest, pred, lexicon, target_sugg
 async function count_references_select_sugg_logic(kind, query, forest, pred, lexicon, target_suggestion_ranking) {
     let all_items = [];
 
-    // First pass: collect all items with a valid score
+    // First pass: collect all suggestions with a valid score
     for (const tree of forest) {
-        let item = tree.item;
-        if (!pred(item.suggestion)) continue;
+        const suggestion = tree.item.suggestion;
+        if (!pred(suggestion)) continue;
 
-        let score = get_score(lexicon, kind, query, item);
+        const score = get_score(lexicon, kind, query, tree.item);
         if (score === null || score <= 0) continue;
 
-        all_items.push({ item, score });
+        all_items.push({ suggestion, score }); // Store suggestion + score together
     }
 
     if (all_items.length === 0) {
         return null;
     }
 
-    // Function to count total references (objects + subjects)
-    async function get_total_references(item) {
-        let uri = suggestion_uri(item.suggestion);
-        let [objects_result, subjects_result] = await Promise.all([
+    // Count total references for each suggestion
+    async function get_total_references(suggestion) {
+        const uri = suggestion_uri(suggestion);
+        const [objects_result, subjects_result] = await Promise.all([
             sparklis.evalSparql(countObjectQuery(uri)),
             sparklis.evalSparql(countSubjectQuery(uri))
         ]);
 
-        let objects_count = objects_result?.rows?.[0]?.[0]?.number || 0;
-        let subjects_count = subjects_result?.rows?.[0]?.[0]?.number || 0;
+        const objects_count = objects_result?.rows?.[0]?.[0]?.number || 0;
+        const subjects_count = subjects_result?.rows?.[0]?.[0]?.number || 0;
         return objects_count + subjects_count;
     }
 
-    // Compute reference counts for each item
+    // Add reference counts
     for (const obj of all_items) {
-        obj.referenceCount = await get_total_references(obj.item);
+        obj.referenceCount = await get_total_references(obj.suggestion);
     }
 
-    // Sort items: first by score desc, then by referenceCount desc
+    // Sort: score desc, then reference count desc
     all_items.sort((a, b) => {
         if (a.score !== b.score) {
             return b.score - a.score;
-        } else {
-            return b.referenceCount - a.referenceCount;
         }
+        return b.referenceCount - a.referenceCount;
     });
 
-    // Select top-N candidates
-    let ranking_items = [];
-    let i = 0;
-    while (ranking_items.length < target_suggestion_ranking && i < all_items.length) {
-        ranking_items.push(all_items[i]);
-        i++;
-    }
+    // Pick top-N
+    const ranking_items = all_items.slice(0, target_suggestion_ranking);
 
     console.log("Ranking items: ", ranking_items);
+
     last_suggestion_score = ranking_items.length >= target_suggestion_ranking
         ? ranking_items[target_suggestion_ranking - 1].score
         : 0;
+	//if last_suggestion_score isn't a number, we set it to 0
+	if (isNaN(last_suggestion_score)) {
+		last_suggestion_score = 0;
+	}
 
     return ranking_items.length >= target_suggestion_ranking
-        ? ranking_items[target_suggestion_ranking - 1].item.suggestion
+        ? ranking_items[target_suggestion_ranking - 1].suggestion
         : null;
 }
 
@@ -647,7 +647,7 @@ class SparklisState {
 	 * Each suggestion corresponds to a new child state.
 	 * Child states have the same command chain as the parent state, but with the first command removed.
 	 */
-	async evaluate() {
+	async evaluate() { //todo current criteria is total score, also test command success number
 		console.log("Evaluating state: ", this.place, " with remaining commands: ", this.remaining_commands);
 		let steps = this.remaining_commands;
 		if (steps.length > 0) {
@@ -670,7 +670,7 @@ class SparklisState {
 						//term -> match?
 						//property->up?
 						//match/class->cancel if no result?
-						
+
 					});
 					sparklis.setCurrentPlace(this.place); // update Sparklis view
 			}
@@ -701,7 +701,7 @@ async function depth_first_search(qa, commands, place, number_of_top_sugg_consid
 	while (stack.length > 0) {     
 		let curr = stack.pop();
 		if (!curr.evaluated) {
-			await curr.evaluate();
+			await curr.evaluate(); // create direct children
 			qa.value = curr.remaining_commands.join(" ; "); // update qa field
 			console.log("state evaluated: ", curr);
 			//console.log("Evaluated state: ", curr.place, " with score: ", curr.score);
