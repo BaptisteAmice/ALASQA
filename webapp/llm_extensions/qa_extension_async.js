@@ -41,11 +41,14 @@ async function process_question(qa) {
     console.log("Steps: " + steps);
     let place = sparklis.currentPlace();
 
-	let commands_algo = "depth_first_search";
+	let commands_algo = "beam_search";
 	let final_place;
 	switch (commands_algo) {
 		case "depth_first_search":
 			final_place =  await depth_first_search(qa, steps, place, number_of_top_sugg_considered = 3);
+			break;
+		case "beam_search":
+			final_place = await beam_search(qa, steps, place, number_of_top_sugg_considered = 6, beam_width = 3);
 			break;
 		case "none":
 		default:
@@ -719,6 +722,47 @@ async function depth_first_search(qa, commands, place, number_of_top_sugg_consid
 	//set the best state as the current place
 	sparklis.setCurrentPlace(best_state.place); // update Sparklis view
 	return best_state.place; // return the best place
+}
+
+/**
+ * Performs a beam search to find the best place based on the given commands.
+ * @param {SparklisPlace} place - The current place in the Sparklis application.
+ * @param {Array} commands - The list of commands to process.
+ * @param {number} number_of_top_sugg_considered - The number of top suggestions to consider for each command.
+ * @param {number} beam_width - The beam width (how many candidates to keep at each level).
+ */
+async function beam_search(qa, commands, place, number_of_top_sugg_considered = 3, beam_width = 3) {
+	let initial_state = new SparklisState(place, commands, 0, number_of_top_sugg_considered);
+	let beam = [initial_state];
+	let best_state = initial_state;
+	let best_score = initial_state.score;
+
+	while (beam.length > 0) {
+		let next_beam = [];
+
+		// Evaluate all current states in the beam
+		for (let state of beam) {
+			if (!state.evaluated) {
+				await state.evaluate(); // generate children
+				qa.value = state.remaining_commands.join(" ; ");
+				console.log("Evaluating: ", state);
+
+				if (state.score > best_score) {
+					console.log("New best state found: ", state.place, " with score: ", state.score);
+					best_state = state;
+					best_score = state.score;
+				}
+			}
+			next_beam.push(...state.children);
+		}
+
+		// Sort all children by score and keep only the top N
+		next_beam.sort((a, b) => b.score - a.score);
+		beam = next_beam.slice(0, beam_width);
+	}
+
+	sparklis.setCurrentPlace(best_state.place); // update Sparklis view
+	return best_state.place;
 }
 
 // computing score of item for suggestion choice
