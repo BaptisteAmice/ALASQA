@@ -6,12 +6,13 @@ const CHATBOT_RESPONSE_MAX_HEIGHT = CHATBOT_MAX_HEIGHT / 2;
 
 document.addEventListener("DOMContentLoaded", function () {
     let style = document.createElement("style");
+    //something as is at z-index: 9999 on the page, so we need to be above it.
     style.textContent = `
         .chatbot-menu-container {
             position: fixed;
             right: 20px;
             top: 60px;
-            z-index: 1000;
+            z-index: 10000; 
             font-family: Arial, sans-serif;
         }
         .chatbot-menu-button {
