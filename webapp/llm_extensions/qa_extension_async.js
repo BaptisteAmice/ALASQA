@@ -41,7 +41,7 @@ async function process_question(qa) {
     console.log("Steps: " + steps);
     let place = sparklis.currentPlace();
 
-	let commands_algo = "beam_search";
+	let commands_algo = "none";
 	let final_place;
 	switch (commands_algo) {
 		case "depth_first_search":
@@ -197,10 +197,21 @@ async function process_step(place, step, target_suggestion_ranking = 1) {
 			reject(error);
 		}
 	});
+} else if ((match = /^group\s*(.+)$/.exec(step))) {
+		return new Promise((resolve, reject) => {
+			apply_suggestion(place, "foreach", "IncrForeach")
+				.then(next_place => {
+					let next_sugg = { type: "IncrAggregId", aggreg: "SAMPLE", id: 1 };
+					if (match[1] === "count") {
+						next_sugg = { type: "IncrAggregId", aggreg: "COUNT_DISTINCT", id: 1 };
+					}
 
-	/*} else if (step === "foreach") {
-	console.log("aaaaaaaaaaa");
-	return  apply_suggestion(place, "foreach", "IncrForeach")*/
+					resolve(apply_suggestion(next_place, match[1], next_sugg));
+				})
+				.catch(msg => {
+					reject(msg);
+				})
+		})
 	} else if (step === "countDistinct") {
 	let sugg = { type: "IncrAggreg", aggreg: "COUNT_DISTINCT" };
 	return  apply_suggestion(place, "count", sugg)
