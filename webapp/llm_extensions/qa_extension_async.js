@@ -6,8 +6,6 @@ var LAST_RESOLVED_COMMAND = null; //used in case of error, to know which command
 var previous_step = null; //used to store the previous command, to be able to go back to it if needed
 var temp_patch_needed = false; //used to know if a temporary patch is needed (code to update for each command needing it
 
-var last_suggestion_score = 0; //used to store the last suggestion score
-
 // upon window load... create text field and ENTER handler
 window.addEventListener(
     'load',
@@ -41,20 +39,25 @@ async function process_question(qa) {
     console.log("Steps: " + steps);
     let place = sparklis.currentPlace();
 
-	let commands_algo = "none";
+	let commands_algo = "beam_search";
 	let final_place;
 	switch (commands_algo) {
 		case "depth_first_search":
 			final_place =  await depth_first_search(qa, steps, place, number_of_top_sugg_considered = 3);
 			break;
 		case "beam_search":
-			final_place = await beam_search(qa, steps, place, number_of_top_sugg_considered = 6, beam_width = 3);
+			//final_place = await beam_search(qa, steps, place, number_of_top_sugg_considered = 6, beam_width = 3);
+			final_place = await beam_search(qa, steps, place, number_of_top_sugg_considered = 3, beam_width = 3);
 			break;
 		case "none":
 		default:
     		final_place = await process_steps(qa, place, steps);
 	}
 	qa.disabled = false; // re-enable the input field
+
+	//log the number of states created and evaluated
+	console.log("Number of states created: ", SparklisState.number_of_states);
+	console.log("Number of states evaluated: ", SparklisState.number_of_evaluated_states);
 	return final_place;
 }
 
@@ -205,6 +208,8 @@ async function process_step(place, step, target_suggestion_ranking = 1) {
 					if (match[1] === "count") {
 						next_sugg = { type: "IncrAggregId", aggreg: "COUNT_DISTINCT", id: 1 };
 					}
+					//todo add other aggregations
+					//todo add the other direction
 
 					resolve(apply_suggestion(next_place, match[1], next_sugg));
 				})
@@ -302,7 +307,7 @@ async function process_step(place, step, target_suggestion_ranking = 1) {
 
 		//synchronous signal, delegating the responsibility to the subscriber to handle the event
 		bus.dispatchEvent(new CustomEvent('limit', { detail: { limit_number: match[1] } }));
-		console.log("event dispatched")
+		console.log("event dispatched");
 
 		//Keep the current place and does nothing
 		return new Promise((resolve, reject) => {
@@ -328,7 +333,7 @@ async function process_step(place, step, target_suggestion_ranking = 1) {
 
 		//synchronous signal, delegating the responsibility to the subscriber to handle the event
 		bus.dispatchEvent(new CustomEvent('offset', { detail: { offset_number: match[1] } }));
-		console.log("event dispatched")
+		console.log("event dispatched");
 
 		//Keep the current place and does nothing
 		return new Promise((resolve, reject) => {
@@ -532,6 +537,7 @@ function get_constr(kind, query) {
 
 // selecting the most frequent suggestion satisfying pred
 async function select_sugg(kind, query, forest, pred, lexicon, target_suggestion_ranking) {
+	SparklisState.single_child_command = false; // several children are needed when suggestions are to choose from
 	if (window.select_sugg_logic) {
 		// using custom logic
 		console.log("using custom select_sugg_logic", window.select_sugg_logic);
@@ -576,7 +582,7 @@ function basic_select_sugg_logic(kind, query, forest, pred, lexicon, target_sugg
         }
     });
 
-	last_suggestion_score = top_items.length >= rank ? top_items[rank - 1].score : 0;
+	SparklisState.last_suggestion_score = top_items.length >= rank ? top_items[rank - 1].score : 0;
 	// Return the (rank-1)th item, or null if not available
     return top_items.length >= rank ? top_items[rank - 1].item.suggestion : null;
 }
@@ -630,12 +636,12 @@ async function count_references_select_sugg_logic(kind, query, forest, pred, lex
 
     console.log("Ranking items: ", ranking_items);
 
-    last_suggestion_score = ranking_items.length >= target_suggestion_ranking
+    SparklisState.last_suggestion_score = ranking_items.length >= target_suggestion_ranking
         ? ranking_items[target_suggestion_ranking - 1].score
         : 0;
 	//if last_suggestion_score isn't a number, we set it to 0
-	if (isNaN(last_suggestion_score)) {
-		last_suggestion_score = 0;
+	if (isNaN(SparklisState.last_suggestion_score)) {
+		SparklisState.last_suggestion_score = 0;
 	}
 
     return ranking_items.length >= target_suggestion_ranking
@@ -646,6 +652,13 @@ async function count_references_select_sugg_logic(kind, query, forest, pred, lex
 
 
 class SparklisState {
+	//static var of the number of Sparklis states created and evaluated
+	static number_of_states = 0; // static variable to count the number of states created
+	static number_of_evaluated_states = 0; // static variable to count the number of states evaluated
+
+	static last_suggestion_score = 1; //used to store the last suggestion score (originally to 1 because we want to prioritize a state having executed as many commands as possible (for commands without suggestions to choose)
+	static single_child_command = true; // used to only have several children for commands with suggestion to choose from
+
 	constructor(place, remaining_commands, score, number_of_top_sugg_considered) {
 		this.place = place;
 		this.remaining_commands = remaining_commands;
@@ -653,6 +666,8 @@ class SparklisState {
 		this.number_of_top_sugg_considered = number_of_top_sugg_considered;
 		this.children = []; // children states
 		this.evaluated = false;
+		SparklisState.number_of_states++; // increment the number of states created
+		SparklisState.last_suggestion_score = 1; // reset between states
 	}
 
 	/**
@@ -667,6 +682,7 @@ class SparklisState {
 		if (steps.length > 0) {
 			let first_step = steps[0];
 			console.log("First step: ", first_step);
+			//todo empecher avoir plusieurs enfants pour certaines commandes
 			for (let i = 1; i <= this.number_of_top_sugg_considered; i++) {
 				await process_step(this.place, first_step, i)
 					.then(async next_place => {
@@ -676,14 +692,14 @@ class SparklisState {
 							&& next_place.results().rows.length == 0) {
 							//replace the next place by the current place
 							next_place = this.place; // keep the current place
-							last_suggestion_score = 0; // reset the last suggestion score
+							SparklisState.last_suggestion_score = 0; // reset the last suggestion score
 							//useful if supposed members of a class aren't actually members of the said class
 						}
 
 						let new_child = new SparklisState(
 							next_place,
 							steps.slice(1), // remaining commands
-							this.score + last_suggestion_score, // score of the current place + last suggestion score
+							this.score + SparklisState.last_suggestion_score, // score of the current place + last suggestion score
 							this.number_of_top_sugg_considered // number of top suggestions considered
 						);
 						this.children.push(new_child); // add child to the list of children
@@ -694,12 +710,31 @@ class SparklisState {
 						//property->up?
 					});
 					sparklis.setCurrentPlace(this.place); // update Sparklis view
+
+					//stop the loop and don't create other children if the command doesn't need it 
+					if (SparklisState.single_child_command) {
+						break;
+					}
 			}
+			//reset for the next states
+			SparklisState.single_child_command = true;
 		} else {
 			console.log("No more steps to execute.");
 		}
 		this.evaluated = true; // mark as evaluated
+		SparklisState.number_of_evaluated_states++; // increment the number of evaluated states
 	}
+
+	toJSON() {
+		return {
+		  place: this.place.id || this.place.toString(), // customize as needed
+		  score: this.score,
+		  remaining_commands: this.remaining_commands,
+		  evaluated: this.evaluated,
+		  children: this.children.map(child => child.toJSON())
+		};
+	  }
+	  
 }
 
 /**
@@ -736,6 +771,9 @@ async function depth_first_search(qa, commands, place, number_of_top_sugg_consid
 			}
 		}
 	}
+
+	const stateTreeJSON = JSON.stringify(initial_state.toJSON(), null, 2);
+	console.log("State Tree JSON:", stateTreeJSON);
 
 	//set the best state as the current place
 	sparklis.setCurrentPlace(best_state.place); // update Sparklis view
@@ -778,6 +816,9 @@ async function beam_search(qa, commands, place, number_of_top_sugg_considered = 
 		next_beam.sort((a, b) => b.score - a.score);
 		beam = next_beam.slice(0, beam_width);
 	}
+
+	const stateTreeJSON = JSON.stringify(initial_state.toJSON(), null, 2);
+	console.log("State Tree JSON:", stateTreeJSON);
 
 	sparklis.setCurrentPlace(best_state.place); // update Sparklis view
 	return best_state.place;
