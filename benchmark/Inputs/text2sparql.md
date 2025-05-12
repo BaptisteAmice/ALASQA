@@ -26,4 +26,6 @@ Asking questions about dataset https://text2sparql.aksw.org/2025/corporate/ on e
 In which department is Ms. Müller? (en) ... done
 
 # Our system
-$ text2sparql ask ./benchmark/Inputs/text2sparql_questions_corporate_test.yaml http://localhost:8000/
+text2sparql ask ./benchmark/Inputs/text2sparql_questions_corporate_test.yaml http://localhost:8000/
+
+text2sparql ask ./benchmark/Inputs/qald_9_plus_train_dbpedia.yaml https://desktop-47kug2k.tail6a5b76.ts.net/

@@ -19,7 +19,18 @@ first death cause maybe????
 todo
 
 # Weird
+
+certaines questions n'ont pas les prefix necessaires de défini (xsd:date)
+???
+
+pas de group key
+133
+
+
+
+
 Peak 17400 (Q123374100) higher than everest?
+la query ne se base par sur la mm métrique pour les deux
 
 
 Question 1: List all boardgames by GMT.

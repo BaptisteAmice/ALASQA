@@ -1,13 +1,15 @@
 # Commands
 
 ## 1 TRUE
-gmt games ; property publisher
+property publisher ; gmt games
 
 ## 2 TRUE
 Skype; property developer
 
 ## 3 to test and compare
-Heraklion ; property birth place
+Heraklion ; property birth place XXX marche plus
+
+property place of birth ; Heraklion
 
 ## 4 NOT WORKING
 match Area51 ; forwardProperty located in state -> post-processing
@@ -73,11 +75,13 @@ get langue la plus parlée....
 What is the highest mountain?
 a mountain ; property height ; desc ; limit 1
 
-## 121 TODO
+## 121 TRUE
 Which poet wrote the most books?
-
-## 123 TODO
+property occupation ; poet ; backwardProperty author; a book ; groupBy count ; desc ; limit 1
+## 123 FAILED
 Which musician wrote the most books?
+property occupation ; XXX
+musician; backwardProperty author; a book ; groupBy count ; desc ; limit 1
 
 ## 130 TODO
 For which label did Elvis record his first album?

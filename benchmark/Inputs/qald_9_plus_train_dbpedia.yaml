@@ -1,0 +1,1235 @@
+dataset:
+  id: https://text2sparql.aksw.org/2025/dbpedia/
+questions:
+- question:
+    en: List all boardgames by GMT.
+    de: Zeige mir alle Brettspiele von GMT.
+- question:
+    en: Who developed Skype?
+    de: Wer hat Skype entwickelt?
+- question:
+    en: Which people were born in Heraklion?
+    de: Welche Menschen wurden in Heraklion geboren?
+- question:
+    en: In which U.S. state is Area 51 located?
+    de: In welchem US Bundesstaat liegt Area 51?
+- question:
+    en: Who is the mayor of New York City?
+    de: Wer ist der Bürgermeister von New York City?
+- question:
+    en: Which countries have places with more than two caves?
+    de: In welche Ländern gibt es mehr als 2 Höhlen?
+- question:
+    en: Where did Abraham Lincoln die?
+    de: Wo ist Abraham Lincoln gestorben?
+- question:
+    en: Which airports does Air China serve?
+    de: Welche Flughäfen bedient Air China?
+- question:
+    en: Give me all actors starring in movies directed by and starring William Shatner.
+    de: Gib mir alle Schauspieler, die in Filmen gespielt haben, in dem William Shatner
+      gespielt und gleichyeitig Regie geführt hat.
+- question:
+    en: What are the official languages of the Philippines?
+    de: Was ist die Amtssprache auf den Philippinen?
+- question:
+    en: Give me all Danish films.
+    de: Liste als dänischen Filme auf.
+- question:
+    en: Which movies starring Brad Pitt were directed by Guy Ritchie?
+    de: Liste Brad Pitt Filme auf, in denen Guy Ritchie Regie geführt hat.
+- question:
+    en: Give me the grandchildren of Bruce Lee.
+    de: Zeige die Enkelkinder von Bruce Lee?
+- question:
+    en: Which other weapons did the designer of the Uzi develop?
+    de: Welche anderen Waffen wurden vom Designer der Uzi entwickelt?
+- question:
+    en: Who is the owner of Universal Studios?
+    de: Wem gehören die Universal Studios?
+- question:
+    en: Which state of the USA has the highest population density?
+    de: Welcher Staat in den USA hat die höchste Bevölkerungsdichte?
+- question:
+    en: Which monarchs were married to a German?
+    de: Welche Monarchen waren mit Deutschen verheiratet?
+- question:
+    en: Which organizations were founded in 1950?
+    de: Welche Organisationen wurden 1950 gegründet?
+- question:
+    en: Who created the comic Captain America?
+    de: Wer ist der Schöpfer von Captain America?
+- question:
+    en: Give me the Apollo 14 astronauts.
+    de: Wer war an Bord der Apollo 14?
+- question:
+    en: Who wrote the book The pillars of the Earth?
+    de: Wer schrieb die Säulen der Welt?
+- question:
+    en: Which state of the United States of America has the highest density?
+    de: Welcher US-Bundesstaat hat die höchste Bevölkerungsdichte?
+- question:
+    en: Which spaceflights were launched from Baikonur?
+    de: Welche Raumflüge starteten von Baikonur aus?
+- question:
+    en: Give me a list of all trumpet players that were bandleaders.
+    de: Liste alle Trompetenspieler auf, die Bandleader einer Band waren.
+- question:
+    en: Which U.S. states are in the same timezone as Utah?
+    de: Welche US-Staaten liegen in der gleichen Zeitzone wie Utah?
+- question:
+    en: Which U.S. states possess gold minerals?
+    de: In welchen US-Staaten gibt es Goldvorkommen?
+- question:
+    en: Who is the daughter of Ingrid Bergman married to?
+    de: Mit wem ist die Tochter von Ingrid Bergman verheiratet?
+- question:
+    en: How deep is Lake Placid?
+    de: Wie tief ist der Lake Placid?
+- question:
+    en: Show me all museums in London.
+    de: Liste alle Museen in London auf.
+- question:
+    en: Which caves have more than 3 entrances?
+    de: Welche Höhlen haben mehr als drei Höhleneingänge?
+- question:
+    en: Who is the tallest player of the Atlanta Falcons?
+    de: Wie heißt der größte Spieler der Atlanta Falcons?
+- question:
+    en: What are the top-10 action role-playing video games according to IGN?
+    de: Welches sind laut IGN die 10 besten Aktion-Rollenspiele für den PC?
+- question:
+    en: Give me all writers that won the Nobel Prize in literature.
+    de: Liste alle Schriftsteller auf, die den Nobelpreis gewonnen haben.
+- question:
+    en: Show me all basketball players that are higher than 2 meters.
+    de: Liste alle Basketballspieler auf, die größer als 2 Meter sind.
+- question:
+    en: When was the Statue of Liberty built?
+    de: Wann wurde die Freiheitsstatue erbaut?
+- question:
+    en: Which states border Illinois?
+    de: Welche Staaten grenzen an Illinois?
+- question:
+    en: Who developed Minecraft?
+    de: Wer entwickelte Minecraft?
+- question:
+    en: Where did Hillel Slovak die?
+    de: Wo ist Hillel Slovak gestorben?
+- question:
+    en: What movies does Jesse Eisenberg play in?
+    de: In welchen Filmen spielt Jesse Eisenberg mit?
+- question:
+    en: Give all swimmers that were born in Moscow.
+    de: Liste alle Schwimmer auf, die in Moskau geboren wurden.
+- question:
+    en: Give me all cosmonauts.
+    de: Gib mir alle Astronauten.
+- question:
+    en: Give me all Swiss non-profit organizations.
+    de: Liste alle Schweizer NGOs auf.
+- question:
+    en: Which presidents were born in 1945?
+    de: Welche Präsidenten wurden im Yahr 1945 geboren?
+- question:
+    en: What kind of music did Lou Reed play?
+    de: Welche Musik hat Lou Reed gespielt?
+- question:
+    en: Where do the Red Sox play?
+    de: Wo haben die Red Sox gespielt?
+- question:
+    en: Show a list of soccer clubs that play in the Bundesliga.
+    de: Zeigen Sie die Liste der Fußballvereine, die in der Bundesliga gespielt haben?
+- question:
+    en: Which volcanos in Japan erupted since 2000?
+    de: Welche Vulkane sind seit 2000 in Japan ausgebrochen?
+- question:
+    en: Which bridges cross the Seine?
+    de: Welche Brücken überqueren die Seine?
+- question:
+    en: What is the official color of the University of Oxford?
+    de: Was ist die offizielle Farbe der Universität Oxford?
+- question:
+    en: How many films did Hal Roach produce?
+    de: Wie viele Filme hat Hal Roach produziert?
+- question:
+    en: Give me all Danish movies.
+    de: Gib mir alle dänischen Filme.
+- question:
+    en: What is the most frequent cause of death?
+    de: Was ist die häufigste Todesursache?
+- question:
+    en: Who are the four youngest MVP basketball players?
+    de: Wer sind die vier jüngsten MVP Spieler im Basketball?
+- question:
+    en: Give me all companies in Munich.
+    de: Gib mir alle Unternehmen in München.
+- question:
+    en: Give me the capitals of all countries that the Himalayas run through.
+    de: Gib mir die Hauptstädte alle Länder, durch die der Himalaya verläuft.
+- question:
+    en: How many movies did Park Chan-wook direct?
+    de: In wie vielen Filmen hat Park Chan-wook Regie geführt?
+- question:
+    en: Which rivers flow into a German lake?
+    de: Welche Flüsse fließen in einen deutschen See?
+- question:
+    en: How many airlines are there?
+    de: Wie viele Fluglinien gibt es?
+- question:
+    en: Give me all islands that belong to Japan.
+    de: Gib mir alle Inseln, die zu Japan gehören.
+- question:
+    en: How many inhabitants does Maribor have?
+    de: Wie viele Einwohner hat Maribor?
+- question:
+    en: Give me all Apollo 14 astronauts.
+    de: Gib mir alle Apollo-14-Astronauten?
+- question:
+    en: Which companies have more than 1 million employees?
+    de: Liste alle Unternehmen auf, die mehr als 1 Million Angestellte haben.
+- question:
+    en: In which films directed by Garry Marshall was Julia Roberts starring?
+    de: In welchen Filmen unter der Regie von Garry Marshall hat Julia Roberts mitgespielt?
+- question:
+    en: Give me all soccer clubs in the Premier League.
+    de: Welche Fußballvereine spielen in der Premier League?
+- question:
+    en: What is the highest place of the Urals?
+    de: Welches ist die höchste Ort im Ural?
+- question:
+    en: Who is the governor of Wyoming?
+    de: Wer ist der Gouverneur von Wyoming?
+- question:
+    en: Where did the architect of the Eiffel Tower study?
+    de: Wo hat der Architekt des Eiffelturms studiert?
+- question:
+    en: Give me all world heritage sites designated within the past two years.
+    de: Welche Weltkulturerbestätten wurden in den vergangenen beiden Jahren ernannt?
+- question:
+    en: Give me all actors who were born in Paris after 1950.
+    de: Liste alle Schauspieler auf, die nach 1950 in Paris geboren wurden.
+- question:
+    en: Which movies star both Liz Taylor and Richard Burton?
+    de: In welchen Filmen haben Liz Taylor und Richard Burton gemeinsam gespielt?
+- question:
+    en: Give me all Australian nonprofit organizations.
+    de: Liste alle australischen Non-Profit-Organisationen auf.
+- question:
+    en: Which pope succeeded John Paul II?
+    de: Welcher Papst folgte auf Johannes Paul II?
+- question:
+    en: Give me all ESA astronauts.
+    de: Liste alle ESA-Austronauten auf.
+- question:
+    en: Who was president of Pakistan in 1978?
+    de: Wer war 1978 in Pakistan Präsident?
+- question:
+    en: Who is the owner of Rolls-Royce?
+    de: Wem gehört Rolls-Royce?
+- question:
+    en: How many museums does Paris have?
+    de: Wie viele Museen gibt es in Paris?
+- question:
+    en: Where was JFK assassinated?
+    de: Wo wurde JFK ermordet?
+- question:
+    en: Give me all federal chancellors of Germany.
+    de: Liste alle Bundeskanzler von Deutschland auf.
+- question:
+    en: Show me everyone who was born on Halloween.
+    de: Liste alle, die an Halloween geboren wurden, auf.
+- question:
+    en: Which beer originated in Ireland?
+    de: Welche Biersorten haben ihren Ursprung in Irland?
+- question:
+    en: To which countries does the Himalayan mountain system extend?
+    de: Auf welche Länder erstreckt sich das Himalaya-Gebirge?
+- question:
+    en: Which actors were born in Germany?
+    de: Welche Schauspieler wurden in Deutschland geboren?
+- question:
+    en: How much carbs does peanut butter have?
+    de: Wie viele Kohlenhydrate hat Erdnussbutter?
+- question:
+    en: Who produced the most films?
+    de: Wer hat die meisten Filme produziert?
+- question:
+    en: How many employees does Google have?
+    de: Wie viele Angestellte hat Google?
+- question:
+    en: Give me all actors who were born in Berlin.
+    de: Liste alle Schauspieler auf, die in Berlin geboren wurden.
+- question:
+    en: Who created Goofy?
+    de: Wer hat Goofy erschaffen?
+- question:
+    en: Which music albums contain the song Last Christmas?
+    de: Auf welchen Musikalben befindet sich das Lied Last Christmas?
+- question:
+    en: When was Alberta admitted as province?
+    de: Wann wurde Alberta zu einer Provinz?
+- question:
+    en: How many missions does the Soyuz programme have?
+    de: Wie viele Missionen hat das Soyuz-Programm?
+- question:
+    en: Give me all the TV shows with Neil Patrick Harris.
+    de: Gib mir alle Fernsehsendungen mit Neil Patrick Harris.
+- question:
+    en: When were the Hells Angels founded?
+    de: Wann wurden die Berge der Engel gegründet?
+- question:
+    en: What is the net income of Apple?
+    de: Was ist Apples Nettoeinkommen?
+- question:
+    en: Give me all Swedish holidays.
+    de: Gib mir alle schwedischen Feiertage
+- question:
+    en: In which city was the former Dutch queen Juliana buried?
+    de: In welcher Stadt wurde die ehemalige dänische Königin Julian begraben?
+- question:
+    en: List all the musicals with music by Leonard Bernstein.
+    de: Listen Sie alle Musicals mit Musik von Leonard Bernstein auf.
+- question:
+    en: Give me all companies in the advertising industry.
+    de: Gib mir alle Firmen der Werbeindustrie.
+- question:
+    en: What is the largest metropolitan area in Washington state?
+    de: Welche Metropole ist die größte im Washington Staat?
+- question:
+    en: Who killed John Lennon?
+    de: Wer hat John Lennon getötet?
+- question:
+    en: Which writers studied in Istanbul?
+    de: Welche Schriftsteller haben in Istanbul studiert ?
+- question:
+    en: Give me all Australian metalcore bands.
+    de: Gib mir alle australischen metalcore-Bands.
+- question:
+    en: Which countries adopted the Euro?
+    de: Welche Länder haben den Euro eingeführt?
+- question:
+    en: Give me all types of eating disorders.
+    de: Gib mir alle Arten von Essstörungen.
+- question:
+    en: Was Marc Chagall a jew?
+    de: War Marc Chagall Jude?
+- question:
+    en: What was Brazil's lowest rank in the FIFA World Ranking?
+    de: Was ist Brasiliens niedrigster Rang in der FIFA Weltrangliste?
+- question:
+    en: How many films did Leonardo DiCaprio star in?
+    de: In wie vielen Filmen hat Leonardo DiCaprio gespielt?
+- question:
+    en: Was Margaret Thatcher a chemist?
+    de: War Magret Thatcher eine Chemikerin?
+- question:
+    en: Which U.S. states are in the same time zone as Utah?
+    de: Welche US Bundesstaaten haben die gleiche Zeitzone wie Utah?
+- question:
+    en: Give me all books written by Danielle Steel.
+    de: Gib mir alle Bücher die Danielle Steel geschrieben hat.
+- question:
+    en: Which country has the most official languages?
+    de: Welches Land gibt es die meisten Amtssprachen?
+- question:
+    en: What is the total amount of men and women serving in the FDNY?
+    de: Wie viele Menschen arbeiten beim FDNY?
+- question:
+    en: Which actor played Chewbacca?
+    de: Wer spielte Chewbacca?
+- question:
+    en: Give me all libraries established earlier than 1400.
+    de: Liste alle Bibliotheken auf, die vor 1400 gegründet wurden.
+- question:
+    en: Which programming languages were influenced by Perl?
+    de: Welche Programmiersprachen wurden von Perl beeinflusst?
+- question:
+    en: In which U.S. state is Mount McKinley located?
+    de: In welchem US-Bundesstaat liegt der Mount McKinley?
+- question:
+    en: What airlines are part of the SkyTeam alliance?
+    de: Welche Fluglinien gehören zur SkyTeam-Allianz?
+- question:
+    en: Which ships were called after Benjamin Franklin?
+    de: Welche Schiffe wurden nach Benjamin Franklin benannt?
+- question:
+    en: Give me all Methodist politicians.
+    de: Welche Politiker sind Methodisten?
+- question:
+    en: What other books have been written by the author of The Fault in Our Stars?
+    de: Welche Bücher hat der Schrifftsteller von Das Schicksal ist eine mieser Verräter
+      noch geschrieben?
+- question:
+    en: What is the highest mountain?
+    de: Welcher ist der höchste Berg?
+- question:
+    en: Which poet wrote the most books?
+    de: Welcher Dichter hat die meisten Bücher geschrieben?
+- question:
+    en: Which programming languages influenced Javascript?
+    de: Welche Programmiersprachen haben Javascript beeinflusst?
+- question:
+    en: Which musician wrote the most books?
+    de: Welcher Musiker hat die meisten Bücher geschrieben?
+- question:
+    en: Which films starring Clint Eastwood did he direct himself?
+    de: In welchen Filmen hat Clint Eastwood Regie geführt und mitgespielt?
+- question:
+    en: Which software has been developed by organizations founded in California?
+    de: Welche Software wurde von in Kalifornien gegründeten Organisationen entwickelt?
+- question:
+    en: Which instruments does Cat Stevens play?
+    de: Welche Instrumente spielt Cat Stevens?
+- question:
+    en: How many airlines are members of the Star Alliance?
+    de: Wie viele Fluglinien gehören zur Star Alliance?
+- question:
+    en: Give me all actors called Baldwin.
+    de: Liste alle Schauspieler mit dem Nachnamen Baldwin auf.
+- question:
+    en: Who wrote The Hunger Games?
+    de: Wer hat die Tribute von Panem geschrieben?
+- question:
+    en: For which label did Elvis record his first album?
+    de: Für welches Label hat Elvis sein erstes Album aufgenommen?
+- question:
+    en: Is Christian Bale starring in Batman Begins?
+    de: Spielt Christian Bale in Batman Begins mit?
+- question:
+    en: Where is the residence of the prime minister of Spain?
+    de: Wo ist der Amtssitz von Spaniens Premierminister?
+- question:
+    en: Which actor was casted in the most movies?
+    de: Welcher Schauspieler hat in den meisten Filmen mitgespielt?
+- question:
+    en: Which countries have more than two official languages?
+    de: Liste alle Länder auf, die mehr als zwei offizielle Landessprachen haben?
+- question:
+    en: Which countries have more than ten caves?
+    de: Liste alle Länder auf, in denen es mehr als zehn Höhlen gibt.
+- question:
+    en: Show me all songs from Bruce Springsteen released between 1980 and 1990.
+    de: Welche Lieder hat Brucse Springsteen zwischen 1980 und 1990 veröffentlicht?
+- question:
+    en: Which television shows were created by John Cleese?
+    de: Welche Serien wurden von John Cleese erfunden?
+- question:
+    en: When did Latvia join the EU?
+    de: Wann ist Lettland der EU beigetreten?
+- question:
+    en: Which soccer players were born on Malta?
+    de: Welche Fußballspieler sind auf Malta geboren?
+- question:
+    en: How many politicians graduated from Columbia University?
+    de: Wie viele Politiker haben an der Columbia University ihren Abschluss gemacht?
+- question:
+    en: Give me the birthdays of all actors of the television show Charmed.
+    de: Zeig mir die Geburtstage aller Schauspieler der Serie Verzaubert
+- question:
+    en: Which telecommunications organizations are located in Belgium?
+    de: Welche Telekommunikationsunternehmen befinden sich in Belgien?
+- question:
+    en: Give me a list of all lakes in Denmark.
+    de: Gib mir eine Liste aller Seen in Dänemark
+- question:
+    en: How many children does Eddie Murphy have?
+    de: WIe viele Kinder hat Eddie Murphy?
+- question:
+    en: Show me all English Gothic buildings in Kent.
+    de: Zeig mir alle englischen gotischen Gebäude in Kent.
+- question:
+    en: Who is the manager of Real Madrid?
+    de: Wer ist der Manager von Real Madrid?
+- question:
+    en: In which countries can you pay using the West African CFA franc?
+    de: In welchen westafrikanischen Ländern können Sie Franken bezahlen ?
+- question:
+    en: Which holidays are celebrated around the world?
+    de: Welche Feiertage werden weltweit gefeiert?
+- question:
+    en: What is the longest river?
+    de: Welcher Fluss ist der längste?
+- question:
+    en: Which organizations were founded in 1930?
+    de: Welche Organisationen wurden 1930 gegründet?
+- question:
+    en: What is the birth name of Angela Merkel?
+    de: Was ist Angela Merkels Geburtsname?
+- question:
+    en: Who has Tom Cruise been married to?
+    de: Mit wem war Tom Cruise verheiratet?
+- question:
+    en: Which weapons did Heckler & Koch develop?
+    de: Welche Waffen hat Heckler & Koch entwickelt?
+- question:
+    en: What is the smallest city by area in Germany?
+    de: Welche deutsche Stadt hat die kleinste Fläche?
+- question:
+    en: What is the ruling party in Lisbon?
+    de: Welche ist die Regierungspartei in Lissabon?
+- question:
+    en: How heavy is Jupiter's lightest moon?
+    de: Wie schwer ist Jupiters leichtester Mond?
+- question:
+    en: How many employees does IBM have?
+    de: Wie viele Angestellte hat IBM?
+- question:
+    en: List all episodes of the first season of the HBO television series The Sopranos!
+    de: Zeige alle Episoden der ersten Staffel der HBO Fernsehserie Die Sopranos!
+- question:
+    en: What does ICRO stand for?
+    de: Wofür steht ICRO?
+- question:
+    en: Does the new Battlestar Galactica series have more episodes than the old one?
+    de: Hat die neue Battlestar Galactica Serie mehr Folgen als die alte?
+- question:
+    en: Give me all films produced by Hal Roach.
+    de: Liste alle Filme, die Hal Roach produziert hat, auf.
+- question:
+    en: Who played Agent Smith in Matrix?
+    de: Wer hat Agent Smith in Matrix gespielt?
+- question:
+    en: Which Greek parties are pro-European?
+    de: Welche griechischen Parteien sind proeuropäisch eingestellt?
+- question:
+    en: Give me a list of all bandleaders that play trumpet.
+    de: Liste alle Bandleader auf, die Trompete spielen.
+- question:
+    en: What is the second highest mountain on Earth?
+    de: Wie heißt der zweithöchste Berg der Welt?
+- question:
+    en: Is Egypts largest city also its capital?
+    de: Ist Ägyptens größte Stadt auch die Hauptstadt?
+- question:
+    en: Which rockets were launched from Baikonur?
+    de: Welche Raketen sind von Baikonur aus gestartet?
+- question:
+    en: How many programming languages are there?
+    de: Wie viele Programmiersprachen gibt es?
+- question:
+    en: Which Chess players died in the same place they were born in?
+    de: Welche Schachspieler sind am gleichen Ort gestorben, an dem sie geboren wurden?
+- question:
+    en: Who is the owner of Facebook?
+    de: Wem gehört Facebook?
+- question:
+    en: Give me all movies with Tom Cruise.
+    de: In welchen Filmen hat Tom Cruise mitgespielt?
+- question:
+    en: In which U.S. state is Fort Knox located?
+    de: Zu welchem Bundesstaat gehört Fort Knox?
+- question:
+    en: Give me all cities in New Jersey with more than 100000 inhabitants.
+    de: Liste alle Städte mit einer Einwohnerzahl größer als 100000 in New Jersey
+      auf.
+- question:
+    en: Which mountains are higher than the Nanga Parbat?
+    de: Liste alle Berge auf, die größer als der Nanga Parbat sind.
+- question:
+    en: Give me all B-sides of the Ramones.
+    de: Liste alle B-Seiten der Ramones auf.
+- question:
+    en: What are the specialities of the UNC Health Care?
+    de: Welches sind die Fachgebiete des UNC Health Care?
+- question:
+    en: When was Olof Palme shot?
+    de: Wann wurde Olof Palme erschossen?
+- question:
+    en: List the seven kings of Rome.
+    de: Liste die sieben Könige Roms auf.
+- question:
+    en: Give me all people that were born in Vienna and died in Berlin.
+    de: Liste alle Menschen auf, die in Wien geboren und in Berlin gestorben sind.
+- question:
+    en: Is Darth Vader Luke’s father?
+    de: Ist Darth Vader der Vater von Luke?
+- question:
+    en: Show me all the breweries in Australia.
+    de: Liste alle Brauereinen in Australien auf.
+- question:
+    en: Give me all films produced by Steven Spielberg with a budget of at least $80
+      million.
+    de: Liste alle von Steven Spielberg produzierten Filme mit einem Budget von mindestens
+      80 Millionen Dollar auf.
+- question:
+    en: Give me all soccer clubs in Spain.
+    de: Liste alle Fußballvereine aus Spanien auf.
+- question:
+    en: Who produced films starring Natalie Portman?
+    de: Wer hat die Filme, in denen Natalie Portman mitspielt, produziert?
+- question:
+    en: Give me all breeds of the German Shepherd dog.
+    de: Liste alle Züchtungen vom Deutschen Schäferhund auf.
+- question:
+    en: Who is the heaviest player of the Chicago Bulls?
+    de: Wer ist der schwerste Spieler der Chicago Bulls?
+- question:
+    en: Which languages are spoken in Estonia?
+    de: Welche Sprachen werden in Estland gesprochen?
+- question:
+    en: What is the largest country in the world?
+    de: Welches ist das größte Land der Welt?
+- question:
+    en: What is the largest city in america?
+    de: Wie heißt die größte Stadt in Amerika?
+- question:
+    en: Who was the pope that founded the Vatican Television?
+    de: Welcher Papst hat das Vatican Television erfunden?
+- question:
+    en: Who discovered Ceres?
+    de: Wer hat Ceres entdeckt?
+- question:
+    en: Who is the king of the Netherlands?
+    de: Wer ist der König der Niederlande?
+- question:
+    en: Is Cola a beverage?
+    de: Ist ein Getränk?
+- question:
+    en: What is the alma mater of the chancellor of Germany Angela Merkel?
+    de: Welche Universität hat Bundeskanzlerin Angela Merkel absolviert?
+- question:
+    en: Who wrote the book Les Piliers de la terre?
+    de: Wer hat das Buch die Säulen der Erde geschrieben?
+- question:
+    en: Which airports does Yeti Airlines serve?
+    de: Welche Flughäfen bedient Yeti Airlines?
+- question:
+    en: Where is the birthplace of Goethe?
+    de: Wo wurde Goethe geboren?
+- question:
+    en: Was the Cuban Missile Crisis earlier than the Bay of Pigs Invasion?
+    de: War die Kubakrisa vor den Invasion der Schweinebucht?
+- question:
+    en: Which ingredients do I need for carrot cake?
+    de: Welche Zutaten benötige ich für einen Karottenkuchen?
+- question:
+    en: Who created Wikipedia?
+    de: Wer hat Wikipedia erstellt?
+- question:
+    en: What is the highest mountain in Saxony Germany?
+    de: Welcher Berg ist der höchste in Sachsen, Deutschland?
+- question:
+    en: Who is the current federal minister of finance in Germany?
+    de: Wer ist der aktuelle Bundesfinanzminister in Deutschland?
+- question:
+    en: In which country is Mecca located?
+    de: In welchem Land liegt Mekka?
+- question:
+    en: Who played Gus Fring in Breaking Bad?
+    de: Wer hat Gus Fring in Breaking Bad gespielt?
+- question:
+    en: In which country does the Nile start?
+    de: In welchem Land entspringt der Nil?
+- question:
+    en: In which state Penn State University is located?
+    de: In welchem Bundesstaat liegt die Penn State University?
+- question:
+    en: What is the biggest stadium in Spain?
+    de: Welches ist das größte Stadion Spaniens?
+- question:
+    en: Who is the coach of Ankara's ice hockey team?
+    de: Wer ist der Trainer von Ankaras Eishockey-Team?
+- question:
+    en: How large is the area of UK?
+    de: Wie groß ist die Fläche des Vereinigten Königreichs?
+- question:
+    en: Who created Batman?
+    de: Von wem ist Batman?
+- question:
+    en: Was Sigmund Freud married?
+    de: War Sigmund Freud verheiratet?
+- question:
+    en: Who are the developers of DBpedia?
+    de: Wie heißen die Entwickler von DBpedia?
+- question:
+    en: Give me all movies directed by Francis Ford Coppola.
+    de: In welchen Filmen hat Francis Ford Coppola Regie geführt?
+- question:
+    en: Are tree frogs a type of amphibian?
+    de: Gehören Baumsteiger zu den Amphibien?
+- question:
+    en: What is the location of the Houses of Parliament?
+    de: Wo hat das britische Parlament seinen Sitz?
+- question:
+    en: how much is the elevation of Düsseldorf Airport ?
+    de: Wie hoch liegt der Düsseldorfer Flughafen?
+- question:
+    en: How much is the population of mexico city ?
+    de: Wie viele Einwohner hat Mexiko City?
+- question:
+    en: when was the founding date of french fifth republic?
+    de: Wann wurde die 5. Rebublik in Frankreich gegründet?
+- question:
+    en: Who was the first King of England?
+    de: Wer war der erste König von Engeland?
+- question:
+    en: Who is the editor of Forbes?
+    de: Wer ist der Herausgeber von Forbes?
+- question:
+    en: Which awards did Douglas Hofstadter win?
+    de: Welchen Preis gewann Douglas Hofstadter?
+- question:
+    en: Who is the youngest Darts player?
+    de: Wer ist der jüngste Darts-Spieler?
+- question:
+    en: Is horse racing a sport?
+    de: Ist Pferderennen einen Sport?
+- question:
+    en: Which river does the Brooklyn Bridge cross?
+    de: Über welchen Fluss führt die Brooklyn Bridge?
+- question:
+    en: How many people live in Poland?
+    de: Wie viele Menschen leben in Polen?
+- question:
+    en: When was the last episode of the TV series Friends aired?
+    de: Wann wurde die letzte Folge von Friends ausgestrahlt?
+- question:
+    en: Is the wife of president Obama called Michelle?
+    de: Heißt die Ehefrau von Präsident Obama Michelle?
+- question:
+    en: Who is 8th president of US?
+    de: Wer war der 8. Präsident der Vereinigten Staaten?
+- question:
+    en: how much is the total population of european union?
+    de: Wie viele Einwohner hat die Europäische Union?
+- question:
+    en: Give me all launch pads operated by NASA.
+    de: Liste alle Startrampen der NASA auf.
+- question:
+    en: Who developed the video game World of Warcraft?
+    de: Wer hat World of Warcraft entwickelt?
+- question:
+    en: What is the birth name of Adele?
+    de: Wie ist der Geburtsname von Adele?
+- question:
+    en: What is the population of Cairo?
+    de: Wie viele Einwohner hat Kairo?
+- question:
+    en: Is Frank Herbert still alive?
+    de: Lebt Frank Herbert noch?
+- question:
+    en: What is the last work of Dan Brown?
+    de: Was ist das letzte Werk von Dan Brown?
+- question:
+    en: Where is Sungkyunkwan University?
+    de: Wo liegt die Sungkyunkwan Universität?
+- question:
+    en: Who is the author of the interpretation of dreams?
+    de: Wer ist der Autor des Buches Traumdeutung?
+- question:
+    en: When was the death of Shakespeare?
+    de: Wann ist Shakespeare gestorben?
+- question:
+    en: Who developed Slack?
+    de: Wer hat Slack entwickelt?
+- question:
+    en: Where is the origin of Carolina reaper?
+    de: Woher kommt der Carolina Reaper?
+- question:
+    en: In which year was Rachel Stevens born?
+    de: In welchem Jahr wurde Rachel Stevens geboren?
+- question:
+    en: How often did Jane Fonda marry?
+    de: Wie oft hat Jane Fonda geheiratet?
+- question:
+    en: Was the wife of president Lincoln called Mary?
+    de: War Präsident Lincolns Frau Mary?
+- question:
+    en: Which cities does the Weser flow through?
+    de: Durch welche Städte fließt die Weser?
+- question:
+    en: In which programming language is GIMP written?
+    de: Welche Programmiersprache hat GIMP geschrieben?
+- question:
+    en: Which university did Angela Merkel attend?
+    de: Welche Universitäten hat Angela Merkel besucht?
+- question:
+    en: List all the musicals with music by Elton John.
+    de: Listen Sie alle Musicals mit Elton Johns Musik auf.
+- question:
+    en: How many Aldi stores are there?
+    de: Wie viele Aldi-Läden gibt es?
+- question:
+    en: What is the longest river in the world?
+    de: Welcher Fluss ist der längste der Welt?
+- question:
+    en: When was John Adams born?
+    de: Wann wurde John Adams geboren?
+- question:
+    en: Which companies produce hovercrafts?
+    de: Welche Firmen stellen Luftkissenfahrzeuge her?
+- question:
+    en: Who was the wife of U.S. president Lincoln?
+    de: Wer war die Frau von US Präsident Lincoln?
+- question:
+    en: Which species does an elephant belong?
+    de: Zu welcher Spezies gehören Elefanten?
+- question:
+    en: How many people live in the capital of Australia?
+    de: Wie viele Menschen leben in Australiens Hauptstadt?
+- question:
+    en: In which ancient empire could you pay with cocoa beans?
+    de: In welchem antiken Reich konnte man mit Kakaobohnen bezahlen?
+- question:
+    en: How many theories did Albert Einstein come up with?
+    de: Wie viele Theorien hat Albert Einstein entwickelt?
+- question:
+    en: Who composed the soundtrack for Cameron's Titanic?
+    de: Wer hat den Titeltrack zu Titanic von Cameron komponiert?
+- question:
+    en: Give me the runtime of Toy Story.
+    de: Gib mir die Länge von Toy Story.
+- question:
+    en: With how many countries Iran has borders?
+    de: An wie viele Länder grenzt der Iran?
+- question:
+    en: Which electronics companies were founded in Beijing?
+    de: Welche Elektronikhersteller wurden in Beijing gegründet?
+- question:
+    en: Who was the successor of John F. Kennedy?
+    de: Wer war der Nachfolger von John F. Kennedy?
+- question:
+    en: Who is the mayor of Paris?
+    de: Wer ist der Bürgermeister von Paris?
+- question:
+    en: Did Arnold Schwarzenegger attend a university?
+    de: War Arnold Schwarzenegger an einer Universität eingeschrieben?
+- question:
+    en: Is James Bond married?
+    de: Ist James Bond verheiratet?
+- question:
+    en: Does the Isar flow into a lake?
+    de: Fließt die Isar in einen See?
+- question:
+    en: Which Indian company has the most employees?
+    de: Welches indische Unternehmen hat die meisten Mitarbeiter?
+- question:
+    en: Who was John F. Kennedy's vice president?
+    de: Wer war Vizepräsident unter John F. Kennedy?
+- question:
+    en: Which country does the creator of Miffy come from?
+    de: Aus welchem Land kommt der Erfinder von Miffy?
+- question:
+    en: In what city is the Heineken brewery?
+    de: Wo hat die Heineken Brauerei ihren Sitz?
+- question:
+    en: Is Barack Obama a democrat?
+    de: Ist Barack Obama Demokrat?
+- question:
+    en: List the children of Margaret Thatcher.
+    de: Wie heißen die Kinder von Margaret Thatcher?
+- question:
+    en: From which region is the Melon de Bourgogne?
+    de: Aus welcher Region stammt die Melon de Bourgogne?
+- question:
+    en: how big is the total area of North Rhine- Westphalia?
+    de: Wie groß ist die Fläche von Nordrhein Westpfalen?
+- question:
+    en: Which city has the most inhabitants?
+    de: Welche Stadt hat die meisten Einwohner?
+- question:
+    en: What is Donald Trump's main business?
+    de: Was ist Donald Trumps Hauptgeschäftsfeld?
+- question:
+    en: When will start the final match of the football world cup 2018?
+    de: Wann ist das Finale der Fußballweltmeisterschaft 2018?
+- question:
+    en: Which films did Stanley Kubrick direct?
+    de: Bei welchen Filmen hat Stanley Kubrick Regie geführt?
+- question:
+    en: how much is the population Iraq?
+    de: Wie viele Einwohner hat der Irak?
+- question:
+    en: How many inhabitants does the largest city in Canada have?
+    de: Wie viele Einwohner hat die größte Stadt Kanadas?
+- question:
+    en: Who is the mayor of the capital of French Polynesia?
+    de: Wer ist der Bürgermeister der größten Stadt in Französich-Polynesien?
+- question:
+    en: Give me all actors starring in movies directed by William Shatner.
+    de: Liste alle Schauspieler auf, die in Filmen mitgespielt haben, für die William
+      Shatner Regie geführt hat.
+- question:
+    en: How tall is Claudia Schiffer?
+    de: Wie groß ist Claudia Schiffer?
+- question:
+    en: how much is the population densty rank of germany?
+    de: Auf welchem Platz steht Deutschland messen an der Bevölkerungsdichte?
+- question:
+    en: What is the highest mountain in Italy?
+    de: Wie heißt der höchste Berg Italiens?
+- question:
+    en: List all games by GMT.
+    de: Liste alle Spiele von GMT auf.
+- question:
+    en: What is the official language of Suriname?
+    de: Welches ist die offizielle Sprache in Surinami?
+- question:
+    en: In which city did Nikos Kazantzakis die?
+    de: In welcher Stadt ist Nikos Kazantzakis gestorben?
+- question:
+    en: What is in a chocolate chip cookie?
+    de: Welche Zutaten gehören in einen Schokoladenkeks?
+- question:
+    en: In which country is the Limerick Lake?
+    de: In welchem Land liegt der Limerick Lake?
+- question:
+    en: Give me all video games published by Mean Hamster Software.
+    de: Liste alle Spiele auf, die von Mean Hamster Software veröffentlicht wurden.
+- question:
+    en: Give me all members of Prodigy.
+    de: Gib mir alle Prodji-Teilnehmer.
+- question:
+    en: In which time zone is Rome?
+    de: In welcher Zeitzone befindet sich Rom?
+- question:
+    en: How high is the lighthouse in Colombo?
+    de: Wie hoch ist der Leuchtturm in Colombo?
+- question:
+    en: Who are the writers of the Wall album of Pink Floyd?
+    de: Wer sind die Autoren des Albums Wall Pink Floyd?
+- question:
+    en: Who is the mayor of Rotterdam?
+    de: Wer ist der Bürgermeister von Rotterdam?
+- question:
+    en: What is the largest city in Australia?
+    de: Welche Stadt ist die größte in Australien?
+- question:
+    en: Who was married to president Chirac?
+    de: Wer hat Präsident Chirac geheiratet?
+- question:
+    en: What form of government is found in South Africa?
+    de: Welche Regierungsform gibt es in Südafrika?
+- question:
+    en: How high is the Yokohama Marine Tower?
+    de: Wie hoch ist der Seeturm in Yokohama?
+- question:
+    en: Which holidays are celebrated around the world?
+    de: Welche Feiertage werden weltweit gefeiert?
+- question:
+    en: Who is the tallest basketball player?
+    de: Wer ist der größte Basketballspieler?
+- question:
+    en: How many languages are spoken in Turkmenistan?
+    de: Wie viele Sprachen gibt es in Turkmenistan?
+- question:
+    en: Did Che Guevara have children?
+    de: Hatte Che Guevara Kinder?
+- question:
+    en: Did Kaurismäki ever win the Grand Prix at Cannes?
+    de: Hat Kaurismäki jemals den Gran Prix in Cannes gewonnen?
+- question:
+    en: To which party does the mayor of Paris belong?
+    de: In welcher Partei ist der pariser Bürgermeister?
+- question:
+    en: Who is the Formula 1 race driver with the most races?
+    de: Welcher Formel-1-Fahrer hat die meisten Siege?
+- question:
+    en: What country is Sitecore from?
+    de: Aus welchem Land stammt Sitecore?
+- question:
+    en: Give me the birth place of Frank Sinatra.
+    de: Gib mir Frank Sinatras Geburtsort.
+- question:
+    en: Is Christian Bale starring in Velvet Goldmine?
+    de: Spielt Christian Bale in Velvet Goldmine mit?
+- question:
+    en: Who is the son of Sonny and Cher?
+    de: Wer ist der Sohn von Sonny und Cher?
+- question:
+    en: How many ethnic groups live in Slovenia?
+    de: Wie viele ethnische Gruppen leben in Slowenien?
+- question:
+    en: What is the capital of Cameroon?
+    de: Wie heißt die Hauptstadt von Kamerun?
+- question:
+    en: Was Natalie Portman born in the United States?
+    de: Wurde Natalie Portman in den USA geboren?
+- question:
+    en: How many pages does War and Peace have?
+    de: Wie viele Seiten hat Krieg und Frieden?
+- question:
+    en: Who is the oldest child of Meryl Streep?
+    de: Wie heißt das älteste Kind von Meryl Streep?
+- question:
+    en: Which television shows were created by Walt Disney?
+    de: Welche TV-Serien wurden von Walt Disney entwickelt?
+- question:
+    en: What does IYCM stand for?
+    de: Wofür steht IYCM?
+- question:
+    en: Which types of grapes grow in Oregon?
+    de: Welche Traubensorten wachsen in Oregon?
+- question:
+    en: Was U.S. president Jackson involved in a war?
+    de: War US-Präsident Jackson in einen Krieg verwickelt?
+- question:
+    en: When was the Titanic completed?
+    de: Wann wurde die Titanic fertiggestellt?
+- question:
+    en: Did Tesla win a nobel prize in physics?
+    de: Hat Tesla den Nobelpreis in Physik gewonnen?
+- question:
+    en: How many states are in Mexico?
+    de: Wieviele Staaten at Mexiko?
+- question:
+    en: Which scientist is known for the Manhattan Project and the Nobel Peace Prize?
+    de: Welcher Wissenschaftler ist bekannt für das Manhattan Projekt und den Nobelpreis?
+- question:
+    en: How much did the Lego Movie cost?
+    de: Wie viel hat der Lego-Movie gekostet?
+- question:
+    en: Who composed the music for Harold and Maude?
+    de: Wer hat die Musik für Harold und Maude geschrieben?
+- question:
+    en: List all episodes of the first season of the HBO television series The Sopranos.
+    de: Liste alle Episoden der ersten Staffel der HBO-Fernsehserie The Sopranos auf.
+- question:
+    en: Which city has the least inhabitants?
+    de: Welche Stadt hat die wenigsten Einwohner?
+- question:
+    en: Where is Syngman Rhee buried?
+    de: Wo ist Syngman Rhee bestattet?
+- question:
+    en: Does Neymar play for Real Madrid?
+    de: Spielt Neymar für Real Madrid?
+- question:
+    en: Who wrote the book The Pillars of the Earth?
+    de: Wer hat das Buch Die Säulen der Welt geschrieben?
+- question:
+    en: Do Prince Harry and Prince William have the same parents?
+    de: Haben Prinz Harry und Prinz William die gleichen Eltern?
+- question:
+    en: Who was the doctoral supervisor of Albert Einstein?
+    de: Wer war der Doktorvater von Albert Einstein?
+- question:
+    en: Does Breaking Bad have more episodes than Game of Thrones?
+    de: Hat Breaking Bad mehr Episoden als Game of Thrones?
+- question:
+    en: Who was Vincent van Gogh inspired by?
+    de: Von wem wurde Vincent van Gogh inspiriert?
+- question:
+    en: Which building after the Burj Khalifa has the most floors?
+    de: Welches Gebäude hat nach dem Burj Khalifa die meisten Stockwerke?
+- question:
+    en: What was the final result of the War of the Roses?
+    de: Wie ging der Rosenkrieg aus?
+- question:
+    en: How much did Pulp Fiction cost?
+    de: Wie viel hat Pulp Fiction gekostet?
+- question:
+    en: Is proinsulin a protein?
+    de: Ist Proinsulin eine Protein?
+- question:
+    en: Do Urdu and Persian have a common root?
+    de: Haben Urdu und Persisch gemeinsame Wurzeln?
+- question:
+    en: Who is starring in Spanish movies produced by Benicio del Toro?
+    de: Wer spielt in spanischen Filmen, die von Benicio del Toro produziert wurden,
+      mit?
+- question:
+    en: Is Lake Baikal bigger than the Great Bear Lake?
+    de: Ist der Baikalsee größer als ein großer Bärensee?
+- question:
+    en: Show me all books in Asimov's Foundation series.
+    de: Zeig mir alle Asimov-Bücher aus der Basis Serie.
+- question:
+    en: Where was Bach born?
+    de: Wo wurde Bach geboren?
+- question:
+    en: Which city has the oldest running metro?
+    de: In welcher Stadt ist die älteste funktionierende U-Bahn?
+- question:
+    en: Who designed the Brooklyn Bridge?
+    de: Wer hat die Brooklyn Bridge entworfen?
+- question:
+    en: How many people live in Eurasia?
+    de: Wie viele Menschen leben in Eurasien?
+- question:
+    en: Who is the host of the BBC Wildlife Specials?
+    de: Wer führt BBC Wildlife Specials?
+- question:
+    en: What is the total population of Melbourne, Florida?
+    de: Was ist die Gesamtbevölkerung von Melbourne und Florida?
+- question:
+    en: What country is Mount Everest in?
+    de: In welchem Land befindet sich der Everest?
+- question:
+    en: To which artistic movement did the painter of The Three Dancers belong?
+    de: Zu welcher künstlerischen Strömung gehörte der Künstler der drei Tänzer?
+- question:
+    en: When did Operation Overlord commence?
+    de: Wann hat Operation Overlord begonnen?
+- question:
+    en: What is the bridge with the longest span?
+    de: Welche ist die längste Brücke?
+- question:
+    en: Is there a video game called Battle Chess?
+    de: Gibt es das Spiel Battle Chess?
+- question:
+    en: Who was buried in the Great Pyramid of Giza?
+    de: Wer wurde in der großen Pyamide von Gizeh bestattet?
+- question:
+    en: Does the Ford Motor Company have a manufacturing plant in Malaysia?
+    de: Hat die For Motor Company eine Produktionsstätte in Malaysia?
+- question:
+    en: Did Socrates influence Aristotle?
+    de: Wurde Aristoteles von Sokrates beeinflusst?
+- question:
+    en: How many children did Benjamin Franklin have?
+    de: Wie viele Kinder hatte Benjamin Franklin?
+- question:
+    en: How tall is Michael Jordan?
+    de: Wie groß ist Micheal Jordan?
+- question:
+    en: In which UK city are the headquarters of the MI6?
+    de: In welcher UK Stadt ist das Hauptquartier des MI6?
+- question:
+    en: Who created Family Guy?
+    de: Von wem ist Family Guy?
+- question:
+    en: In which city does the Chile Route 68 end?
+    de: In welcher Stadt endet die Route 66?
+- question:
+    en: Give me the grandchildren of Elvis Presley.
+    de: Wie heißen die Enkelkinder von Elvis Presley?
+- question:
+    en: When did the Ming dynasty dissolve?
+    de: Wann hat sich die Ming Dynastie aufgelöst?
+- question:
+    en: In which military conflicts did Lawrence of Arabia participate?
+    de: An welchen militärischen Konflikten hat Lawrence von Arabien teilgenommen?
+- question:
+    en: What is the timezone in San Pedro de Atacama?
+    de: In welcher Zeitzone liegt San Pedro de Atacama?
+- question:
+    en: Give me all books by William Goldman with more than 300 pages.
+    de: Liste alle Bücher mit mehr als 300 Seiten von William Goldman auf.
+- question:
+    en: What did Bruce Carver die from?
+    de: Woran ist Bruce Carver gestorben?
+- question:
+    en: Which subsidiary of Lufthansa serves both Dortmund and Berlin Tegel?
+    de: Welche Tochtergesellschaft von Lufthansa fliegt Dortmund und Berlin Tegel
+      an?
+- question:
+    en: Does Abraham Lincoln's death place have a website?
+    de: Hat der Sterbeort von Abraham Lincoln eine Internetseite?
+- question:
+    en: Did Elvis Presley have children?
+    de: Hatte Elvis Presley Kinder?
+- question:
+    en: Is Michelle Obama the wife of Barack Obama?
+    de: Ist Michelle Obama die Ehefrau von Barack Obama?
+- question:
+    en: In which city does Sylvester Stallone live?
+    de: In welcher Stadt lebt Sylvester Stallone?
+- question:
+    en: Which books by Kerouac were published by Viking Press?
+    de: Welche Bücher von Kerouac wurden von Viking Press veröffentlicht?
+- question:
+    en: Who wrote the song Hotel California?
+    de: Wer hat das Lied Hotel California geschrieben?
+- question:
+    en: What is the capital of Canada?
+    de: Wie heißt die Hauptstadt von Kanada?
+- question:
+    en: Who is the mayor of Tel Aviv?
+    de: Wer ist der Bürgermeister von Tel Aviv?
+- question:
+    en: What form of government does Russia have?
+    de: Welche Regierungsform hat Russland?
+- question:
+    en: Show me the book that Muhammad Ali wrote.
+    de: Zeige mir das Buch, das Mahammad Ali geschrieben hat.
+- question:
+    en: Who was the first to climb Mount Everest?
+    de: Wer war der erste, der den Mount Everest bestiegen hat?
+- question:
+    en: How many languages are spoken in Colombia?
+    de: Wie viele Sprachen werden in Kolumbien gesprochen?
+- question:
+    en: What is the currency of the Czech Republic?
+    de: Wie heißt die Währung in Tschechien?
+- question:
+    en: Where in France is sparkling wine produced?
+    de: Wo in Frankreich wird Sekt hergestellt?
+- question:
+    en: When did Boris Becker end his active career?
+    de: Wann hat Boris Becker seine aktive Karriere beendet?
+- question:
+    en: Which movies starring Mickey Rourke were directed by Guy Ritchie?
+    de: In welchen Filmen mit Mickey Rourke hat Guy Ritchie Regie geführt?
+- question:
+    en: In which films did Julia Roberts as well as Richard Gere play?
+    de: In welchen Filmen haben Julia Roberts und Richard Gere gemeinsam mitgespielt?
+- question:
+    en: Show me Hemingway's autobiography.
+    de: Zeige mir die Autobiographie von Hemingway.
+- question:
+    en: How tall is Amazon Eve?
+    de: Wie groß ist Amazon Eve?
+- question:
+    en: What are the five boroughs of New York?
+    de: Wie heißen die fünf Bezirke von New York?
+- question:
+    en: Give me all Canadian Grunge record labels.
+    de: Liste alle kanadischen Grunge Plattenlabel auf.
+- question:
+    en: In which country does the Ganges start?
+    de: In welchem Land entspringt der Ganges?
+- question:
+    en: Who is the founder of Penguin Books?
+    de: Wer ist der Gründer von Penguin Buks?
+- question:
+    en: Who wrote the Game of Thrones theme?
+    de: Wer hat die Musik für Game of Thrones geschrieben?
+- question:
+    en: Who is the president of Eritrea?
+    de: Wer ist der Präsident von Eritrea?
+- question:
+    en: In which city did John F. Kennedy die?
+    de: In welcher Stadt starb John F. Kennedy?
+- question:
+    en: What is the highest mountain in Australia?
+    de: Was ist der höchste Berg in Australien?
+- question:
+    en: Who writes the Farmers' Almanac?
+    de: Wer schreibt den Almanach der Bauern?
+- question:
+    en: Give me the currency of China.
+    de: Gib mir die chinesische Währung
+- question:
+    en: Give me all Swedish oceanographers.
+    de: Geben Sie mir alle schwedischen Ozeanographen
+- question:
+    en: In which city are the headquarters of the United Nations?
+    de: In welchen Städten befinden sich die UN-Hauptquartiere?
+- question:
+    en: Is Rita Wilson the wife of Tom Hanks?
+    de: Ist Rita Wilson die Frau von Tom Hanks?
+- question:
+    en: In which countries do people speak Japanese?
+    de: In welchen Ländern wird Japanisch gesprochen?
+- question:
+    en: Which of Tim Burton's films had the highest budget?
+    de: Welcher Tim Burton Film hatte das höchste Budget?
+- question:
+    en: Which museum in New York has the most visitors?
+    de: Welches Museum in New York hat die meisten Besucher?
+- question:
+    en: What was the first Queen album?
+    de: Was war Queens erstes Album?
+- question:
+    en: What was the first name of the band Queens of the Stone Age?
+    de: Was war der erste Name der Band Queens of Stone Age?
+- question:
+    en: What was the last movie with Alec Guinness?
+    de: Was war der letzte Film mit Alec Guinnes?
+- question:
+    en: Give me all actors starring in Last Action Hero.
+    de: Gib mir alle Schauspieler die in Last Action Hero gespielt haben.
+- question:
+    en: Who discovered Pluto?
+    de: Wer hat Pluto entdeckt?
