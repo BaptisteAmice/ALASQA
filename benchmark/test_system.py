@@ -18,6 +18,7 @@ class TestSystem:
             response, nl_query, error, steps_status, reasoning = self.create_query_body(question, endpoint)
         except Exception as e:
             response = ""
+            nl_query = ""
             error = "Error: please try to intercept the error before." + str(e)
             reasoning = ""
             steps_status = ""
