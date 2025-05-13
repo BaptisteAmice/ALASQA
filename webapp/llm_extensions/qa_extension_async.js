@@ -183,6 +183,10 @@ async function process_step(place, step, target_suggestion_ranking = 1) {
     console.log("Step: ", step);
 	LAST_INITIATED_COMMAND = step;
     let match;
+
+	//reset last_suggestion_score
+	SparklisState.last_suggestion_score = 1; // reset the last suggestion score
+
     if (step === "up") {
 	return move_focus(place, move_up)
     } else if (step === "down") {
@@ -679,7 +683,7 @@ class SparklisState {
 							&& next_place.results().rows.length == 0) {
 							//replace the next place by the current place
 							next_place = this.place; // keep the current place
-							SparklisState.last_suggestion_score = 0; // reset the last suggestion score
+							SparklisState.last_suggestion_score = 0; // we won't increment the score for this state
 							//useful if supposed members of a class aren't actually members of the said class
 						}
 
