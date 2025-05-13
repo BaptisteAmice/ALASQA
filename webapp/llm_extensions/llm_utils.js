@@ -128,9 +128,16 @@ async function getWikidataLabel(wikidataURI, language = "en") {
     try {
         const response = await fetch(url);
         const data = await response.json();
-        return data.entities[entityId]?.labels[language]?.value || "Label not found";
+        let label ="Label not found";
+        try {
+            data.entities[entityId]?.labels[language]?.value || "Label not found";
+        }
+        catch(err) {
+            console.error("Error fetching label:", err);
+        }
+        return label;
     } catch (error) {
-        console.error("Error fetching data:", error);
+        console.warn("Error fetching data:", error);
         return "Error fetching label";
     }
 }
@@ -302,7 +309,7 @@ async function add_command(questionId, question, sparql, results, last_command, 
     let newResults;
     try {
         newSparql = removePrefixes(newSparql);
-        newResults = await getResultsWithLabels(newSparql);
+        newResults = await getQueryResults(newSparql);
     } catch (e) {
         //catch error thrown by wikidata endpoint
         console.error("add_command sparql evaluation failed", e);
@@ -386,17 +393,21 @@ async function getConceptSuggestionsWithLabels() { //todo
 }
 
 /**
- * Evaluate a SPARQL query and add labels to it's result if it's for every uri from wikidata.
- * @param {*} sparqlQuery 
- * @returns 
+ * Evaluate a SPARQL query and return the results
+ * @param {string} sparqlQuery - The SPARQL query to evaluate
+ * @param {boolean} withLabels - If true, add labels to the results for Wikidata URIs
+ * @returns {Promise<Object>} - The results of the SPARQL query
  */
-async function getResultsWithLabels(sparqlQuery) {
+async function getQueryResults(sparqlQuery, withLabels = false) {
     let results = await sparklis.evalSparql(sparqlQuery);
-    for (let row of results.rows) {
-        for (let value of row) {
-            // for each value, if it is a wikidata uri, add the corresponding label from wikidata
-            if (value && value.type === "uri" && value.uri.startsWith("http://www.wikidata.org/")) {
-                value.label = await getWikidataLabel(value.uri);
+    //only look for labels if needed
+    if (withLabels) {
+        for (let row of results.rows) {
+            for (let value of row) {
+                // for each value, if it is a wikidata uri, add the corresponding label from wikidata
+                if (value && value.type === "uri" && value.uri.startsWith("http://www.wikidata.org/")) {
+                    value.label = await getWikidataLabel(value.uri);
+                }
             }
         }
     }

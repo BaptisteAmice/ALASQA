@@ -539,7 +539,7 @@ async function step_get_results(framework, place, overidding_sparql = null) {
     }
     let results;
     try { 
-        results = await getResultsWithLabels(sparql);
+        results = await getQueryResults(sparql);
     } catch (e) {
         //catch error thrown by wikidata endpoint
         let message = error_messages[3];
