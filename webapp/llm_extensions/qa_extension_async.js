@@ -78,6 +78,13 @@ function correct_command_chain_syntax(steps_string) {
 	// Remove quotes from the string (the LLM sometimes adds them)
 	patched_steps_string = patched_steps_string.replace(/['"]+/g, '');
 
+
+	//Replace today with the current date
+	var now = new Date();
+	var now_xsd_formatted = now.toISOString();
+	var today_xsd_formatted = now_xsd_formatted.split("T")[0]; // get only the date part
+	patched_steps_string = patched_steps_string.replace(/\btoday\b/g, today_xsd_formatted);
+
 	return patched_steps_string;
 }
 
