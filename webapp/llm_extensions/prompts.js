@@ -355,8 +355,9 @@ A:
 - Then, we follow the "educated at" property to find the corresponding school.
 <commands>Yayoi Kusama; property educated at</commands>
 
-Q: What is the boiling point of water?
+Q: Quel est le point d'ébullition de l'eau ?
 A: 
+- In english, this question is: What is the boiling point of water?
 - The question asks for the boiling point of water.
 - We first retrieve the entity "water".
 - Then, we follow the "boiling point" property to get the value.
@@ -618,7 +619,7 @@ function following_command_system_prompt() { //toimprove
 }
 
 ///// Direct question to SPARQL
-function direct_qa_system_prompt(endpoint) {
+function direct_qa_system_prompt(endpoint) { //todo une version dbpedia et une version wikidata
     return `Given a natural language question, generate an appropriate SPARQL query to retrieve the relevant information from the knowledge graph. Use the SPARQL endpoint: ${endpoint}.
 
     Follow these steps:
