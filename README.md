@@ -17,6 +17,11 @@ if just want to interact with interface : open html file in browser or launch a 
 for api and benchmarking: 
 venv requirements.txt
 check the config.py file
+
+or via conda
+conda env create --file=environment.yml
+conda activate llm-sparklis-env
+
 ### api
 if want to use api:
 launch the server
