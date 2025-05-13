@@ -33,6 +33,10 @@ async function process_question(qa) {
 	LAST_RESOLVED_COMMAND = null; // reset the previous command
 	previous_step = null; // reset the previous step
     let question = qa.value;
+
+	//reset Sparklis states
+	SparklisState.resetSparklisStateClass();
+	
 	question = correct_command_chain_syntax(question); //patch malformed command chain syntax
     console.log("Question: " + question);
     let steps = question.split(/\s*;\s*/).filter(s => s !== '');
@@ -67,6 +71,9 @@ function correct_command_chain_syntax(steps_string) {
 	 */
 	// Remove the spaces at the start of the string
 	let patched_steps_string = steps_string.replace(/^\s+/, '');
+
+	// Remove the spaces at the end of the string
+	patched_steps_string = patched_steps_string.replace(/\s+$/, '');
 
 	// Remove quotes from the string (the LLM sometimes adds them)
 	patched_steps_string = patched_steps_string.replace(/['"]+/g, '');
@@ -191,15 +198,7 @@ async function process_step(place, step, target_suggestion_ranking = 1) {
 	LAST_INITIATED_COMMAND = "groupBy";
 	bus.dispatchEvent(new CustomEvent('groupby_action', { detail: { action: 'count' } }));
 	//Keep the current place and does nothing
-	return new Promise((resolve, reject) => {
-		try {
-			waitForEvaluation(sparklis.currentPlace()).then(() => {
-				resolve(sparklis.currentPlace());
-			});
-		} catch (error) {
-			reject(error);
-		}
-	});
+	return place;
 } else if ((match = /^group\s*(.+)$/.exec(step))) {
 		return new Promise((resolve, reject) => {
 			apply_suggestion(place, "foreach", "IncrForeach")
@@ -310,16 +309,7 @@ async function process_step(place, step, target_suggestion_ranking = 1) {
 		console.log("event dispatched");
 
 		//Keep the current place and does nothing
-		return new Promise((resolve, reject) => {
-			try {
-				waitForEvaluation(sparklis.currentPlace()).then(() => {
-					resolve(sparklis.currentPlace());
-				});
-			} catch (error) {
-				reject(error);
-			}
-		});
-
+		return place;
 		} else if ((match = /^offset\s*(.+)$/.exec(step))) {
 		LAST_INITIATED_COMMAND = "offset";
 		if (!isNumeric(match[1])) {
@@ -336,29 +326,7 @@ async function process_step(place, step, target_suggestion_ranking = 1) {
 		console.log("event dispatched");
 
 		//Keep the current place and does nothing
-		return new Promise((resolve, reject) => {
-			try {
-				waitForEvaluation(sparklis.currentPlace()).then(() => {
-					resolve(sparklis.currentPlace());
-				});
-			} catch (error) {
-				reject(error);
-			}
-		});
-
-	} else if (step === "goback") { //todo marche pas 2 fois d'affilées
-		LAST_INITIATED_COMMAND = "goback";
-		return new Promise((resolve, reject) => {
-			try {
-				sparklis.back();
-				waitForEvaluation(sparklis.currentPlace()).then(() => {
-					resolve(sparklis.currentPlace());
-				});
-			} catch (error) {
-				reject(error);
-			}
-		});
-
+		return place;
 	} else if ((match = /^filter\s+(.+)$/.exec(step))) {
 		LAST_INITIATED_COMMAND = "filter";
 		let constr = { type: "MatchesAll", kwds: match[1].split(/\s+/) };
@@ -495,7 +463,8 @@ function search_and_apply_suggestion(place, kind, query, getSuggestions, filterS
 			    console.log("got suggestions for constraint");
 			    //console.log(forest);
 			    let best_sugg = await select_sugg(kind, query, forest, filterSuggestion, lexicon, target_suggestion_ranking);
-			    if (!best_sugg) {
+			    SparklisState.last_suggestion = best_sugg; // store the last found suggestion
+				if (!best_sugg) {
 				reject("no suggestion found");
 			    } else {
 				console.log("choosing suggestion:");
@@ -656,6 +625,7 @@ class SparklisState {
 	static number_of_states = 0; // static variable to count the number of states created
 	static number_of_evaluated_states = 0; // static variable to count the number of states evaluated
 
+	static last_suggestion = null; // used to store the last found suggestion (for debugging purposes)
 	static last_suggestion_score = 1; //used to store the last suggestion score (originally to 1 because we want to prioritize a state having executed as many commands as possible (for commands without suggestions to choose)
 	static single_child_command = true; // used to only have several children for commands with suggestion to choose from
 
@@ -667,7 +637,17 @@ class SparklisState {
 		this.children = []; // children states
 		this.evaluated = false;
 		SparklisState.number_of_states++; // increment the number of states created
+		SparklisState.last_suggestion = null; // reset between states
 		SparklisState.last_suggestion_score = 1; // reset between states
+	}
+
+	static resetSparklisStateClass() {
+		//reset the Sparklis state
+		SparklisState.number_of_states = 0; // reset the number of states created
+		SparklisState.number_of_evaluated_states = 0; // reset the number of states evaluated
+		SparklisState.last_suggestion = null; // reset the last suggestion
+		SparklisState.last_suggestion_score = 1; // reset the last suggestion score
+		SparklisState.single_child_command = true; // reset the single child command flag
 	}
 
 	/**
