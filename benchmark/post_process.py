@@ -972,6 +972,98 @@ def boolean_prediction_fiability(file_name: str, all_data: dict):
     table_data_verifier.append([len(filtered_verifier_failed_data)])
     plot_table(table_headers_verifier, table_data_verifier, all_data, "Boolean type prediction fiability")
 
+
+def boolean_prediction_fiability_confusion_matrix_with_variability(file_names: list[str], all_data: dict):
+    """
+    When the LLM predict if the expected answer to the question is boolean or not, we want to check how reliable it is.
+    We want a confusion matrix but with the variability of the results (Mean ± std).
+
+    """
+    # Test the boolean expected fiability
+    constraints_verifier_tp = { # True positive
+        "BenchmarkResult": lambda x : x in [True, False],
+        "Reasoning": lambda x: x is not None and "<answer>boolean</answer>" in x
+    }
+    constraints_verifier_fp = { # False positive
+        "BenchmarkResult": lambda x : x not in [True, False],
+        "Reasoning": lambda x: x is not None and "<answer>boolean</answer>" in x
+    }
+    constraints_verifier_fn = { # False negative
+        "BenchmarkResult": lambda x : x in [True, False],
+        "Reasoning": lambda x: x is not None and "<answer>non-boolean</answer>" in x
+    }
+    constraints_verifier_tn = { # True negative
+        "BenchmarkResult": lambda x : x not in [True, False],
+        "Reasoning": lambda x: x is not None and "<answer>non-boolean</answer>" in x
+    }
+    constraint_verifier_failed_p = { # Failed
+        "BenchmarkResult": lambda x: x in [True, False],
+        "Reasoning": lambda x: "<answer>boolean</answer>" not in x and "<answer>non-boolean</answer>" not in x
+    }
+    constraint_verifier_failed_n = { # Failed
+        "BenchmarkResult": lambda x: x not in [True, False],
+        "Reasoning": lambda x: "<answer>boolean</answer>" not in x and "<answer>non-boolean</answer>" not in x
+    }
+
+    #We need to get the mean and standard deviation for TP, FP, TN, FN
+    # Create a dictionary to store the counts for each file
+    counts = {
+        "TP": [],
+        "FP": [],
+        "TN": [],
+        "FN": [],
+        "FailedP": [],
+        "FailedN": []
+    }
+    for file_name in file_names:
+        # Load the data
+        filtered_verifier_tp_data = load_and_filter_data(file_name, constraints_verifier_tp)
+        filtered_verifier_fp_data = load_and_filter_data(file_name, constraints_verifier_fp)
+        filtered_verifier_fn_data = load_and_filter_data(file_name, constraints_verifier_fn)
+        filtered_verifier_tn_data = load_and_filter_data(file_name, constraints_verifier_tn)
+        filtered_verifier_failed_p_data = load_and_filter_data(file_name, constraint_verifier_failed_p)
+        filtered_verifier_failed_n_data = load_and_filter_data(file_name, constraint_verifier_failed_n)
+
+        # Append the counts to the list
+        counts["TP"].append(len(filtered_verifier_tp_data)/len(all_data)*100)
+        counts["FP"].append(len(filtered_verifier_fp_data)/len(all_data)*100)
+        counts["TN"].append(len(filtered_verifier_tn_data)/len(all_data)*100)
+        counts["FN"].append(len(filtered_verifier_fn_data)/len(all_data)*100)
+        counts["FailedP"].append(len(filtered_verifier_failed_p_data)/len(all_data)*100)
+        counts["FailedN"].append(len(filtered_verifier_failed_n_data)/len(all_data)*100)
+
+    # Now we can calculate the mean and standard deviation for each count
+    means = {key: np.mean(value) for key, value in counts.items()}
+    stds = {key: np.std(value) for key, value in counts.items()}
+    # Create the confusion matrix
+    matrix = np.array(
+        [
+            [means["TP"], means["FN"], means["FailedP"]],
+            [means["FP"], means["TN"], means["FailedN"]]
+        ]
+    )
+    # Create the standard deviation matrix
+    std_matrix = np.array(
+        [
+            [stds["TP"], stds["FN"], stds["FailedP"]],
+            [stds["FP"], stds["TN"], stds["FailedN"]]
+        ]
+    )
+    # Plotting
+    plt.figure(figsize=(6, 4))
+    sns.heatmap(matrix, annot=True, fmt=".2f", cmap="Blues", xticklabels=["Boolean","Non-Boolean", "Other"], yticklabels=["Boolean","Non-Boolean"], cbar=False)
+    plt.title("Confusion Matrix for Boolean type prediction fiability")
+    plt.ylabel("Benchmark Class")
+    plt.xlabel("Predicted Class")
+    # Add the standard deviation as text
+    for i in range(matrix.shape[0]):
+        for j in range(matrix.shape[1]):
+            plt.text(j + 0.5, i + 0.7, f"±{std_matrix[i, j]:.2f}", ha="center", va="center", color="black")
+    pp.savefig()
+    if show:
+        plt.show()
+    plt.close()
+
 def question_word_ratio_ranking(filtered_data_0, filtered_data_1, title_complement="", number_of_words=30):
     word_count_0 = defaultdict(int)
     word_count_1 = defaultdict(int)
@@ -1379,6 +1471,7 @@ def make_pdf_report(files_names: list[str], core_files_names: list[str], questio
 
     # Plot the confusion matrix of type predictions
     boolean_prediction_fiability(file_name, all_data)
+    boolean_prediction_fiability_confusion_matrix_with_variability(files_names, all_data)
 
 
     constraints_f1_at_0 = {
@@ -1428,11 +1521,13 @@ def make_pdf_report(files_names: list[str], core_files_names: list[str], questio
 if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.realpath(__file__))
     core_files = [
-        script_dir + "/BestOutputs/QALD9/DBpedia/QALD-9-plus_sparklisllm-LLMFrameworkText2Sparql_20250418_174652.json",
+        script_dir + "/BestOutputs/QALD9/QALD-9-plus_sparklisllm-LLMFrameworkScoreAtAllCost_20250403_181057.json",
     ]
 
     input_files = [
-        script_dir + "/BestOutputs/QALD9/DBpedia/QALD-9-plus_sparklisllm-LLMFrameworkText2Sparql_20250427_030418.json",
+        script_dir + "/BestOutputs/for_paper/QALD-9-plus_sparklisllm-LLMFrameworkIsBooleanExpected_20250513_140219.json",
+        script_dir + "/BestOutputs/for_paper/QALD-9-plus_sparklisllm-LLMFrameworkIsBooleanExpected_20250513_155528.json",
+        script_dir + "/BestOutputs/for_paper/QALD-9-plus_sparklisllm-LLMFrameworkIsBooleanExpected_20250513_174924.json"
     ]
 
     questions_groups_qald_9_train_wikidata_level_word = {  "Cluster_0": {    "exemplar_id": "1",    "exemplar_question": "List all boardgames by GMT.",    "members": [      "1",      "178",      "249",      "290"    ]  },  "Cluster_1": {    "exemplar_id": "8",    "exemplar_question": "Which airports does Air China serve?",    "members": [      "8",      "126",      "196",      "255"    ]  },  "Cluster_2": {    "exemplar_id": "9",    "exemplar_question": "Give me all actors starring in movies directed by and starring William Shatner.",    "members": [      "9",      "286"    ]  },  "Cluster_3": {    "exemplar_id": "11",    "exemplar_question": "Give me all Danish films.",    "members": [      "11",      "41",      "51",      "59",      "71",      "94",      "118",      "403"    ]  },  "Cluster_4": {    "exemplar_id": "16",    "exemplar_question": "Which state of the USA has the highest population density?",    "members": [      "16",      "22",      "407"    ]  },  "Cluster_5": {    "exemplar_id": "34",    "exemplar_question": "Show me all basketball players that are higher than 2 meters.",    "members": [      "34"    ]  },  "Cluster_6": {    "exemplar_id": "36",    "exemplar_question": "Which states border Illinois?",    "members": [      "36",      "48",      "80",      "102",      "112",      "122",      "163",      "253"    ]  },  "Cluster_7": {    "exemplar_id": "43",    "exemplar_question": "Which presidents were born in 1945?",    "members": [      "43",      "3",      "17",      "23",      "72",      "82",      "100",      "125",      "139",      "150",      "162",      "167",      "263",      "318",      "326"    ]  },  "Cluster_8": {    "exemplar_id": "50",    "exemplar_question": "How many films did Hal Roach produce?",    "members": [      "50",      "56",      "106",      "130",      "140",      "258"    ]  },  "Cluster_9": {    "exemplar_id": "54",    "exemplar_question": "Give me all companies in Munich.",    "members": [      "54",      "20",      "29",      "64",      "97",      "113",      "145",      "161",      "171",      "181",      "183",      "204",      "213",      "231",      "334",      "347",      "412"    ]  },  "Cluster_10": {    "exemplar_id": "63",    "exemplar_question": "In which films directed by Garry Marshall was Julia Roberts starring?",    "members": [      "63"    ]  },  "Cluster_11": {    "exemplar_id": "85",    "exemplar_question": "How many employees does Google have?",    "members": [      "85",      "60",      "76",      "90",      "144",      "157",      "168",      "262",      "284",      "362",      "382"    ]  },  "Cluster_12": {    "exemplar_id": "86",    "exemplar_question": "Give me all actors who were born in Berlin.",    "members": [      "86",      "33",      "40",      "69",      "179"    ]  },  "Cluster_13": {    "exemplar_id": "87",    "exemplar_question": "Who created Goofy?",    "members": [      "87",      "2",      "19",      "37",      "99",      "129",      "152",      "191",      "200",      "210",      "241",      "350",      "356",      "365",      "391",      "413"    ]  },  "Cluster_14": {    "exemplar_id": "108",    "exemplar_question": "Which U.S. states are in the same time zone as Utah?",    "members": [      "108",      "25"    ]  },  "Cluster_15": {    "exemplar_id": "119",    "exemplar_question": "What other books have been written by the author of The Fault in Our Stars?",    "members": [      "119"    ]  },  "Cluster_16": {    "exemplar_id": "131",    "exemplar_question": "Is Christian Bale starring in Batman Begins?",    "members": [      "131",      "314"    ]  },  "Cluster_17": {    "exemplar_id": "134",    "exemplar_question": "Which countries have more than two official languages?",    "members": [      "134",      "62",      "338"    ]  },  "Cluster_18": {    "exemplar_id": "136",    "exemplar_question": "Show me all songs from Bruce Springsteen released between 1980 and 1990.",    "members": [      "136"    ]  },  "Cluster_19": {    "exemplar_id": "137",    "exemplar_question": "Which television shows were created by John Cleese?",    "members": [      "137",      "12",      "114",      "199",      "321",      "378"    ]  },  "Cluster_20": {    "exemplar_id": "141",    "exemplar_question": "Give me the birthdays of all actors of the television show Charmed.",    "members": [      "141",      "55"    ]  },  "Cluster_21": {    "exemplar_id": "147",    "exemplar_question": "In which countries can you pay using the West African CFA franc?",    "members": [      "147"    ]  },  "Cluster_22": {    "exemplar_id": "148",    "exemplar_question": "Which holidays are celebrated around the world?",    "members": [      "148",      "116",      "174",      "305"    ]  },  "Cluster_23": {    "exemplar_id": "158",    "exemplar_question": "List all episodes of the first season of the HBO television series The Sopranos!",    "members": [      "158"    ]  },  "Cluster_24": {    "exemplar_id": "160",    "exemplar_question": "Does the new Battlestar Galactica series have more episodes than the old one?",    "members": [      "160"    ]  },  "Cluster_25": {    "exemplar_id": "164",    "exemplar_question": "Give me a list of all bandleaders that play trumpet.",    "members": [      "164",      "24",      "46",      "143"    ]  },  "Cluster_26": {    "exemplar_id": "169",    "exemplar_question": "Which Chess players died in the same place they were born in?",    "members": [      "169"    ]  },  "Cluster_27": {    "exemplar_id": "172",    "exemplar_question": "In which U.S. state is Fort Knox located?",    "members": [      "172",      "4",      "115",      "247",      "297",      "369"    ]  },  "Cluster_28": {    "exemplar_id": "182",    "exemplar_question": "Give me all films produced by Steven Spielberg with a budget of at least $80 million.",    "members": [      "182"    ]  },  "Cluster_29": {    "exemplar_id": "186",    "exemplar_question": "Who is the heaviest player of the Chicago Bulls?",    "members": [      "186",      "31",      "190",      "202",      "311"    ]  },  "Cluster_30": {    "exemplar_id": "193",    "exemplar_question": "Is Cola a beverage?",    "members": [      "193",      "104",      "107",      "166",      "180",      "211",      "223",      "235",      "267",      "268",      "274",      "343",      "344",      "358",      "361"    ]  },  "Cluster_31": {    "exemplar_id": "198",    "exemplar_question": "Was the Cuban Missile Crisis earlier than the Bay of Pigs Invasion?",    "members": [      "198"    ]  },  "Cluster_32": {    "exemplar_id": "216",    "exemplar_question": "how much is the elevation of D�sseldorf Airport ?",    "members": [      "216",      "217",      "230",      "278",      "288"    ]  },  "Cluster_33": {    "exemplar_id": "225",    "exemplar_question": "How many people live in Poland?",    "members": [      "225",      "256",      "324",      "351"    ]  },  "Cluster_34": {    "exemplar_id": "227",    "exemplar_question": "Is the wife of president Obama called Michelle?",    "members": [      "227",      "245",      "376"    ]  },  "Cluster_35": {    "exemplar_id": "234",    "exemplar_question": "What is the population of Cairo?",    "members": [      "234",      "10",      "52",      "65",      "93",      "120",      "149",      "151",      "233",      "236",      "280",      "283",      "291",      "303",      "317",      "353",      "354",      "370",      "372",      "380",      "386",      "393",      "409"    ]  },  "Cluster_36": {    "exemplar_id": "238",    "exemplar_question": "Who is the author of the interpretation of dreams?",    "members": [      "238",      "67",      "132",      "194",      "215",      "285",      "299"    ]  },  "Cluster_37": {    "exemplar_id": "239",    "exemplar_question": "When was the death of Shakespeare?",    "members": [      "239",      "35",      "89",      "92",      "105",      "138",      "177",      "214",      "218",      "219",      "226",      "254",      "270",      "275",      "302",      "325",      "337",      "359",      "368",      "374",      "388",      "405",      "411"    ]  },  "Cluster_38": {    "exemplar_id": "265",    "exemplar_question": "Who is the mayor of Paris?",    "members": [      "265",      "5",      "15",      "27",      "53",      "66",      "75",      "170",      "184",      "192",      "197",      "209",      "212",      "220",      "222",      "229",      "232",      "259",      "264",      "271",      "300",      "306",      "315",      "320",      "330",      "379",      "381",      "396",      "397",      "398"    ]  },  "Cluster_39": {    "exemplar_id": "279",    "exemplar_question": "Which city has the most inhabitants?",    "members": [      "279",      "84",      "110",      "121",      "123",      "133",      "224",      "269",      "332",      "340",      "349",      "408"    ]  },  "Cluster_40": {    "exemplar_id": "281",    "exemplar_question": "When will start the final match of the football world cup 2018?",    "members": [      "281"    ]  },  "Cluster_41": {    "exemplar_id": "282",    "exemplar_question": "Which films did Stanley Kubrick direct?",    "members": [      "282",      "14",      "70",      "124",      "153",      "221",      "248"    ]  },  "Cluster_42": {    "exemplar_id": "294",    "exemplar_question": "In which country is the Limerick Lake?",    "members": [      "294",      "95",      "203",      "205",      "243",      "257",      "273",      "292",      "346",      "395",      "406"    ]  },  "Cluster_43": {    "exemplar_id": "296",    "exemplar_question": "Give me all members of Prodigy.",    "members": [      "296",      "42",      "61",      "78",      "91",      "101",      "103",      "175",      "185",      "260",      "313",      "367",      "402"    ]  },  "Cluster_44": {    "exemplar_id": "307",    "exemplar_question": "How many languages are spoken in Turkmenistan?",    "members": [      "307",      "58",      "127",      "142",      "187",      "327",      "385"    ]  },  "Cluster_45": {    "exemplar_id": "308",    "exemplar_question": "Did Che Guevara have children?",    "members": [      "308",      "266",      "309",      "375"    ]  },  "Cluster_46": {    "exemplar_id": "310",    "exemplar_question": "To which party does the mayor of Paris belong?",    "members": [      "310",      "81",      "355",      "364"    ]  },  "Cluster_47": {    "exemplar_id": "328",    "exemplar_question": "Which scientist is known for the Manhattan Project and the Nobel Peace Prize?",    "members": [      "328"    ]  },  "Cluster_48": {    "exemplar_id": "335",    "exemplar_question": "Who wrote the book The Pillars of the Earth?",    "members": [      "335",      "21",      "195"    ]  },  "Cluster_49": {    "exemplar_id": "336",    "exemplar_question": "Do Prince Harry and Prince William have the same parents?",    "members": [      "336"    ]  },  "Cluster_50": {    "exemplar_id": "342",    "exemplar_question": "How much did Pulp Fiction cost?",    "members": [      "342",      "44",      "244",      "329"    ]  },  "Cluster_51": {    "exemplar_id": "345",    "exemplar_question": "Who is starring in Spanish movies produced by Benicio del Toro?",    "members": [      "345"    ]  },  "Cluster_52": {    "exemplar_id": "348",    "exemplar_question": "Where was Bach born?",    "members": [      "348",      "7",      "38",      "45",      "74",      "77",      "237",      "252",      "333",      "339"    ]  },  "Cluster_53": {    "exemplar_id": "363",    "exemplar_question": "How tall is Michael Jordan?",    "members": [      "363",      "156",      "287",      "304",      "312"    ]  },  "Cluster_54": {    "exemplar_id": "390",    "exemplar_question": "In which films did Julia Roberts as well as Richard Gere play?",    "members": [      "390"    ]  },  "Cluster_55": {    "exemplar_id": "400",    "exemplar_question": "What is the highest mountain in Australia?",    "members": [      "400",      "39",      "154",      "155",      "165",      "188",      "189",      "201",      "207",      "251",      "289",      "293",      "301",      "357"    ]  }}
