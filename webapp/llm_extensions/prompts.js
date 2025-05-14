@@ -414,7 +414,7 @@ A:
 - We first retrieve the class "Supplier".
 - Then, we follow the property "country" to get the country of each supplier.
 - Finally, we filter the results to include only those suppliers located in France.
-<commands>a Supplier ; forwardProperty country ; France</commands>
+<commands>a Supplier ; property country ; France</commands>
 
 Q: Wie ist die Telefonnummer des Managers von Arnelle Gerber?
 A:

@@ -675,37 +675,60 @@ class SparklisState {
 			console.log("First step: ", first_step);
 			//todo empecher avoir plusieurs enfants pour certaines commandes
 			for (let i = 1; i <= this.number_of_top_sugg_considered; i++) {
-				await process_step(this.place, first_step, i)
-					.then(async next_place => {
-						await waitForEvaluation(next_place);
-						//if the last command got a class but doesn't have any results, we will just cancel it and pass through it
-						if ((LAST_INITIATED_COMMAND === "class" || LAST_INITIATED_COMMAND === "match")
-							&& next_place.results().rows.length == 0) {
-							//replace the next place by the current place
-							next_place = this.place; // keep the current place
-							SparklisState.last_suggestion_score = 0; // we won't increment the score for this state
-							//useful if supposed members of a class aren't actually members of the said class
-						}
+				const trySteps = async () => { //don't bind, so "this" still refere to the object
+					await process_step(this.place, first_step, i)
+						.then(async next_place => {
+							await waitForEvaluation(next_place);
+							//if the last command got a class but doesn't have any results, we will just cancel it and pass through it
+							if ((LAST_INITIATED_COMMAND === "class" || LAST_INITIATED_COMMAND === "match")
+								&& next_place.results().rows.length == 0) {
+								//replace the next place by the current place
+								next_place = this.place; // keep the current place
+								SparklisState.last_suggestion_score = 0; // we won't increment the score for this state
+								//useful if supposed members of a class aren't actually members of the said class
+							}
 
-						let new_child = new SparklisState(
-							next_place,
-							steps.slice(1), // remaining commands
-							this.score + SparklisState.last_suggestion_score, // score of the current place + last suggestion score
-							this.number_of_top_sugg_considered // number of top suggestions considered
-						);
-						this.children.push(new_child); // add child to the list of children
-					}).catch(msg => {
-						console.log("Error while processing step: ", msg);
-						//todo regarder ce qu'on sauve
-						//term -> match?
-						//property->up?
-					});
-					sparklis.setCurrentPlace(this.place); // update Sparklis view
+							let new_child = new SparklisState(
+								next_place,
+								steps.slice(1), // remaining commands
+								this.score + SparklisState.last_suggestion_score, // score of the current place + last suggestion score
+								this.number_of_top_sugg_considered // number of top suggestions considered
+							);
+							this.children.push(new_child); // add child to the list of children
+						}).catch(async msg => {
+							console.log("Error while processing step: ", msg);
+							// if the command that failed was trying to get a specific entity, we can instead try to match the corresponding string (useful for literal values)
+							if (LAST_INITIATED_COMMAND === "term" && steps[0].length >= 3) {
+								const message_match = "The command trying to get a specific entity failed. Now trying to match the corresponding term instead.";
+								console.log(message_match);
+								bus.dispatchEvent(new CustomEvent('term_cmd_backup', { detail: { message: message_match } }));
+								first_step = "match " + first_step; // overwrite the first step
+								await trySteps(); // call recursively to retry with updated command
+								return;
+							
+							// if a property fail, we can try to go up and retry the command (useful to save commands without a complexe handling of the focus)
+							} else if (this.place.focusPath().length > 1
+								&& (LAST_INITIATED_COMMAND === "property" || 
+									LAST_INITIATED_COMMAND === "up")
+								) {
+								//execute up and then retry the command
+								console.log("Property failed. Now trying to go up and retry the command.");
+								//Look up
+								this.place = await move_focus(this.place, move_up);	
+								console.log("Steps after adding up: ", steps);
+								await trySteps(); // call recursively to retry with updated comman
+								return;
+							}
 
-					//stop the loop and don't create other children if the command doesn't need it 
-					if (SparklisState.single_child_command) {
-						break;
-					}
+						});
+						sparklis.setCurrentPlace(this.place); // update Sparklis view
+				}
+				await trySteps(); // run per loop iteration
+
+				//stop the loop and don't create other children if the command doesn't need it 
+				if (SparklisState.single_child_command) {
+					break;
+				}	
 			}
 			//reset for the next states
 			SparklisState.single_child_command = true;
