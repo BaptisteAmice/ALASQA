@@ -89,14 +89,19 @@ def sparklisllm_question(driver, question, endpoint_sparql, system_name) -> tupl
     # The errors will be concatenated in this variable
     error = ""
     language = config.LANGUAGE_SPARKLIS
-    #todo temp solution
+    
+    url_extension = ''
+    no_caching = True
+    no_logging = True
+    if no_caching:
+        # Caching SPARQL query results (uncheck for frequently changing data)
+        url_extension += '&caching=false'
+    if no_logging:
+        # Reporting query history for usability improvement (only client IP, session ID, and queries are reported, not query results)
+        url_extension += '&logging=false'
     if "wikidata" in endpoint_sparql:
-        #Open config modal
-        #config_trigger = driver.find_element(By.CSS_SELECTOR, '[data-toggle="modal"][data-target="#config-language-modal"]')
-        #config_trigger.click()
-        #For the labels of entities, use property *rdfs:label* with language *en*
-        #For the labels of classes, properties, and qualifiers, use property *rdfs:label* *en*
-        url_extension = '&wikidata_mode=true&entity_lexicon_select=http%3A//www.w3.org/2000/01/rdf-schema%23label&entity_lexicon_lang='+language+'&concept_lexicons_select=http%3A//www.w3.org/2000/01/rdf-schema%23label&concept_lexicons_lang='+language+'&auto-filtering=false'
+        url_extension += '&wikidata_mode=true&entity_lexicon_select=http%3A//www.w3.org/2000/01/rdf-schema%23label&entity_lexicon_lang='+language+'&concept_lexicons_select=http%3A//www.w3.org/2000/01/rdf-schema%23label&concept_lexicons_lang='+language+'&auto-filtering=false'
+    if url_extension != '':
         driver.get(driver.current_url + url_extension)
 
     # Set the sparql endpoint
