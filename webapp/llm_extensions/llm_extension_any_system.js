@@ -299,6 +299,9 @@ async function step_extract_tags(framework, llm_output, tag) {
  */
 async function step_execute_commands(framework, commands) {
     framework.reasoning_text += "<br>" + framework.getCurrentStep()["Name"] + " - commands: " + commands + "<br>";
+    //to avoid any problem, we want to reset the sparklis place (else sometimes it isn't reset if a query failed to finish)
+    sparklis.home();
+
     getQAInputField().value = commands;
     await process_question(getQAInputField())
         .then(() => { 
@@ -842,7 +845,6 @@ class LLMFrameworkRetryWithoutTimeout extends LLMFramework {
         let valid_responses_queries = [];
         let valid_responses_results = [];
         while (!got_number_of_same_response_expected) {
-            console.log("elapsed time", elapsedTime);
             this.reasoning_text += "<br>Try " + i + "<br>";
             // Call llm generation
             let output_llm = await this.executeStep(step_generation, "LLM generation", 
