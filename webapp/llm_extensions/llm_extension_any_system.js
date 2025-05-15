@@ -193,7 +193,8 @@ async function qa_control() {
     // disable interactions with the llm input field (used as the condition to wait for the end of the process in tests)
     disableInputs();
 
-    let question = getInputQuestion();
+    let question_field = document.getElementById("user-input");
+    let question = question_field.value;
     let question_id = addLLMQuestion(question); //  Add a div in the interface to display the question and the answer
 
     /////////// PROCESSING ///////////
@@ -219,7 +220,7 @@ async function qa_control() {
     //update reasoning one last time in case of for
     updateReasoning(framework.question_id, framework.reasoning_text);
     //set the result in the answer field
-    updateAnswer(framework.question_id, framework.result_text, framework.sparklis_nl, framework.sparql, framework.errors); //todo sparklis_request 
+    updateAnswer(framework.question_id, framework.result_text, framework.sparklis_nl, framework.sparql, framework.errors); 
     //re-enable interactions (used as the condition to end the wait from tests)
     enableInputs(); 
 }
@@ -603,43 +604,6 @@ class LLMFrameworkOneShotImproved extends LLMFramework {
 window.LLMFrameworkOneShotImproved = LLMFrameworkOneShotImproved; //to be able to access the class
 window.LLMFrameworks.push(LLMFrameworkOneShotImproved.name); //to be able to access the class name
 
-
-class LLMFrameworkTheMost extends LLMFramework {
-    constructor(question, question_id) {
-        super(question, question_id, "count_references");
-    }
-    async answerQuestionLogic() {
-        // Call llm generation
-        let output_llm = await this.executeStep(step_generation, "LLM generation", 
-            [this, commands_chain_system_prompt_the_most(),"commands_chain_system_prompt_the_most", this.question]
-        );
-        // Extract the commands from the LLM output
-        let extracted_commands_list = await this.executeStep(step_extract_tags, "Extracted commands",
-             [this, output_llm, "commands"]
-        );
-        // Execute the commands, wait for place evaluation and get the results
-        let extracted_commands = extracted_commands_list.at(-1) || "";
-        await this.executeStep(step_execute_commands, "Commands execution", [this, extracted_commands]);
-        
-        //if the sparql query limit number is set, change the limit clause in the query
-        let place = sparklis.currentPlace();
-        this.sparql = place.sparql();
-        if (this.sparql_query_limit_number) {
-            //execute step
-            this.sparql = await this.executeStep(step_change_or_add_limit, "Add/change limit", [this, this.sparql, this.sparql_query_limit_number]);
-            //remove the ordering variable from the select clause
-            this.sparql = await this.executeStep(step_remove_ordering_var_from_select, "Remove ordering variable from select", [this, this.sparql]);
-        }
-        if (this.sparql_query_offset_number) {
-            //execute step
-            this.sparql = await this.executeStep(step_change_or_add_offset, "Add/change offset", [this, this.sparql, this.sparql_query_offset_number]);
-        }
-        await this.executeStep(step_get_results, "Get results", [this, place, this.sparql]);
-    }
-}
-window.LLMFrameworkTheMost = LLMFrameworkTheMost; //to be able to access the class
-window.LLMFrameworks.push(LLMFrameworkTheMost.name); //to be able to access the class name
-
 class LLMFrameworkTheMostImproved extends LLMFramework {
     constructor(question, question_id) {
         super(question, question_id, "count_references");
@@ -800,7 +764,7 @@ class LLMFrameworkText2Sparql extends LLMFramework {
 
             ////////////////////////// LAST TRY TO SAVE THE RESPONSE
             if (!got_a_response) {
-                //todo
+
             }
         }      
     }
@@ -1087,9 +1051,6 @@ class LLMFrameworkOneShotWithBooleanConvScoringReferences extends LLMFrameworkOn
 window.LLMFrameworkOneShotWithBooleanConvScoringReferences = LLMFrameworkOneShotWithBooleanConvScoringReferences; //to be able to use the class through the window object
 window.LLMFrameworks.push(LLMFrameworkOneShotWithBooleanConvScoringReferences.name); // to be able to access the class name in the interface and choose it in the dropdown
 
-class LLMFrameworkReact extends LLMFramework {
-    //todo
-}
 class LLMFrameworkDirect extends LLMFramework {
     async answerQuestionLogic() {
         let used_endpoint = sparklis.endpoint();
@@ -1127,7 +1088,7 @@ class LLMFrameworkDirectBoolean extends LLMFramework {
 window.LLMFrameworkDirectBoolean = LLMFrameworkDirectBoolean; //to be able to use the class through the window object
 window.LLMFrameworks.push(LLMFrameworkDirectBoolean.name); // to be able to access the class name in the interface and choose it in the dropdown
 
-class LLMFrameworkScoreAtAllCost extends LLMFramework { //todo tester
+class LLMFrameworkScoreAtAllCost extends LLMFramework {
     constructor(question, question_id) {
         super(question, question_id, "count_references");
     }
@@ -1180,18 +1141,12 @@ class LLMFrameworkScoreAtAllCost extends LLMFramework { //todo tester
         // trying to save the process
         if (this.sparql == "") {
             this.reasoning_text += "<br>SPARQL query is empty, trying to get another result<br>";
-            //todo temp solution
             this.sparql = "ASK WHERE { BIND(false AS ?x) FILTER(?x) }";
         } 
     }
 }
 window.LLMFrameworkScoreAtAllCost = LLMFrameworkScoreAtAllCost; //to be able to use the class through the window object
 window.LLMFrameworks.push(LLMFrameworkScoreAtAllCost.name); // to be able to access the class name in the interface and choose it in the dropdown
-
-
-class LLMFrameworkSteps extends LLMFramework {
-    //todo
-}
 
 class LLMFrameworkBooleanBySubquestions extends LLMFramework {
     async answerQuestionLogic() {

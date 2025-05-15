@@ -343,7 +343,7 @@ function loadQuestionsFromSession() {
         qaDiv.appendChild(answerHeader);
         qaDiv.appendChild(answerDiv);
         qaDiv.appendChild(errorsHeader); 
-        qaDiv.appendChild(errorsDiv); //todo factoriser
+        qaDiv.appendChild(errorsDiv);
         
         document.getElementById("chatbot-responses-container").appendChild(qaDiv);
     });

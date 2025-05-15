@@ -146,21 +146,6 @@ async function process_steps(qa, place, steps) {
 				steps.unshift("up");
 				console.log("Steps after adding up: ", steps);
 				return process_steps(qa, place, steps);
-			
-			//todo disabled for the moment because it doesn't work well
-			/*} //if poperty failed, we can try to get the property without constraint
-			else if (LAST_INITIATED_COMMAND === "property") {
-				//todo trouver tt les property, trouver leur labels -> tester distance edition
-				//-> si fail temps
-
-				//signal to add text to the reasoning and errors of the system
-				console.log("Property failed. Now trying to get the property without constraint.");
-				//add a "propertyWithoutConstraint" to the first command of qa
-				let first_step = steps[0];
-				let new_first_step = "propertyWithoutConstraint " + first_step;
-				steps[0] = new_first_step;
-				qa.value = steps.join(" ; "); // update qa field
-				return process_steps(qa, place, steps);*/
 			} 
 
 			if (temp_patch_needed) {
@@ -667,13 +652,12 @@ class SparklisState {
 	 * Each suggestion corresponds to a new child state.
 	 * Child states have the same command chain as the parent state, but with the first command removed.
 	 */
-	async evaluate() { //todo current criteria is total score, also test command success number
+	async evaluate() {
 		console.log("Evaluating state: ", this.place, " with remaining commands: ", this.remaining_commands);
 		let steps = this.remaining_commands;
 		if (steps.length > 0) {
 			let first_step = steps[0];
 			console.log("First step: ", first_step);
-			//todo empecher avoir plusieurs enfants pour certaines commandes
 			for (let i = 1; i <= this.number_of_top_sugg_considered; i++) {
 				const trySteps = async () => { //don't bind, so "this" still refere to the object
 					await process_step(this.place, first_step, i)

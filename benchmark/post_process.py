@@ -484,13 +484,6 @@ def get_system_errors(filtered_data):
             system_errors.append(["No error message"])
     return system_errors
 
-def matrix_command_error(commands_list, system_errors):
-    """
-    Creates a matrix of used commands and system errors for each question.
-    """
-    #todo
-    pass
-
 def generate_boxplot(list_of_lists, values, x_label: str, y_label: str, label_rotation=45):
     # Create a dictionary to group values by their corresponding categories
     grouped_data = defaultdict(list)
@@ -1266,14 +1259,6 @@ def plot_table_commands_failed(rows: dict):
 
     plt.close(fig)
 
-
-def failed_cmd_id_histogram(filtered_data):
-    cmds_list = get_commands_list(filtered_data)
-    #todo
-    #get failed command
-
-
-
 def make_pdf_report(files_names: list[str], core_files_names: list[str], question_groups: dict):
     """
     Generate all the plots and tables for the given files.
@@ -1293,7 +1278,6 @@ def make_pdf_report(files_names: list[str], core_files_names: list[str], questio
     table_data.append([len(all_data)])
     tree_data["All questions"] = {"count": len(all_data), "children": {}}
 
-    #todo put in a function and have the id/text of representative question
     #print average f1 score for each question group (based on alldata)
     average_f1_score_per_question_group = []
 
@@ -1369,8 +1353,6 @@ def make_pdf_report(files_names: list[str], core_files_names: list[str], questio
     generate_boxplot(system_errors, precisions, "System Errors", "Precisions", label_rotation=10)
     generate_boxplot(system_errors, recalls, "System Errors", "Recalls", label_rotation=10)
     generate_boxplot(system_errors, f1_scores, "System Errors", "F1 Scores", label_rotation=10)
-
-    matrix_command_error(commands_list, system_errors)
 
     non_done_step = find_first_non_done_step(filtered_valid_data)
     hist_first_non_done_step(non_done_step, "valid benchmark results")
@@ -1504,15 +1486,9 @@ def make_pdf_report(files_names: list[str], core_files_names: list[str], questio
         "Error": lambda x: isinstance(x, str) and any(cmd_error in x for cmd_error in cmd_error_messages)
     }
     filtered_failed_cmd_data = load_and_filter_data(file_name, constraints_failed_cmd)
-    failed_cmd_id_histogram(filtered_failed_cmd_data)
-    #todo finir qd on aura failed cmd
 
     # todo pour groupe questions similaires
     # ->boite à moustache groupe de questions similaires
-
-    #todo matrice erreur
-    #lignes : x==0, x==1, 0<x<1
-    #colonnes : commandes finies, commandes pas finies[fwd not found, bwd not found, etc.]
 
     # Close the pdf file
     pp.close()

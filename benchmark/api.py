@@ -37,7 +37,7 @@ def get_answer(question: str, dataset: str) -> dict:
             dataset = "https://desktop-47kug2k.tail6a5b76.ts.net:3131/corporate/sparql"
     
     system_name = "sparklisllm-LLMFrameworkText2Sparql"
-    driver = interactions.get_new_driver(is_headless=True) #todo change
+    driver = interactions.get_new_driver(is_headless=True)
     result, nl_query, error, steps_status, reasoning, _ = interactions.simulated_user(
         config.SPARKLIS_FILE,
         lambda drv: interactions.sparklisllm_question(drv, question, dataset, system_name),
@@ -49,15 +49,3 @@ def get_answer(question: str, dataset: str) -> dict:
         "question": question,
         "query": result
     }
-
-# @app.get("/fetch")
-# def fetch_local_page(question: str, endpoint_sparql: str = config.SPARQL_ENDPOINT, system_name: str = "sparklisllm-LLMFrameworkOneShot") -> str:
-#     """
-#     Draft of the "/" endpoint. #todo
-#     """
-#     result, nl_query, error, steps_status, reasoning, driver = interactions.simulated_user(
-#         config.SPARKLIS_FILE,
-#         lambda driver: interactions.sparklisllm_question(driver, question, endpoint_sparql, system_name)
-#     )
-#     driver.close() # should close the page after the api request
-#     return response

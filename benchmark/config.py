@@ -24,7 +24,7 @@ BATCH_SIZE = 1
 # Location of the Sparklis file (local or remote)
 SPARKLIS_FILE = "http://localhost:8000/static/osparklis.html"
 
-# Location of the LLM API
+# Location of the LLM API (not used by Sparklis, but just to test if it is reachable when running the benchmark), to update in llm_utils.js if you want to use a different API
 LLM_API = 'http://localhost:1234/v1/'
 LLM_API_MODEL = LLM_API + 'models'
 
@@ -55,10 +55,9 @@ LANGUAGE_QUESTIONS = 'en'
 LANGUAGE_SPARKLIS = 'en'
 
 # Name of the tested system
-TESTED_SYSTEM = 'sparklisllm-LLMFrameworkOneShotForwardScoringReferences' # dummy | sparklisllm-[specific_system_name]
+TESTED_SYSTEM = 'sparklisllm-LLMFrameworkText2Sparql' # dummy | sparklisllm-[specific_system_name]
 
 # SPARQL endpoint, only used in scripts and not by the API
 #SPARQL_ENDPOINT = 'https://dbpedia.org/sparql'
 SPARQL_ENDPOINT = 'https://query.wikidata.org/sparql'
 #SPARQL_ENDPOINT = 'https://skynet.coypu.org/wikidata/'
-#SPARQL_ENDPOINT = 'invalid/endpoint' #todo erreur specifique?
