@@ -26,7 +26,7 @@ def simulated_user(url: str, interactions, driver: webdriver.Firefox = None) -> 
     """
     # Create a new driver if none is provided
     if driver is None:
-        driver = get_new_driver(is_headless=False)
+        driver = get_new_driver(is_headless=config.HIDE_BROWSER_ON_BENCHMARK_EVALUATION)
     driver.get(url)
     result, nl_query, error, steps_status, reasoning = interactions(driver)
     return result, nl_query, error, steps_status, reasoning, driver
