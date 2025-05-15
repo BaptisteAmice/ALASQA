@@ -54,6 +54,9 @@ LANGUAGE_QUESTIONS = 'en'
 # Language in which Sparklis will be used to answer the questions
 LANGUAGE_SPARKLIS = 'en'
 
+# If True, the browser is hidden during the benchmark evaluation (less heavy, but less readable)
+HIDE_BROWSER_ON_BENCHMARK_EVALUATION = True
+
 # Name of the tested system
 TESTED_SYSTEM = 'sparklisllm-LLMFrameworkText2Sparql' # dummy | sparklisllm-[specific_system_name]
 
