@@ -52,6 +52,7 @@ class Dummy(TestSystem):
 class Sparklisllm(TestSystem):
     # (static variable) allow to keep the same driver for all requests of a benchmark
     used_driver = None
+    keep_same_driver = False #True to keep the same browser for all the requests of a benchmark (can cause problems after too many requests, but faster)
 
     def create_query_body(self, question: str, endpoint: str) -> tuple[str, str, str, str]:
         response, nl_query, error, steps_status, reasoning, driver = interactions.simulated_user(
@@ -59,7 +60,10 @@ class Sparklisllm(TestSystem):
             lambda driver: interactions.sparklisllm_question(driver, question, endpoint, self.system_name),
             driver=Sparklisllm.used_driver,
         )
-        Sparklisllm.used_driver = driver
+        if Sparklisllm.keep_same_driver:
+            Sparklisllm.used_driver = driver
+        else:
+            driver.close() # close the driver before opening a new one
         return response, nl_query, error, steps_status, reasoning
     
     def end_system(self):
