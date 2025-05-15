@@ -4,7 +4,6 @@ console.log("QA extension active");
 var LAST_INITIATED_COMMAND = null; //used in case of error, to know which command was initiated last (code to update for each command needing it
 var LAST_RESOLVED_COMMAND = null; //used in case of error, to know which command was resolved last (code to update for each command needing it
 var previous_step = null; //used to store the previous command, to be able to go back to it if needed
-var temp_patch_needed = false; //used to know if a temporary patch is needed (code to update for each command needing it
 
 // upon window load... create text field and ENTER handler
 window.addEventListener(
@@ -109,7 +108,7 @@ async function process_steps(qa, place, steps) {
 					//Ignore the command
 					console.log("Ignoring the command "+ LAST_INITIATED_COMMAND + " because it doesn't have any results."); 
 					//a temp patch is needed because (a boardgame; property publisher; GMT Games) doesn't work well
-					temp_patch_needed = true; // signal that a temporary patch is needed
+					next_place = place; // keep the current place
 				}
 			} else {
 				LAST_RESOLVED_COMMAND = LAST_INITIATED_COMMAND;
@@ -146,12 +145,6 @@ async function process_steps(qa, place, steps) {
 				steps.unshift("up");
 				console.log("Steps after adding up: ", steps);
 				return process_steps(qa, place, steps);
-			} 
-
-			if (temp_patch_needed) {
-				temp_patch_needed = false; // reset the temporary patch needed flag
-				console.log("Temporary patch is used to prevent error after going back.");
-				return process_question(qa); // retry the question
 			}
 			
 			// default case if no save are possible
