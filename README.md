@@ -1,66 +1,69 @@
 # LLMAugmentedSparklisQA
 
-todo
-
 ## Description
 
+This repository contains an extension of Sparklis that integrates a Large Language Model (LLM) to generate SPARQL queries from natural language questions. The LLM extension is based on a command extension of Sparklis, which allows navigation in knowledge graphs using command chains instead of the graphical interface.
 
 ## Installation
-#todo used browser and its version
 
-launch a local llm
-    (in our case) mistral-nemo-instruct-2407
-set llm api in llm_utils.js and in benchmark/config.py
+This system has been tested on Linux and Windows, in Firefox and Brave (a chrome-based browser).
 
-if just want to interact with interface : open html file in browser or launch a server
+In order for the system to work correctly, an LLM should be available through an API. The system has been tested with mistral-nemo-instruct-2407 hosted thanks to LM Studio and accessible through an openAI like API. You will need to update the LLM endpoint URL in both `llm_utils.js` and `benchmark/config.py` to match your local API address.
 
-for api and benchmarking: 
-venv requirements.txt
-check the config.py file
+If you just want to use the interface, you can just open the html file in your browser. If you want to use the API or run benchmarks, you will need to install the Python dependencies.
 
-or via conda
+It is recommended to use a virtual environment (venv) or conda to install the dependencies.
+For creating the virtual environment, you can use the file requirements.txt. 
+If you want to use conda, you can use the file environment.yml.
+```bash
 conda env create --file=environment.yml
 conda activate llm-sparklis-env
+```
 
-### api
-if want to use api:
-launch the server
+You may need to install Drivers for the browser you are using in order for Selenium to work correctly. You can find the documentation for the drivers here: https://selenium-python.readthedocs.io/installation.html#drivers
 
-### benchmark
-launch the server: fastapi dev api.py
+You will need to check and update the config.py file in the benchmark folder to set different parameters (like the LLM endpoint, the SPARQL endpoint for benchmark runs, etc.).
 
-selenium
-might need Drivers in the path (for browser)(https://selenium-python.readthedocs.io/installation.html#drivers)
+### API
 
-## Usage
-launch a local llm accessible through an api
+If you want to use the API, you will need to run the server. You can use the file api.py to run the server. You can use the command below to run the server:
+```bash
+fastapi run .\benchmark\api.py  
+```
+By default the server will run on port 8000. 
+You will find the API documentation at http://localhost:8000/docs.
+You will also be able to find the hosted files of Sparklis used by the API at http://localhost:8000/static/osparklis.html.
 
-launch the api (or you can just open the html if you want to just use it manually)
-fastapi dev api.py
-(if virtual env not activated : source .venv/bin/activate)
+The API only accepts 2 endpoints designed by the identifiers https://text2sparql.aksw.org/2025/dbpedia/ and https://text2sparql.aksw.org/2025/corporate/. You can update the corresponding SPARQL endpoints in the api.py file.
 
-lm studio
-use gpu (vulkan for example)
+### Benchmark
+
+By launching the API before the benchmark, you won't have to update the location of osparklis.html in the config.py file and will be using the same version of Sparklis as the one used in the API.
+You can run the benchmark with the command below:
+```bash
+python benchmark/benchmark.py
+```
+
+# Text2Sparql
+
+You can also use text2sparql yml files to run benchmarks through the API.
+`translator_qald_to_text2sparql.py` can convert QALD JSON files to Text2SPARQL YAML files.
 
 
-to test text2sparql script you have to host graphes locally 
-for example with fuseki create
-http://localhost:3030/corporate/sparql
-and 
-http://localhost:3030/dbpedia/sparql
+You may want to host graphs locally to run the benchmarks.
+For that, you can for example use Fuseki2 to create the endpoints (https://jena.apache.org/documentation/fuseki2/).
 
-fuseki doc:
-https://jena.apache.org/documentation/fuseki2/
 
-then expose for example with tailscale 
+If you want to simply expose such a server to the internet, you can use tools such as Tailscale.
+To expose the API:
+```bash
 tailscale funnel 8000
-
-.\fuseki-server.bat (on windows)
-(needs https to be callable)
+```
+To expose the graphs (easy way to have the needed ssl certs):
+```bash
 tailscale funnel --https 3131 3030
-
+```
 
 ## License
-For open source projects, say how it is licensed.
 
-(todo check licenses selenium, etc.)
+Licence: Apache Licence 2.0
