@@ -336,63 +336,6 @@ function forward_commands_chain_system_prompt() {
     `;
 }
 
-function forward_commands_chain_system_prompt_match() {
-    return `
-    ## Task: Generate knowledge graph query commands for Sparklis (SPARQL-based tool).
-
-    ## Format:
-    1. Think step by step about what entities and relationships are needed.
-    2. Finish your response with a sequence of commands, separated by semicolons (;), and wrapped in <commands>...</commands>.
-
-    ### Available Commands:
-    - a [concept] → Retrieve entities of a given concept (e.g., "a book" to find books). **⚠️ IMPORTANT:** If the question already contains the name of an entity (e.g., the book title of the book), DO NOT use "a [concept]". Directly query the entity instead.
-    - match [string] → Retrieve the list of entities matching the string (e.g., "Albert Einstein" to find the entities representing Einstein). Use this when asking about a specific thing or individual.
-    - forwardProperty [property] → Filter by property (e.g., "forwardProperty director" to find films directed by someone). **⚠️ Forward direction only:** You can only move from subject to object, not the reverse. Structure queries accordingly.
-    - higherThan [number], lowerThan [number] → Value constraints.
-    - after [date], before [date] → Time constraints (e.g., "after 2000").
-
-    ### ⚠️ Best Practice:
-    **Try to start from a known entity whenever possible.** If the question includes a specific entity (e.g., "Tim Burton"), use it as the starting point instead of querying a general concept (e.g., "a person"). This helps create more precise queries.
-
-    ### Wikidata-Specific Precision:
-    - a human → real people
-    - a fictional human → fictional people
-
-    ## Examples:
-    Q: At which school went Yayoi Kusama?
-    A: 
-    - The question asks for the school where Yayoi Kusama studied.
-    - We first retrieve the entity "Yayoi Kusama".
-    - Then, we follow the "educated at" property to find the corresponding school.
-    <commands>match Yayoi Kusama; forwardProperty educated at</commands>
-
-    Q: What is the boiling point of water?
-    A: 
-    - The question asks for the boiling point of water.
-    - We first retrieve the entity "water".
-    - Then, we follow the "boiling point" property to get the value.
-    <commands>match water; forwardProperty boiling point</commands>
-
-    Q: Movies by Tim Burton after 1980?
-    A: 
-    - The question asks for movies directed by Tim Burton that were released after 1980.
-    - We start by retrieving entities of type "film".
-    - Then, we filter these films by the "director" property.
-    - Next, we match the specific director "Tim Burton".
-    - Finally, we apply a date filter to include only movies released after 1980.
-    <commands>a film; forwardProperty director; match Tim Burton; forwardProperty release date; after 1980</commands>
-
-    Q: among the founders of tencent company, who has been member of national people' congress?"
-    A: 
-    - The question asks for founders of Tencent who were also members of the National People's Congress.
-    - We first retrieve the entity "Tencent".
-    - Then, we follow the "founder of" property to get its founders.
-    - Next, we filter by the "position" property to check roles these founders held.
-    - Finally, we match "National People's Congress" to find those who were members.
-    <commands>match Tencent;forwardProperty founder of; forwardProperty position;match National People's Congress</commands>
-    `;
-}
-
 ///// Verifier
 function verifier_system_prompt() {
     return `For a given question, a given SPARQL query, and its result, evaluate whether the result of the query answers the question.
@@ -415,43 +358,6 @@ function refine_query_system_prompt() { //toimprove
     For example, if the expected answer is a boolean but the query does not return one, yet contains the necessary data to determine it, you must modify it to return the correct boolean value.
     If the query does not retrieve relevant data for answering the question, you must write a new query from scratch.
     Conclude your reasoning by wrapping the new query (without comments) in the <query>...</query> tags.`;
-}
-
-
-function following_command_system_prompt() { //toimprove
-    return `
-    You will be given a question, a SPARQL query, the result of executing that query, and the last command you used to achieve that result.
-    To continue building your query, follow these steps:
-
-    1. **Add one command at a time** to refine the query.
-    - Each command should add a new filter or condition to the query.
-    - Available Commands:
-        - a [concept] → Retrieve entities of a given concept (e.g., "a book" to find books).
-        - [entity] → Retrieve an entity (e.g., "Albert Einstein" to find the entity representing Einstein).
-        - forwardProperty [property] → Filter by property (e.g., "forwardProperty director" to find films directed by someone).
-        - backwardProperty [property] → Reverse relation (e.g., "backwardProperty director" to find directors of films).
-        - higherThan [number], lowerThan [number] → Value constraints.
-        - after [date], before [date] → Time constraints (e.g., "after 2000").
-        - and, or → Logical operators (e.g., if the previous command was "Tim Burton", you can add "or", and the next command could be "Steven Spielberg", to find films by either director).
-        - goback → Undo the last command.
-
-    Don't try to use ids such as Q513, instead just use the names of the entities.
-    
-    2. **Explain the reasoning** behind each command choice.
-    - Justify why each command is necessary to answer the question.
-    - Consider how each command narrows down the search space.
-
-    3. Conclude with the new command wrapped in <command>...</command>.
-
-    ### Examples:
-
-    **Q: Movies by Spielberg or Tim Burton after 1980?**
-    - We already retrieved films and filtered by director.
-    - To further narrow down the results, we need to filter by release date.
-    - We can get the property "release date" using the forwardProperty command.
-    - **Query:** \`<command>forwardProperty release date;</command>\`
-    - The next command should filter the release date to be after 1980.
-    `;
 }
 
 ///// Direct question to SPARQL
