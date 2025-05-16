@@ -30,7 +30,7 @@ def trim_request(request: str) -> str: #todo doesn't work for mintaka #neigher f
 #####################################
 
 
-class ExtractorMintaka: #todo uppdate for language and for filter, and for tags
+class ExtractorMintaka: #todo update for language and for filter, and for tags
     """
     Extracts data from the Mintaka1k benchmark
     """
