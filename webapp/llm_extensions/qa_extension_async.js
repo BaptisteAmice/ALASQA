@@ -4,6 +4,7 @@ console.log("QA extension active");
 var LAST_INITIATED_COMMAND = null; //used in case of error, to know which command was initiated last (code to update for each command needing it
 var LAST_RESOLVED_COMMAND = null; //used in case of error, to know which command was resolved last (code to update for each command needing it
 var previous_step = null; //used to store the previous command, to be able to go back to it if needed
+var wikidata_timeout_state = false; //used to know if currently in the mod to prevent timemout
 
 // upon window load... create text field and ENTER handler
 window.addEventListener(
@@ -372,6 +373,8 @@ async function process_step(place, step, target_suggestion_ranking = 1) {
 			sparklis.propertyLabels(), target_suggestion_ranking)
 	} else if ((match = /^property\s+(.+)$/.exec(step))) { //forward property first, then backward property
 		LAST_INITIATED_COMMAND = "property";
+		const property_start_time = performance.now();
+
 		const primaryFilter = sugg =>
 			suggestion_type(sugg) === "IncrRel" && sugg.orientation === "Fwd" ||
 			suggestion_type(sugg) === "IncrPred" && sugg.arg === "S";
@@ -382,6 +385,7 @@ async function process_step(place, step, target_suggestion_ranking = 1) {
 	
 		let result = null;
 		try {
+			//forward
 			result = await search_and_apply_suggestion(
 				place, "fwd property", match[1],
 				(place, constr) => place.getConceptSuggestions(false, constr),
@@ -393,15 +397,52 @@ async function process_step(place, step, target_suggestion_ranking = 1) {
 			console.log("No forward property found, trying backward property.");
 		}
 		
-	
-		if (!result || result.length === 0) {
-			result = search_and_apply_suggestion(
-				place, "bwd property", match[1],
-				(place, constr) => place.getConceptSuggestions(false, constr),
-				fallbackFilter,
-				sparklis.propertyLabels(),
-				target_suggestion_ranking
-			);
+		try {
+			//backward
+			if (!result || result.length === 0) {
+				result = await search_and_apply_suggestion(
+					place, "bwd property", match[1],
+					(place, constr) => place.getConceptSuggestions(false, constr),
+					fallbackFilter,
+					sparklis.propertyLabels(),
+					target_suggestion_ranking
+				);
+			}
+		} catch (error) {
+			//timeout
+			const property_elapsed_time = (performance.now() - property_start_time) / 1000; // in seconds
+			console.log("Property search took " + property_elapsed_time + " seconds.");
+			let input_wikidata = document.getElementById("input-wikidata-mode");
+			const error_is_probably_timeout = !wikidata_timeout_state && input_wikidata.checked && property_elapsed_time >= 60;
+			if (error_is_probably_timeout) {
+				console.warn("Trying to solve without timeout.");
+				wikidata_timeout_state = true;
+				//get the values corresponding to max_increment_samples and max_properties in the url
+				let document_max_increment_samples = document.getElementById("input-max-increment-samples");
+				let document_max_properties = document.getElementById("input-max-properties");
+				//in the url, or 200 if not found
+				const save_max_increment_samples = document_max_increment_samples.value;
+				const save_max_properties = document_max_properties.value;
+				//pass use at most and suggest at most to n for the time of the query
+				const temp_max_increment_samples = '3';
+				const temp_max_properties = '3';
+				//set the values
+				document_max_increment_samples.value = temp_max_increment_samples;
+				document_max_increment_samples.dispatchEvent(new Event('input', { bubbles: true })); // trigger the input event
+				document_max_properties.value = temp_max_properties;
+				document_max_properties.dispatchEvent(new Event('input', { bubbles: true })); // trigger the input event
+				try {
+					result = await process_step(place, step, target_suggestion_ranking)
+				} catch (error) {
+					console.warn("Failed to find the property even in timeout mode.");
+				}
+				//reset the values
+				document_max_increment_samples.value = save_max_increment_samples;
+				document_max_increment_samples.dispatchEvent(new Event('input', { bubbles: true })); // trigger the input event
+				document_max_properties.value = save_max_properties;
+				document_max_properties.dispatchEvent(new Event('input', { bubbles: true })); // trigger the input event
+				wikidata_timeout_state = false;
+			}
 		}
 		return result;
 		} else if ((match = /^propertyWithoutConstraint\s+(.+)$/.exec(step))) { //todo priority order??
