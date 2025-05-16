@@ -1,9 +1,6 @@
 # todo
 egypt biggest city is its capital city?
 
-76 pas bonne
-262 pas bonne
-
 75 bizarre
 
 # Added tags
@@ -44,6 +41,14 @@ return only the birthdays (technically respond to the question but probably not 
 ## 1
 returned all boardgames instead of just GMT boardgames
 now only returns GMT boardgames
+
+## 76
+returned the list of museums instead of their count
+now returns the count of museums in Paris
+
+## 262
+returned a list of thinhs bordering iran instead of the count
+now filters the list to only include countries and returns the count
 
 # Removed non-working in input file and now
 
