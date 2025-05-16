@@ -2,6 +2,18 @@
 # This script isn't sufficient and should be complemented by manual tagging
 
 import json
+import re
+
+
+def contains_literal_type(obj):
+    if isinstance(obj, dict):
+        if obj.get("type") == "literal":
+            return True
+        return any(contains_literal_type(v) for v in obj.values())
+    elif isinstance(obj, list):
+        return any(contains_literal_type(item) for item in obj)
+    return False
+
 
 def insert_tags_field(input_path: str, output_path: str):
     """
@@ -28,7 +40,7 @@ def insert_tags_field(input_path: str, output_path: str):
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
 
-def auto_tag_questions(input_path: str, output_path: str):
+def auto_tag_questions(input_path: str, output_path: str, keep_existing_tags: bool = True):
     """
     Adds specific tags to each question based on query structure, language content,
     and answer type. Tags are only added if not already present.
@@ -37,9 +49,14 @@ def auto_tag_questions(input_path: str, output_path: str):
         data = json.load(f)
 
     for q in data.get("questions", []):
-        if "tags" not in q:
+        if not keep_existing_tags:
+            # If not keeping existing tags, initialize an empty list
             q["tags"] = []
-            print("no tags")
+            print("Resetting tags to empty list.")
+        elif "tags" not in q:
+            # If the tags field doesn't exist, initialize an empty list
+            q["tags"] = []
+            print("No existing tags, initializing empty list.")
 
         tags = set(q["tags"])  # Use a set for fast lookup & to avoid duplicates
 
@@ -49,6 +66,12 @@ def auto_tag_questions(input_path: str, output_path: str):
             tags.add("aggregation")
         if "ask" in sparql:
             tags.add("ask")
+        if "limit  " in sparql:
+            tags.add("limit")
+        if "offset " in sparql:
+            tags.add("offset")
+        if ("YEAR(") in sparql or ("MONTH(") in sparql or ("DAY(") in sparql:
+            tags.add("time")
 
         # Check English language question
         # English question string
@@ -59,30 +82,121 @@ def auto_tag_questions(input_path: str, output_path: str):
                 break
         
         keyword_tags = {
-            "all ": ["all"],
+            " all ": ["all"],
             "not ": ["negation"],
-            "how many ": ["number", "literal"],
-            "how much ": ["number", "literal"],
-            "how tall ": ["number", "literal"],
-            "how often ": ["number", "literal"],
-            "how big ": ["number", "literal"],
-            "how long ": ["number", "literal"],
+            " and ": ["and"],
+            " or ": ["or"],
+            "how many ": ["number"],
+            "how much ": ["number"],
+            "how tall ": ["number"],
+            "how often ": ["number"],
+            "how big ": ["number"],
+            "how long ": ["number"],
             "the most ": ["the most"],
             "the least": ["the most"],
             "the first": ["the most"],
+            "the last": ["the most"],
+            "first ": ["the most"],
+            "last ": ["the most"],
             "largest": ["the most"],
+            "biggest": ["the most"],
+            "smallest": ["the most"],
             "highest": ["the most"],
+            "lowest": ["the most"],
             "longest": ["the most"],
+            "shortest": ["the most"],
             "tallest": ["the most"],
             "oldest": ["the most"],
+            "youngest": ["the most"],
+            "heaviest": ["the most"],
+            "lightest": ["the most"],
             "than": ["comparison"],
             "more ":["comparison"],
             "less ":["comparison"],
+            "people ": ["person"],
+            "who ": ["who", "person"], #not always a person but most of the time
             "author": ["author", "person"],
+            "writer": ["author", "person"],
+            "wrote": ["author", "person"],
             "actor": ["actor", "person"],
             "starring": ["actor", "person"],
             "directed": ["director", "person"],
             "director": ["director", "person"],
+            "player": ["person"],
+            "mayor ": ["person"],
+            "mayors ": ["person"],
+            "monarch  ": ["person"],
+            "monarchs ": ["person"],
+            "president ": ["person"],
+            "presidents ": ["person"],
+            "governor ": ["person"],
+            "governors ": ["person"],
+            "chancellor ": ["person"],
+            "chancellors ": ["person"],
+            "astronaut": ["person"],
+            "cosmonaut": ["person"],
+            "swimmer": ["person"],
+            "architect ": ["person"],
+            "architects ": ["person"],
+            "pope ": ["person"],
+            "politician ": ["person"],
+            "poet ": ["person"],
+            "musician": ["person"],
+            "bandleader": ["person"],
+            "designer ": ["person"],
+            "owner": ["person"],
+
+            # Celebrities
+            "dan brown": ["person"],
+            "albert": ["person"],
+            "einstein": ["person"],
+            "burton": ["person"],
+            "liz ": ["person"],
+            "taylor ": ["person"],
+            "william": ["person"],
+            "shatner": ["person"],
+            "guy ritchie": ["person"],
+            "garry": ["person"],
+            "marshall": ["person"],
+            "julia": ["person"],
+            "robert": ["person"],
+            "clint eastwood": ["person"],
+            "baldwin": ["person"],
+            "christian bale": ["person"],
+            "natalie": ["person"],
+            "portman": ["person"],
+            "francis": ["person"],
+            "ford coppola": ["person"],
+            "benicio": ["person"],
+            "del toro": ["person"],
+            "rourke": ["person"],
+            "ritchie": ["person"],
+            "neymar": ["person"],
+            "abraham": ["person"],
+            "lincoln": ["person"],
+            "ingrid": ["person"],
+            "bergman": ["person"],
+            "hillel Slovak": ["person"],
+            "jesse": ["person"],
+            "eisenberg": ["person"],
+            "lou reed": ["person"],
+            "john": ["person"],
+            "paul": ["person"],
+            "jfk ": ["person"],
+            "tom cruise": ["person"],
+            "sigmund freud": ["person"],
+            "douglas hofstadter": ["person"],
+            "obama": ["person"],
+            "michelle": ["person"],
+            "adele": ["person"],
+            "frank herbert": ["person"],
+            "shakespeare": ["person"],
+            "rachel stevens": ["person"],
+            "donald trump": ["person"],
+            "hillel slovak": ["person"],
+            "claudia": ["person"],
+            "schiffer": ["person"],
+
             "film": ["film"],
             "movie": ["film"],
             "episode": ["series"],
@@ -90,6 +204,7 @@ def auto_tag_questions(input_path: str, output_path: str):
             " book": ["book"],
             "countries": ["country", "location"],
             "country": ["country", "location"],
+
             "france": ["country", "location"],
             "germany": ["country", "location"],
             "italy": ["country", "location"],
@@ -97,15 +212,33 @@ def auto_tag_questions(input_path: str, output_path: str):
             "spain": ["country", "location"],
             "australia": ["country", "location"],
             "usa ": ["country", "location"],
-            "japan ": ["country", "location"],
+            "japan": ["country", "location"],
             "china": ["country", "location"],
+            "philippines": ["country", "location"],
+            "pakistan": ["country", "location"],
+            "ireland": ["country", "location"],
+            "netherlands": ["country", "location"],
+            "poland": ["country", "location"],
+            "ukraine": ["country", "location"],
+            "iraq": ["country", "location"],
+            "canada": ["country", "location"],
+
             "city": ["city", "location"],
             "capital": ["city", "location"],
+            
             "paris": ["city", "location"],
             "berlin": ["city", "location"],
             "london": ["city", "location"],
             "new york": ["city", "location"],
             "tokyo": ["city", "location"],
+            "heraklion": ["city", "location"],
+            "baikonur": ["city", "location"],
+            "moscow": ["city", "location"],
+            "munich": ["city", "location"],
+            "maribor": ["city", "location"],
+            "cairo": ["city", "location"],
+
+            "current": ["current"],
             "date": ["time"],
             "year": ["time"],
             "before ": ["time", "comparison"],
@@ -114,19 +247,31 @@ def auto_tag_questions(input_path: str, output_path: str):
             "where ": ["location", "where"],
             "place": ["location"],
             "locat": ["location"],
-            "enterprise": ["enterprise"],
-            "company": ["enterprise"],
-            "companies": ["enterprise"],
             "organization": ["organization"],
+            "enterprise": ["enterprise", "organization"],
+            "company": ["enterprise", "organization"],
+            "companies": ["enterprise", "organization"],
+
+            "gmt": ["enterprise", "organization"],
+            "air china": ["enterprise", "organization"],
+            "universal studios": ["enterprise", "organization"],
+
             "state ": ["state", "location"],
             "states ": ["state", "location"],
-            "who ": ["who"],
+
+            "wyoming": ["state", "location"],
+
             "what ": ["what"],
             "which ": ["which"],
             "football": ["sport"],
             "basketball": ["sport"],
+            "soccer": ["sport"],
             "player": ["player", "person"],
             "mountain": ["mountain"],
+
+            "urals": ["mountain"],
+            "everest": ["mountain"],
+
             "lake": ["lake"],
             "river": ["river"],
             "borders": ["borders"],
@@ -135,12 +280,40 @@ def auto_tag_questions(input_path: str, output_path: str):
             "university": ["education"],
             "death": ["death"],
             "died": ["death"],
+            "assassinated": ["death"],
+            "killed": ["death"],
             "birth": ["birth"],
             "born": ["birth"],
             "airport": ["airport"],
+
+            "minecraft": ["game"],
+            "boardgame": ["game"],
+            "don't starve": ["game"],
+            "Warcraft": ["game"],
+            "game": ["game"],
+
+            "language": ["language"],
         }
-        for keyword, associated_tags in keyword_tags.items():
-            if keyword in question_text:
+
+        matched_spans = []
+        question_text_lower = question_text.lower()
+
+        # Sort by length (longer phrases first)
+        # By sorting by length, if a a section of the question matches to several keywords patterns, we only add the keyword of the longest match (but if the other keyword appear somewhere else in the question, we add it)
+        sorted_keywords = sorted(keyword_tags.items(), key=lambda x: -len(x[0]))
+
+        for keyword, associated_tags in sorted_keywords:
+            for match in re.finditer(re.escape(keyword), question_text_lower):
+                start, end = match.span()
+
+                # Skip if this span overlaps with any previous match
+                if any(s <= start < e or s < end <= e for s, e in matched_spans):
+                    continue
+
+                # Record matched span
+                matched_spans.append((start, end))
+
+                # Add tags
                 for tag in associated_tags:
                     tags.add(tag)
 
@@ -149,13 +322,19 @@ def auto_tag_questions(input_path: str, output_path: str):
             tags.add("boolean")
 
         # if q["answers"][0]["results"]["bindings"] exists
-        # add if a single answer or several are expected
         if "results" in q.get("answers", [{}])[0]:
+            # add if a single answer or several are expected
             if "bindings" in q["answers"][0]["results"]:
                 if len(q["answers"][0]["results"]["bindings"]) == 1:
                     tags.add("single")
                 elif len(q["answers"][0]["results"]["bindings"]) > 1:
                     tags.add("list")
+
+            # Check if the answer is a literal
+            if contains_literal_type(q["answers"][0]["results"]["bindings"]):
+                tags.add("literal")
+
+        
 
         #order alphabetically the tags
         tags = sorted(tags)
@@ -258,7 +437,8 @@ if __name__ == "__main__":
     )
     auto_tag_questions(
         output_file,
-        output_file
+        output_file,
+        keep_existing_tags=False
     )
 
     print(get_all_tags(output_file))

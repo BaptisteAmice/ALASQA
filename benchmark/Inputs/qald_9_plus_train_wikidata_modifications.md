@@ -1,6 +1,11 @@
 # todo
 egypt biggest city is its capital city?
 
+76 pas bonne
+262 pas bonne
+
+75 bizarre
+
 # Added tags
 added tags to questions for post-processing
 Tag list: todo

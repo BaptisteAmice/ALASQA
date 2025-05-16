@@ -60,6 +60,8 @@ def generate_latex_table(stats):
     rows.append(header)
     rows.append(title)
 
+    nb_files = len(stats["Tous"]["Précision"]) # Total number of files
+
     for category in ["Tous", "Bool", "URIs", "Literals"]:
         pr = format_mean_std(stats[category]["Précision"])
         rc = format_mean_std(stats[category]["Rappel"])
@@ -67,7 +69,7 @@ def generate_latex_table(stats):
         row = f"{category} & {pr} & {rc} & {f1} \\\\"
         rows.append(row)
 
-    footer = "\\hline\n\\end{tabular}\n\\caption{Performances du modèle \\textbf{nemo} selon le type de résultat}\n\\label{tab:nemo-scores}\n\\end{table}"
+    footer = "\\hline\n\\end{tabular}\n\\caption{Performances du modèle \\textbf{nemo} selon le type de résultat (basé sur "+str(nb_files)+" exécutions)}\n\\label{tab:nemo-scores}\n\\end{table}"
     rows.append(footer)
     return "\n".join(rows)
 
