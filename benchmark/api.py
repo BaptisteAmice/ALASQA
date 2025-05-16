@@ -37,10 +37,11 @@ def get_answer(question: str, dataset: str) -> dict:
             dataset = "https://desktop-47kug2k.tail6a5b76.ts.net:3131/corporate/sparql"
     
     system_name = "sparklisllm-LLMFrameworkText2Sparql"
+    suggestion_commands_algo = 'best_at_individual_cmd'
     driver = interactions.get_new_driver(is_headless=True)
     result, nl_query, error, steps_status, reasoning, _ = interactions.simulated_user(
         config.SPARKLIS_FILE,
-        lambda drv: interactions.sparklisllm_question(drv, question, dataset, system_name),
+        lambda drv: interactions.sparklisllm_question(drv, question, dataset, system_name, suggestion_commands_algo),
         driver=driver
     )
     driver.close() # should close the page after the api request

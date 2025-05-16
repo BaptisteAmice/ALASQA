@@ -60,6 +60,9 @@ HIDE_BROWSER_ON_BENCHMARK_EVALUATION = True
 # Name of the tested system
 TESTED_SYSTEM = 'sparklisllm-LLMFrameworkText2Sparql' # dummy | sparklisllm-[specific_system_name]
 
+# Logic used to choose among suggestions
+SUGGESTION_COMMANDS_ALGO = 'best_at_individual_cmd' # best_at_individual_cmd | depth_first_search | beam_search
+
 # SPARQL endpoint, only used in scripts and not by the API
 #SPARQL_ENDPOINT = 'https://dbpedia.org/sparql'
 SPARQL_ENDPOINT = 'https://query.wikidata.org/sparql'

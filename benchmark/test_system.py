@@ -6,8 +6,9 @@ class TestSystem:
     Abstract class for a tested system.
     A system is used to create queries from questions and endpoints.
     """
-    def __init__(self, system_name: str):
+    def __init__(self, system_name: str, suggestion_commands_algo: str):
         self.system_name = system_name
+        self.suggestion_commands_algo = suggestion_commands_algo
 
     def create_query(self, question: str, endpoint: str) -> tuple[str, str, str, str]:
         """
@@ -57,7 +58,7 @@ class Sparklisllm(TestSystem):
     def create_query_body(self, question: str, endpoint: str) -> tuple[str, str, str, str]:
         response, nl_query, error, steps_status, reasoning, driver = interactions.simulated_user(
             config.SPARKLIS_FILE,
-            lambda driver: interactions.sparklisllm_question(driver, question, endpoint, self.system_name),
+            lambda driver: interactions.sparklisllm_question(driver, question, endpoint, self.system_name, self.suggestion_commands_algo),
             driver=Sparklisllm.used_driver,
         )
         if Sparklisllm.keep_same_driver:
@@ -75,13 +76,13 @@ class Sparklisllm(TestSystem):
 
 #####################################
 
-def testSystemFactory(system_name: str) -> TestSystem:
+def testSystemFactory(system_name: str, suggestion_commands_algo: str) -> TestSystem:
     """
     Factory method to create a test system.
     """
     if system_name == "dummy":
-        return Dummy(system_name)
+        return Dummy(system_name, suggestion_commands_algo)
     elif "sparklisllm" in system_name:
-        return Sparklisllm(system_name)
+        return Sparklisllm(system_name, suggestion_commands_algo)
     else:
         raise ValueError('Unknown test system name')

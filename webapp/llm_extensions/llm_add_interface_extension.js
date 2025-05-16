@@ -108,6 +108,7 @@ document.addEventListener("DOMContentLoaded", function () {
     menu.classList.add("chatbot-menu");
     menu.style.display = "none";
 
+    // Create the dropdown for the system selection
     let system_dropdown = document.createElement("select");
     system_dropdown.id = "system-dropdown";
     system_dropdown.name = "system-dropdown";

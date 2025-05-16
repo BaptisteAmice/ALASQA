@@ -12,7 +12,9 @@ import config
 
 ERROR_PREFIX = "Error: "
 
-def main(benchmark_file: str, benchmark_name: str, tested_system_name: str, endpoint: str, used_llm: str):
+def main(benchmark_file: str, benchmark_name: str, 
+         tested_system_name: str, suggestion_commands_algo: str, 
+         endpoint: str, used_llm: str):
     """
     Evaluation of a system on a benchmark, based on the configuration in config.py.
     """
@@ -21,11 +23,11 @@ def main(benchmark_file: str, benchmark_name: str, tested_system_name: str, endp
     #This part is only done one time
     now = datetime.datetime.now()
     filename = benchmark_name+'_'+tested_system_name+'_'+now.strftime('%Y%m%d_%H%M%S')+'.json'
-    meta: dict = metadata(benchmark_name, tested_system_name, endpoint, used_llm)
+    meta: dict = metadata(benchmark_name, tested_system_name, suggestion_commands_algo, endpoint, used_llm)
     questions_ids, questions, benchmark_queries, tags = extract_benchmark(benchmark_file, benchmark_name)
 
     # Create the system object
-    system: TestSystem = testSystemFactory(tested_system_name)
+    system: TestSystem = testSystemFactory(tested_system_name, suggestion_commands_algo)
 
 
     # Initialize empty lists to accumulate results
@@ -89,7 +91,7 @@ def main(benchmark_file: str, benchmark_name: str, tested_system_name: str, endp
     logging.info('########## System evaluation End ##########')
 
 
-def metadata(benchmark_name: str, tested_system_name: str, endpoint: str, used_llm: str) -> dict:
+def metadata(benchmark_name: str, tested_system_name: str, suggestion_commands_algo: str, endpoint: str, used_llm: str) -> dict:
     """
     Create a metadata dictionary.
     """
@@ -97,6 +99,7 @@ def metadata(benchmark_name: str, tested_system_name: str, endpoint: str, used_l
     return {
         'BenchmarkName' : benchmark_name,
         'TestedSystem' : tested_system_name,
+        'SuggestionCommandsAlgo' : suggestion_commands_algo,
         'Date' : datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         'Endpoint' : endpoint,
         'UsedLLM' : used_llm
@@ -416,4 +419,4 @@ if __name__ == "__main__":
     # Start the evaluation
     for _ in range(config.NB_TESTS):
         main(config.BENCHMARK_FILE, config.BENCHMARK_NAME, config.TESTED_SYSTEM, 
-            config.SPARQL_ENDPOINT, used_llm)
+            config.SUGGESTION_COMMANDS_ALGO, config.SPARQL_ENDPOINT, used_llm)

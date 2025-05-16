@@ -1,6 +1,14 @@
 // reporting that this extension is active
 console.log("QA extension active");
 
+// list of ways to select suggestions
+window.suggestion_commands_algo = [
+	"best_at_individual_cmd",
+	"depth_first_search",
+	"beam_search"
+];
+	
+
 var LAST_INITIATED_COMMAND = null; //used in case of error, to know which command was initiated last (code to update for each command needing it
 var LAST_RESOLVED_COMMAND = null; //used in case of error, to know which command was resolved last (code to update for each command needing it
 var previous_step = null; //used to store the previous command, to be able to go back to it if needed
@@ -16,7 +24,32 @@ window.addEventListener(
 		event.stopPropagation();
 		process_question(qa);
 	    }
-	})
+	});
+
+	// Create the dropdown for the suggestion algorithm selection
+    let suggestion_commands_algo_dropdown = document.createElement("select");
+    suggestion_commands_algo_dropdown.id = "suggestion-commands-algo-dropdown";
+    suggestion_commands_algo_dropdown.name = "suggestion-commands-algo-dropdown";
+    suggestion_commands_algo_dropdown.style.marginBottom = "10px";
+	suggestion_commands_algo_dropdown.style.marginRight = "10px";
+    suggestion_commands_algo_dropdown.style.padding = "8px";
+    suggestion_commands_algo_dropdown.style.fontSize = "14px";
+    suggestion_commands_algo_dropdown.style.border = "1px solid #ddd";
+    suggestion_commands_algo_dropdown.style.borderRadius = "5px";
+    suggestion_commands_algo_dropdown.style.cursor = "pointer";
+    suggestion_commands_algo_dropdown.style.backgroundColor = "#f8f9fa";
+    suggestion_commands_algo_dropdown.style.color = "black";
+    
+    // Add the available algo to the dropdown
+    window.suggestion_commands_algo.forEach(algo => {
+        let option = document.createElement("option");
+        option.value = algo;
+        option.text = algo;
+        suggestion_commands_algo_dropdown.appendChild(option);
+    });
+
+	// Add the dropdown next to the qa input field
+	qa.parentNode.insertBefore(suggestion_commands_algo_dropdown, qa);
 });
 
 /* processing a question, i.e. a sequence of steps */
@@ -43,7 +76,8 @@ async function process_question(qa) {
     console.log("Steps: " + steps);
     let place = sparklis.currentPlace();
 
-	let commands_algo = "beam_search";
+	let commands_algo = $("#suggestion-commands-algo-dropdown").val();
+	console.log("Commands algo: ", commands_algo);
 	let final_place;
 	switch (commands_algo) {
 		case "depth_first_search":
@@ -53,7 +87,7 @@ async function process_question(qa) {
 			//final_place = await beam_search(qa, steps, place, number_of_top_sugg_considered = 6, beam_width = 3);
 			final_place = await beam_search(qa, steps, place, number_of_top_sugg_considered = 3, beam_width = 3);
 			break;
-		case "none":
+		case "best_at_individual_cmd":
 		default:
     		final_place = await process_steps(qa, place, steps);
 	}
