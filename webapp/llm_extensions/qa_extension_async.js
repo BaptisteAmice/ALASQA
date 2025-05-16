@@ -149,6 +149,7 @@ async function process_steps(qa, place, steps) {
 			
 			// default case if no save are possible
 			LAST_INITIATED_COMMAND = null; // reset the last initiated command
+			qa.disabled = false; // also re-enable the input field on fail
 			return Promise.reject(msg); // Propagate error
 	    })
     }

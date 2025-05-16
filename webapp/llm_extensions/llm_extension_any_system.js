@@ -351,13 +351,19 @@ function step_remove_limit(framework, query, limit) {
 function step_change_or_add_limit(framework, query, limit) {
     console.log("Query before limit change: ", query);
     framework.reasoning_text += "<br>Adding LIMIT " + limit + "<br>";
+
+    // Only change the query if it is not null or empty
+    if (!query || typeof query !== 'string' || query.trim() === '') {
+        console.warn("Query is empty or undefined, cannot add LIMIT.");
+        return query; // Return the original query if it's empty or undefined
+    }
     
     // Remove existing LIMIT clause (case-insensitive)
     const queryWithoutLimit = query.replace(/LIMIT\s+\d+/i, '').trim();
-    
+
     // Ensure there's a newline before appending LIMIT
     const updatedQuery = `${queryWithoutLimit}\nLIMIT ${limit}`;
-    
+
     return updatedQuery;
 }
 
@@ -424,6 +430,12 @@ function step_change_or_add_offset(framework, query, offset) {
     console.log("Query before offset change: ", query);
     framework.reasoning_text += "<br>Adding OFFSET " + offset + "<br>";
 
+    // Only change the query if it is not null or empty
+    if (!query || typeof query !== 'string' || query.trim() === '') {
+        console.warn("Query is empty or undefined, cannot add OFFSET.");
+        return query; // Return the original query if it's empty or undefined
+    }
+
     // Remove existing OFFSET clause (case-insensitive)
     let queryWithoutOffset = query.replace(/OFFSET\s+\d+/i, '').trim();
 
@@ -470,6 +482,13 @@ function step_change_order_type_to_date(framework, query) {
 
 function step_remove_ordering_var_from_select(framework, query) {
     framework.reasoning_text += "<br>Removing ordering variable from SELECT<br>";
+
+    // Only change the query if it is not null or empty
+    if (!query || typeof query !== 'string' || query.trim() === '') {
+        console.warn("Query is empty or undefined, cannot remove ordering variable.");
+        return query; // Return the original query if it's empty or undefined
+    }
+
     const selectRegex = /SELECT\s+(DISTINCT\s+)?([^\n\r{]+)/i;
     const orderRegex = /ORDER\s+BY\s+([^\n\r]+)/i;
 
