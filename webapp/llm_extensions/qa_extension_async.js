@@ -788,13 +788,15 @@ class SparklisState {
 		} else {
 			console.log("No more steps to execute.");
 		}
+		// reverse the order of the children to have the best one first evaluated in a pile (and same result as best_at_individual_cmd for several children of same score)
+		this.children = this.children.reverse(); 
 		this.evaluated = true; // mark as evaluated
 		SparklisState.number_of_evaluated_states++; // increment the number of evaluated states
 	}
 
 	toJSON() {
 		return {
-		  place: this.place.id || this.place.toString(), // customize as needed
+		  link: this.place.permalink(), // return the permalink of the place
 		  score: this.score,
 		  remaining_commands: this.remaining_commands,
 		  evaluated: this.evaluated,
