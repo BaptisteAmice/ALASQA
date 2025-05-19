@@ -116,7 +116,8 @@ def precision_recall_f1_plot(precision, recall, f1_scores):
 
     plt.xlabel("Questions")
     plt.ylabel("Score")
-    plt.title("Performance of the system for each question")
+    if not show:
+        plt.title("Performance of the system for each question")
     plt.legend()
     plt.grid(True)
     pp.savefig()
@@ -201,7 +202,8 @@ def plot_scores_relative_to_core_responses(core_files: list[str], new_file: str,
         plt.legend(handles=[worse_handle, better_handle, in_range_handle])
         plt.xlabel("Response Key (Numerically Ordered)")
         plt.ylabel(metric)
-        plt.title(f"Comparison of {metric} scores to all core responses")
+        if not show:
+            plt.title(f"Comparison of {metric} scores to all core responses")
 
         # Show only selected x-axis labels
         plt.xticks(
@@ -235,7 +237,8 @@ def boxplot_scores(precision, recall, f1_scores, title_end: str):
         plt.text(x=0.5,y=0.5,s="No scores to plot.")
 
     plt.ylabel("Score")
-    plt.title("Boxplot of the scores for " + title_end)
+    if not show:
+        plt.title("Boxplot of the scores for " + title_end)
     plt.legend()
     plt.grid(True)
     pp.savefig()
@@ -329,7 +332,8 @@ def hist_first_non_done_step(data: list, title_end: str):
     plt.bar(unique_values, counts, color='skyblue', edgecolor='black')
     plt.xlabel('First non-Done Step')
     plt.ylabel('Count')
-    plt.title("Histogram of First Non-Done Steps for "  + title_end)
+    if not show:
+        plt.title("Histogram of First Non-Done Steps for "  + title_end)
     plt.xticks(unique_values)  # Ensure all unique values appear on x-axis
     plt.grid(axis='y')
 
@@ -380,8 +384,11 @@ def plot_box_system_time(filtered_data):
     system_times = [entry.get("SystemTime") for entry in filtered_data.values()]
     plt.figure()
     plt.boxplot(system_times)
-    plt.ylabel("System Time")
-    plt.title("Boxplot of the System Time")
+    plt.ylabel("System Time (seconds)")
+    if not show:
+        plt.title("Boxplot of the system's response time")
+    #hide x-axis ticks
+    plt.xticks([])
     plt.grid(True)
     pp.savefig()
     if show:
@@ -525,7 +532,8 @@ def generate_boxplot(list_of_lists, values, x_label: str, y_label: str, label_ro
     # Make the boxplot
     sns.boxplot(x=str(x_label), y=str(y_label), data=data, fill=False)
     plt.xticks(rotation=label_rotation, ha="right", fontsize=10)  # Adjust rotation and alignment
-    plt.title("Boxplot of " + y_label + " per " + x_label)
+    if not show:
+        plt.title("Boxplot of " + y_label + " per " + x_label)
     plt.grid()
     pp.savefig()
     if show:
@@ -681,7 +689,8 @@ def generate_score_comparison_matrices_to_core(core_files: list[str], new_files:
         better_patch = mpatches.Patch(color='green', label=f'Better ({nbre_improvements})')
         same_patch = mpatches.Patch(color='blue', label=f'No Change ({nbre_no_change})')
         plt.legend(handles=[worse_patch, better_patch, same_patch], loc='upper center', bbox_to_anchor=(0.5, -0.1), ncol=3)
-        plt.title(f"Comparison to previous system of {metric} using '{evaluated_criteria}' criterion")
+        if not show:
+            plt.title(f"Comparison to previous system of {metric} using '{evaluated_criteria}' criterion")
         pp.savefig()
         if show:
             plt.show()
@@ -772,7 +781,8 @@ def generate_score_comparison_matrices_to_treshold(new_files: list[str], evaluat
         better_patch = mpatches.Patch(color='green', label=f'x==1: ({nbre_improvements})')
         same_patch = mpatches.Patch(color='blue', label=f'0<x<1: ({nbre_no_change})')
         plt.legend(handles=[worse_patch, better_patch, same_patch], loc='upper center', bbox_to_anchor=(0.5, -0.1), ncol=3)
-        plt.title(f"{metric} scores using {evaluated_criteria} criteria")
+        if not show:
+            plt.title(f"{metric} scores using {evaluated_criteria} criteria")
         pp.savefig()
         if show:
             plt.show()
@@ -806,7 +816,8 @@ def plot_hist_scores_per_thresholds(filtered_data, thresholds: list = [0, 0.25, 
         plt.xticks(range(len(thresholds)), [f"<={threshold}" for threshold in thresholds])
         plt.xlabel("Threshold Range")
         plt.ylabel("Count")
-        plt.title(f"Histogram of {metric_name}s per Threshold")
+        if not show:
+            plt.title(f"Histogram of {metric_name}s per Threshold")
         plt.grid(True)
         pp.savefig()  # Save the plot to the PDF
         if show:
@@ -853,7 +864,8 @@ def plot_tree(data, title="Tree Representation"):
         pos = nx.spring_layout(G, seed=42)  # Alternative if pygraphviz is not installed
 
     nx.draw(G, pos, with_labels=True, node_size=2000, node_color="lightblue", edge_color="gray", font_size=10)
-    plt.title(title)
+    if not show:
+        plt.title(title)
     pp.savefig()
     if show:
         plt.show()
@@ -913,7 +925,8 @@ def plot_confusion_matrix_bool(filtered_data):
     # Plotting
     plt.figure(figsize=(6, 4))
     sns.heatmap(matrix, annot=True, fmt="d", cmap="Blues", xticklabels=["True","False", "Other"], yticklabels=["True","False"], cbar=False)
-    plt.title("Confusion Matrix for boolean results")
+    if not show:
+        plt.title("Confusion Matrix for boolean results")
     plt.ylabel("Benchmark Class")
     plt.xlabel("Predicted Class")
     pp.savefig()
@@ -1045,7 +1058,8 @@ def boolean_prediction_fiability_confusion_matrix_with_variability(file_names: l
     # Plotting
     plt.figure(figsize=(6, 4))
     sns.heatmap(matrix, annot=True, fmt=".2f", cmap="Blues", xticklabels=["Boolean","Non-Boolean", "Other"], yticklabels=["Boolean","Non-Boolean"], cbar=False)
-    plt.title("Confusion Matrix for Boolean type prediction fiability")
+    if not show:
+        plt.title("Confusion Matrix for Boolean type prediction fiability")
     plt.ylabel("Benchmark Class")
     plt.xlabel("Predicted Class")
     # Add the standard deviation as text
@@ -1096,7 +1110,8 @@ def question_word_ratio_ranking(filtered_data_0, filtered_data_1, title_compleme
     plt.xticks(rotation=45, ha="right", fontsize=10)
     plt.xlabel("Words")
     plt.ylabel("Frequency Ratio (+1 smoothing)")
-    plt.title(f'Top {number_of_words} worst words by ratio - {title_complement}')
+    if not show:
+        plt.title(f'Top {number_of_words} worst words by ratio - {title_complement}')
 
     plt.grid()
     pp.savefig()
@@ -1152,7 +1167,8 @@ def question_tags_pp(filtered_data, file_name):
         plt.xticks(rotation=45, ha="right", fontsize=10)
         plt.xlabel("Tags")
         plt.ylabel(metric_names[i])
-        plt.title(f'Boxplot of {metric_names[i]} per Tag')
+        if not show:
+            plt.title(f'Boxplot of {metric_names[i]} per Tag')
         plt.grid()
         pp.savefig()
         if show:
@@ -1178,7 +1194,8 @@ def question_tags_pp(filtered_data, file_name):
     plt.xticks(rotation=45, ha="right", fontsize=10)
     plt.xlabel("Tags")
     plt.ylabel("Frequency Ratio (+1 smoothing)")
-    plt.title(f'Top {len(all_tags)} worst tags by ratio')
+    if not show:
+        plt.title(f'Top {len(all_tags)} worst tags by ratio')
     plt.grid()
     pp.savefig()
     if show:
