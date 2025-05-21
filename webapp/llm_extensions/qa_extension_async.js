@@ -788,8 +788,6 @@ class SparklisState {
 		} else {
 			console.log("No more steps to execute.");
 		}
-		// reverse the order of the children to have the best one first evaluated in a pile (and same result as best_at_individual_cmd for several children of same score)
-		this.children = this.children.reverse(); 
 		this.evaluated = true; // mark as evaluated
 		SparklisState.number_of_evaluated_states++; // increment the number of evaluated states
 	}
@@ -827,6 +825,8 @@ async function depth_first_search(qa, commands, place, number_of_top_sugg_consid
 		let curr = stack.pop();
 		if (!curr.evaluated) {
 			await curr.evaluate(); // create direct children
+			// reverse the order of the children to have the best one first evaluated in a pile (and same result as best_at_individual_cmd for several children of same score)
+			curr.children = curr.children.reverse(); 
 			qa.value = curr.remaining_commands.join(" ; "); // update qa field
 			console.log("state evaluated: ", curr);
 			//console.log("Evaluated state: ", curr.place, " with score: ", curr.score);
