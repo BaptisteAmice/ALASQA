@@ -693,6 +693,8 @@ def generate_score_comparison_matrices_to_core(core_files: list[str], new_files:
             plt.title(f"Comparison to previous system of {metric} using '{evaluated_criteria}' criterion")
         pp.savefig()
         if show:
+            #force the cases to be square
+            ax.set_aspect('equal', adjustable='box')
             plt.show()
         plt.close()
 
@@ -785,6 +787,8 @@ def generate_score_comparison_matrices_to_treshold(new_files: list[str], evaluat
             plt.title(f"{metric} scores using {evaluated_criteria} criteria")
         pp.savefig()
         if show:
+            #force the cases to be square
+            ax.set_aspect('equal', adjustable='box')
             plt.show()
         plt.close()
 
@@ -1071,6 +1075,38 @@ def boolean_prediction_fiability_confusion_matrix_with_variability(file_names: l
         plt.show()
     plt.close()
 
+def question_word_ranking(filtered_valid_data, number_of_words=30):
+    """
+    Extracts the most frequent words from the questions in the filtered data.
+    """
+    word_count = defaultdict(int)
+
+    for entry in filtered_valid_data.values():
+        question = entry.get("Question")
+        if question:
+            words = re.findall(r'\w+', question.lower())
+            for word in words:
+                word_count[word] += 1
+
+    # Sort by frequency (descending)
+    sorted_words = sorted(word_count.items(), key=lambda x: x[1], reverse=True)
+
+    words, counts = zip(*sorted_words[:number_of_words])
+
+    plt.figure(figsize=(12, 6))
+    plt.bar(words, counts, color='skyblue', edgecolor='black')
+    plt.xticks(rotation=45, ha="right", fontsize=10)
+    plt.xlabel("Words")
+    plt.ylabel("Frequency")
+    if not show:
+        plt.title('Top {number_of_words} most frequent words in questions')
+
+    plt.grid()
+    pp.savefig()
+    if show:
+        plt.show()
+    plt.close()
+
 def question_word_ratio_ranking(filtered_data_0, filtered_data_1, title_complement="", number_of_words=30):
     word_count_0 = defaultdict(int)
     word_count_1 = defaultdict(int)
@@ -1157,6 +1193,22 @@ def question_tags_pp(filtered_data, file_name):
         all_tags_recalls.append(recalls)
         all_tags_f1_scores.append(f1_scores)
 
+    # Plot ranking of tags frequency
+    tag_frequencies = [len(filtered_tags_data_dict[tag]) for tag in all_tags]
+    sorted_tags = sorted(zip(all_tags, tag_frequencies), key=lambda x: x[1], reverse=True)
+    tags, frequencies = zip(*sorted_tags)
+    plt.figure(figsize=(12, 6))
+    colors = ['lightblue' for f in frequencies]
+    plt.bar(tags, frequencies, color=colors, edgecolor='black')
+    plt.xticks(rotation=45, ha="right", fontsize=10)
+    plt.xlabel("Tags")
+    plt.ylabel("Frequency")
+    if not show:
+        plt.title(f'Top {len(all_tags)} most frequent tags')
+    plt.grid()
+    pp.savefig()
+    if show:
+        plt.show()
 
     # Plot boxplots for each metric
     metrics = [all_tags_precisions, all_tags_recalls, all_tags_f1_scores]
@@ -1489,6 +1541,7 @@ def make_pdf_report(files_names: list[str], core_files_names: list[str], questio
     }
     filtered_f1_at_1 = load_and_filter_data(file_name, constraints_f1_at_1)
 
+    question_word_ranking(filtered_valid_data)
     question_word_ratio_ranking(filtered_f1_at_0, filtered_f1_at_1, "F1at0/F1at1")
     
 
