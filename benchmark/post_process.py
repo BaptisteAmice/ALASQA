@@ -1193,10 +1193,10 @@ def question_tags_pp(filtered_data, file_name):
         all_tags_recalls.append(recalls)
         all_tags_f1_scores.append(f1_scores)
 
-    # Plot ranking of tags frequency
+    # Plot ranking of tags frequency for the 30 first tags
     tag_frequencies = [len(filtered_tags_data_dict[tag]) for tag in all_tags]
     sorted_tags = sorted(zip(all_tags, tag_frequencies), key=lambda x: x[1], reverse=True)
-    tags, frequencies = zip(*sorted_tags)
+    tags, frequencies = zip(*sorted_tags[0:30])
     plt.figure(figsize=(12, 6))
     colors = ['lightblue' for f in frequencies]
     plt.bar(tags, frequencies, color=colors, edgecolor='black')
