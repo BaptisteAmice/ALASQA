@@ -104,3 +104,16 @@ now return 4 books instead of none
 all tim burton movies can't be found by the "creator" property
 ->also need "producer" and "director"
 "capital cost" is more present than "budget"
+
+# Changed question translation
+
+## fr
+### 24
+Donnez-moi une liste de tous les joueurs de trempette qui sont chefs de groupe.
+to
+Donnez-moi une liste de tous les joueurs de trompette qui sont chefs de groupe.
+
+### 180
+Luke est-il le père de Dark Vador ?
+to
+Dark Vador est-il le père de Luke ?
