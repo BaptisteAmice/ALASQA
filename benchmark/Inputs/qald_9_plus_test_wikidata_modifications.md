@@ -54,17 +54,17 @@ null
 Titles are mistranslated in the French version of the questions.
 Didn't correct other question, but don't seem translated by a french speaker.
 
-### 99
-Replaced "Quels acteurs jouent dans la Théorie du Big Bang?"
+### 79
+Replaced "Y a-t-il des serrures aux États-Unis?"
 by
-"Quels acteurs jouent dans Big Bang Theory?"
+"Y a-t-il des chateaux aux États-Unis ?"
 
 ### 157
 Replaced "Donnez-moi des acteurs anglais jouant dans \" Remember All Links»"
 by
 "Donnez-moi des acteurs anglais jouant dans Lovesick."
 
-### 79
-Replaced "Y a-t-il des serrures aux États-Unis?"
+### 168
+Replaced "Quels acteurs jouent dans la Théorie du Big Bang?"
 by
-"Y a-t-il des chateaux aux États-Unis ?"
+"Quels acteurs jouent dans Big Bang Theory?"
