@@ -85,6 +85,11 @@ class ExtractorQald:
                 if q["language"] == language:
                     question_in_language = q["string"]
                     break
+
+            # Skip if question in desired language not found
+            if question_in_language is None:
+                continue
+
             questions.append(question_in_language)
 
             request = item['query']['sparql']
