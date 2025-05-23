@@ -67,4 +67,4 @@ by
 ### 168
 Replaced "Quels acteurs jouent dans la Théorie du Big Bang?"
 by
-"Quels acteurs jouent dans The Big Bang Theory?"
+"Quels acteurs jouent dans Big Bang Theory?"
