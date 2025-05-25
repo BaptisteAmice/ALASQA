@@ -50,6 +50,9 @@ now returns the count of museums in Paris
 returned a list of thinhs bordering iran instead of the count
 now filters the list to only include countries and returns the count
 
+## 350 
+wdt:P287 to wdt:P84
+
 # Removed non-working in input file and now
 
 ## 13
