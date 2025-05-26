@@ -27,13 +27,15 @@ too vague
 ## 25
 "Find all Turkish verbs ending with \u201cu\u015f\u201d with their lemma."
 
+## 87
+
+## 145
+
 ## 195
 "What event killed the most people in the years 1910 to 1920?"
 
-# Not knowing what to do
-## 145
-Is samurai champloo a piece of original work or an adaptation?
--> if it has an adaptation, it will be true for one entity and false for another...
-(not working)
+## 258
+
+## 330
 
 
