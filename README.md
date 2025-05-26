@@ -6,7 +6,7 @@ This repository contains an extension of Sparklis that integrates a Large Langua
 
 ## Installation
 
-This system has been tested on Linux and Windows, in Firefox and Brave (a chrome-based browser).
+This system has been tested on Linux and Windows, in Firefox and Brave (a chrome-based browser) with LM Studio (between versions 0.3.9 and 0.3.14).
 
 In order for the system to work correctly, an LLM should be available through an API. The system has been tested with mistral-nemo-instruct-2407 hosted thanks to LM Studio and accessible through an openAI like API. You will need to update the LLM endpoint URL in both `llm_utils.js` and `benchmark/config.py` to match your local API address.
 
@@ -41,7 +41,13 @@ The API only accepts 2 endpoints designed by the identifiers https://text2sparql
 By launching the API before the benchmark, you won't have to update the location of osparklis.html in the config.py file and will be using the same version of Sparklis as the one used in the API.
 You can run the benchmark with the command below:
 ```bash
-python benchmark/benchmark.py
+python benchmark/system_evaluation.py
+```
+
+A PDF containing plots can then be generated using the resultig JSON file as input
+through:
+```bash
+python benchmark/post_process.py
 ```
 
 # Text2Sparql
