@@ -38,9 +38,6 @@
 119
 116
 
-todo chec si ssous ensemble de tain
-
-
 # Changed question translation
 
 ## fr
