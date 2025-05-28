@@ -11,6 +11,7 @@ import networkx as nx
 import numpy as np
 import os
 import re
+import math
 
 logging.basicConfig(
     level=logging.INFO, # NOTSET | DEBUG | INFO | WARNING | ERROR | CRITICAL
@@ -617,10 +618,15 @@ def generate_score_comparison_matrices_to_core(core_files: list[str], new_files:
         full_key_range = sorted(all_keys)
 
     if max_columns is None:
-        max_columns = int(np.ceil(np.sqrt(len(full_key_range))))
+        max_columns = int(np.ceil(np.sqrt(len(full_key_range))) * 1.5)
+    num_rows = (len(full_key_range) + max_columns - 1) // max_columns
 
+    cell_size = 0.8
+    fig_width = max_columns * cell_size
+    fig_height = num_rows * cell_size
     for metric in metrics:
-        plt.figure(figsize=(12, 12))
+        plt.figure(figsize=(fig_width, fig_height))
+
         ax = plt.gca()
         ax.set_frame_on(False)
         ax.set_xticks([])
@@ -647,16 +653,16 @@ def generate_score_comparison_matrices_to_core(core_files: list[str], new_files:
                 new_score = evaluate_criteria(new_scores, evaluated_criteria)
 
                 if new_score < core_score:
-                    color = 'red'
+                    color = 'lightcoral'
                     nbre_degradations += 1
                 elif new_score > core_score:
-                    color = 'green'
+                    color = 'springgreen'
                     nbre_improvements += 1
                 else:
-                    color = 'blue'
+                    color = 'lightblue'
                     nbre_no_change += 1
 
-                text = f"{key}\n{new_score:.3f}"
+                text = f"{key}\n{new_score:.2f}"
             else:
                 color = 'white'
                 text = f"{key}"
@@ -664,7 +670,6 @@ def generate_score_comparison_matrices_to_core(core_files: list[str], new_files:
             table_data.append(text)
             cell_colors.append(color)
 
-        num_rows = (len(full_key_range) + max_columns - 1) // max_columns
         table_matrix = np.full((num_rows, max_columns), "", dtype=object)
         color_matrix = np.full((num_rows, max_columns), "white", dtype=object)
 
@@ -679,22 +684,22 @@ def generate_score_comparison_matrices_to_core(core_files: list[str], new_files:
 
         for row in range(num_rows):
             for col in range(max_columns):
-                table.add_cell(row, col, cell_width, cell_height,
+                cell = table.add_cell(row, col, cell_width, cell_height,
                                text=table_matrix[row, col],
                                facecolor=color_matrix[row, col],
                                edgecolor='black', loc='center')
 
         ax.add_table(table)
-        worse_patch = mpatches.Patch(color='red', label=f'Worse ({nbre_degradations})')
-        better_patch = mpatches.Patch(color='green', label=f'Better ({nbre_improvements})')
-        same_patch = mpatches.Patch(color='blue', label=f'No Change ({nbre_no_change})')
+        worse_patch = mpatches.Patch(color='lightcoral', label=f'Worse ({nbre_degradations})')
+        better_patch = mpatches.Patch(color='springgreen', label=f'Better ({nbre_improvements})')
+        same_patch = mpatches.Patch(color='lightblue', label=f'No Change ({nbre_no_change})')
         plt.legend(handles=[worse_patch, better_patch, same_patch], loc='upper center', bbox_to_anchor=(0.5, 0.0), ncol=3)
         if not show:
             plt.title(f"Comparison to previous system of {metric} using '{evaluated_criteria}' criterion")
         pp.savefig()
         if show:
             #force the cases to be square
-            ax.set_aspect('equal', adjustable='box')
+            #ax.set_aspect('equal', adjustable='box')
             plt.show()
         plt.close()
 
@@ -702,6 +707,8 @@ def generate_score_comparison_matrices_to_treshold(new_files: list[str], evaluat
     metrics = ["Precision", "Recall", "F1Score"]
     new_data_list = [load_and_filter_data(new_file, {}) for new_file in new_files]
     
+    show = True
+
     # Collect all possible keys to determine the full question range
     all_keys = set()
     for data in new_data_list:
@@ -716,10 +723,14 @@ def generate_score_comparison_matrices_to_treshold(new_files: list[str], evaluat
         full_key_range = sorted(all_keys)
 
     if max_columns is None:
-        max_columns = int(np.ceil(np.sqrt(len(full_key_range))))
+        max_columns = int(np.ceil(np.sqrt(len(full_key_range))) * 1.5)
 
+
+    cell_size = 0.8  # Try values between 0.6 and 1.2 depending on density
+    fig_width = max_columns * cell_size
+    fig_height = ((len(full_key_range) + max_columns - 1) // max_columns) * cell_size
     for metric in metrics:
-        plt.figure(figsize=(12, 12))
+        plt.figure(figsize=(fig_width, fig_height))
         ax = plt.gca()
         ax.set_frame_on(False)
         ax.set_xticks([])
@@ -741,16 +752,16 @@ def generate_score_comparison_matrices_to_treshold(new_files: list[str], evaluat
                 new_score = evaluate_criteria(new_scores, evaluated_criteria)
 
                 if new_score == 1:
-                    color = 'green'
+                    color = 'springgreen'
                     nbre_improvements += 1
                 elif new_score > 0:
-                    color = 'blue'
+                    color = 'lightblue'
                     nbre_no_change += 1
                 else: 
-                    color = 'red'
+                    color = 'lightcoral'
                     nbre_degradations += 1
 
-                text = f"{key}\n{new_score:.3f}"
+                text = f"{key}\n{new_score:.2f}"
             else:
                 color = 'white'
                 text = f"{key}"
@@ -769,7 +780,7 @@ def generate_score_comparison_matrices_to_treshold(new_files: list[str], evaluat
 
         table = tbl.Table(ax, bbox=[0, 0, 1, 1])
         cell_width = 1.0 / max_columns
-        cell_height = 1.0 / num_rows
+        cell_height = 1.0 / max_columns
 
         for row in range(num_rows):
             for col in range(max_columns):
@@ -779,16 +790,16 @@ def generate_score_comparison_matrices_to_treshold(new_files: list[str], evaluat
                                edgecolor='black', loc='center')
 
         ax.add_table(table)
-        worse_patch = mpatches.Patch(color='red', label=f'x==0: ({nbre_degradations})')
-        better_patch = mpatches.Patch(color='green', label=f'x==1: ({nbre_improvements})')
-        same_patch = mpatches.Patch(color='blue', label=f'0<x<1: ({nbre_no_change})')
+        worse_patch = mpatches.Patch(color='lightcoral', label=f'x==0: ({nbre_degradations})')
+        better_patch = mpatches.Patch(color='springgreen', label=f'x==1: ({nbre_improvements})')
+        same_patch = mpatches.Patch(color='lightblue', label=f'0<x<1: ({nbre_no_change})')
         plt.legend(handles=[worse_patch, better_patch, same_patch], loc='upper center', bbox_to_anchor=(0.5, 0.0), ncol=3)
         if not show:
             plt.title(f"{metric} scores using {evaluated_criteria} criteria")
         pp.savefig()
         if show:
             #force the cases to be square
-            ax.set_aspect('equal', adjustable='box')
+            #ax.set_aspect('equal', adjustable='box')
             plt.show()
         plt.close()
 
@@ -1111,7 +1122,6 @@ def question_word_ratio_ranking(filtered_data_0, filtered_data_1, title_compleme
     word_count_0 = defaultdict(int)
     word_count_1 = defaultdict(int)
 
-    show = True
 
     smoothing = len(filtered_data_1) + len(filtered_data_0)  # Smoothing factor to avoid division by zero
 
@@ -1184,7 +1194,6 @@ def question_tags_pp(filtered_data, file_name):
     # Get data
     all_tags = get_all_question_tags(filtered_data)
 
-    show = True
 
     constraints_f1_at_1 = {
         "BenchmarkResult": lambda x : x not in [None, []],
@@ -1357,6 +1366,65 @@ def plot_table_commands_failed(rows: dict):
 
     plt.close(fig)
 
+def plot_question_clusters(question_groups_data, size_scale=100, spacing=3):
+    """
+    Plot question groups as circles:
+    - circle size = number of questions
+    - circle color = average F1 score (red=low, green=high)
+    - circle text = representative question ID
+
+    Circles are arranged in a grid with spacing to avoid overlap.
+    
+    Args:
+        question_groups_data: list of dicts with keys 'representative_question', 'questions', 'f1scoremean'
+        size_scale: scaling factor for circle size (default 100)
+        spacing: space multiplier between circles in grid (default 3)
+    """
+    filtered_data = [g for g in question_groups_data if g["f1scoremean"] is not None]
+
+    if not filtered_data:
+        print("No valid data to plot.")
+        return
+
+    sizes = [len(g["questions"]) for g in filtered_data]
+    colors = [g["f1scoremean"] for g in filtered_data]
+    labels = [g["representative_question_id"] for g in filtered_data]
+
+    sizes_scaled = [s * size_scale for s in sizes]
+
+    cmap = plt.get_cmap('RdYlGn')
+
+    n = len(filtered_data)
+    cols = int(math.ceil(math.sqrt(n)))
+    rows = int(math.ceil(n / cols))
+
+    # Grid positions with spacing
+    x = []
+    y = []
+    for i in range(n):
+        col = i % cols
+        row = i // cols
+        x.append(col * spacing)
+        y.append(-row * spacing)
+
+    fig = plt.figure(figsize=(cols * 2, rows * 2))
+    scatter = plt.scatter(x, y, s=sizes_scaled, c=colors, cmap=cmap, alpha=0.7, edgecolors='black')
+
+    for i, label in enumerate(labels):
+        plt.text(x[i], y[i], label, ha='center', va='center', fontsize=10, weight='bold')
+
+    plt.colorbar(scatter, label='Average F1 Score')
+    plt.xticks([])
+    plt.yticks([])
+    if not show:
+        plt.title("Question Groups: Size by Number of Questions, Color by Avg F1 Score")
+    plt.tight_layout()
+    if pp:
+        pp.savefig(fig)
+    if show:
+        plt.show()
+    plt.close(fig)
+
 def make_pdf_report(files_names: list[str], core_files_names: list[str], question_groups: dict):
     """
     Generate all the plots and tables for the given files.
@@ -1390,6 +1458,7 @@ def make_pdf_report(files_names: list[str], core_files_names: list[str], questio
 
         average_f1_score_per_question_group.append({
             "representative_question": question_group["exemplar_question"],
+            "representative_question_id": question_group["exemplar_id"],
             "questions": question_group["members"],
             #"f1scores": f1_scores_group,
             "f1scoremean": f1_mean,
@@ -1398,6 +1467,8 @@ def make_pdf_report(files_names: list[str], core_files_names: list[str], questio
 
     # order the group by decreasing f1 score
     average_f1_score_per_question_group.sort(key=lambda x: x["priority_score"], reverse=True)
+
+    plot_question_clusters(average_f1_score_per_question_group)
 
     print("NB of question groups:", len(question_groups))
     print("Average F1 score per question group:")
@@ -1597,11 +1668,11 @@ if __name__ == "__main__":
     ]
 
     input_files = [
-        r'C:\Users\PC\Desktop\llmSparklis\benchmark\BestOutputs\for_paper\QALD9Plus\wikidata\train\retry\best_suggestion\QALD-9-plus_sparklisllm-LLMFrameworkRetryWithoutTimeout_20250518_022648.json',
+        r'C:\Users\PC\Desktop\llmSparklis\benchmark\BestOutputs\for_paper\QALD9Plus\wikidata\train\retry\beam3x3\QALD-9-plus_sparklisllm-LLMFrameworkRetryWithoutTimeout_20250522_000656.json',
     ]
 
-    questions_groups_qald_9_train_wikidata_level_word = {  "Cluster_0": {    "exemplar_id": "1",    "exemplar_question": "List all boardgames by GMT.",    "members": [      "1",      "178",      "249",      "290"    ]  },  "Cluster_1": {    "exemplar_id": "8",    "exemplar_question": "Which airports does Air China serve?",    "members": [      "8",      "126",      "196",      "255"    ]  },  "Cluster_2": {    "exemplar_id": "9",    "exemplar_question": "Give me all actors starring in movies directed by and starring William Shatner.",    "members": [      "9",      "286"    ]  },  "Cluster_3": {    "exemplar_id": "11",    "exemplar_question": "Give me all Danish films.",    "members": [      "11",      "41",      "51",      "59",      "71",      "94",      "118",      "403"    ]  },  "Cluster_4": {    "exemplar_id": "16",    "exemplar_question": "Which state of the USA has the highest population density?",    "members": [      "16",      "22",      "407"    ]  },  "Cluster_5": {    "exemplar_id": "34",    "exemplar_question": "Show me all basketball players that are higher than 2 meters.",    "members": [      "34"    ]  },  "Cluster_6": {    "exemplar_id": "36",    "exemplar_question": "Which states border Illinois?",    "members": [      "36",      "48",      "80",      "102",      "112",      "122",      "163",      "253"    ]  },  "Cluster_7": {    "exemplar_id": "43",    "exemplar_question": "Which presidents were born in 1945?",    "members": [      "43",      "3",      "17",      "23",      "72",      "82",      "100",      "125",      "139",      "150",      "162",      "167",      "263",      "318",      "326"    ]  },  "Cluster_8": {    "exemplar_id": "50",    "exemplar_question": "How many films did Hal Roach produce?",    "members": [      "50",      "56",      "106",      "130",      "140",      "258"    ]  },  "Cluster_9": {    "exemplar_id": "54",    "exemplar_question": "Give me all companies in Munich.",    "members": [      "54",      "20",      "29",      "64",      "97",      "113",      "145",      "161",      "171",      "181",      "183",      "204",      "213",      "231",      "334",      "347",      "412"    ]  },  "Cluster_10": {    "exemplar_id": "63",    "exemplar_question": "In which films directed by Garry Marshall was Julia Roberts starring?",    "members": [      "63"    ]  },  "Cluster_11": {    "exemplar_id": "85",    "exemplar_question": "How many employees does Google have?",    "members": [      "85",      "60",      "76",      "90",      "144",      "157",      "168",      "262",      "284",      "362",      "382"    ]  },  "Cluster_12": {    "exemplar_id": "86",    "exemplar_question": "Give me all actors who were born in Berlin.",    "members": [      "86",      "33",      "40",      "69",      "179"    ]  },  "Cluster_13": {    "exemplar_id": "87",    "exemplar_question": "Who created Goofy?",    "members": [      "87",      "2",      "19",      "37",      "99",      "129",      "152",      "191",      "200",      "210",      "241",      "350",      "356",      "365",      "391",      "413"    ]  },  "Cluster_14": {    "exemplar_id": "108",    "exemplar_question": "Which U.S. states are in the same time zone as Utah?",    "members": [      "108",      "25"    ]  },  "Cluster_15": {    "exemplar_id": "119",    "exemplar_question": "What other books have been written by the author of The Fault in Our Stars?",    "members": [      "119"    ]  },  "Cluster_16": {    "exemplar_id": "131",    "exemplar_question": "Is Christian Bale starring in Batman Begins?",    "members": [      "131",      "314"    ]  },  "Cluster_17": {    "exemplar_id": "134",    "exemplar_question": "Which countries have more than two official languages?",    "members": [      "134",      "62",      "338"    ]  },  "Cluster_18": {    "exemplar_id": "136",    "exemplar_question": "Show me all songs from Bruce Springsteen released between 1980 and 1990.",    "members": [      "136"    ]  },  "Cluster_19": {    "exemplar_id": "137",    "exemplar_question": "Which television shows were created by John Cleese?",    "members": [      "137",      "12",      "114",      "199",      "321",      "378"    ]  },  "Cluster_20": {    "exemplar_id": "141",    "exemplar_question": "Give me the birthdays of all actors of the television show Charmed.",    "members": [      "141",      "55"    ]  },  "Cluster_21": {    "exemplar_id": "147",    "exemplar_question": "In which countries can you pay using the West African CFA franc?",    "members": [      "147"    ]  },  "Cluster_22": {    "exemplar_id": "148",    "exemplar_question": "Which holidays are celebrated around the world?",    "members": [      "148",      "116",      "174",      "305"    ]  },  "Cluster_23": {    "exemplar_id": "158",    "exemplar_question": "List all episodes of the first season of the HBO television series The Sopranos!",    "members": [      "158"    ]  },  "Cluster_24": {    "exemplar_id": "160",    "exemplar_question": "Does the new Battlestar Galactica series have more episodes than the old one?",    "members": [      "160"    ]  },  "Cluster_25": {    "exemplar_id": "164",    "exemplar_question": "Give me a list of all bandleaders that play trumpet.",    "members": [      "164",      "24",      "46",      "143"    ]  },  "Cluster_26": {    "exemplar_id": "169",    "exemplar_question": "Which Chess players died in the same place they were born in?",    "members": [      "169"    ]  },  "Cluster_27": {    "exemplar_id": "172",    "exemplar_question": "In which U.S. state is Fort Knox located?",    "members": [      "172",      "4",      "115",      "247",      "297",      "369"    ]  },  "Cluster_28": {    "exemplar_id": "182",    "exemplar_question": "Give me all films produced by Steven Spielberg with a budget of at least $80 million.",    "members": [      "182"    ]  },  "Cluster_29": {    "exemplar_id": "186",    "exemplar_question": "Who is the heaviest player of the Chicago Bulls?",    "members": [      "186",      "31",      "190",      "202",      "311"    ]  },  "Cluster_30": {    "exemplar_id": "193",    "exemplar_question": "Is Cola a beverage?",    "members": [      "193",      "104",      "107",      "166",      "180",      "211",      "223",      "235",      "267",      "268",      "274",      "343",      "344",      "358",      "361"    ]  },  "Cluster_31": {    "exemplar_id": "198",    "exemplar_question": "Was the Cuban Missile Crisis earlier than the Bay of Pigs Invasion?",    "members": [      "198"    ]  },  "Cluster_32": {    "exemplar_id": "216",    "exemplar_question": "how much is the elevation of D�sseldorf Airport ?",    "members": [      "216",      "217",      "230",      "278",      "288"    ]  },  "Cluster_33": {    "exemplar_id": "225",    "exemplar_question": "How many people live in Poland?",    "members": [      "225",      "256",      "324",      "351"    ]  },  "Cluster_34": {    "exemplar_id": "227",    "exemplar_question": "Is the wife of president Obama called Michelle?",    "members": [      "227",      "245",      "376"    ]  },  "Cluster_35": {    "exemplar_id": "234",    "exemplar_question": "What is the population of Cairo?",    "members": [      "234",      "10",      "52",      "65",      "93",      "120",      "149",      "151",      "233",      "236",      "280",      "283",      "291",      "303",      "317",      "353",      "354",      "370",      "372",      "380",      "386",      "393",      "409"    ]  },  "Cluster_36": {    "exemplar_id": "238",    "exemplar_question": "Who is the author of the interpretation of dreams?",    "members": [      "238",      "67",      "132",      "194",      "215",      "285",      "299"    ]  },  "Cluster_37": {    "exemplar_id": "239",    "exemplar_question": "When was the death of Shakespeare?",    "members": [      "239",      "35",      "89",      "92",      "105",      "138",      "177",      "214",      "218",      "219",      "226",      "254",      "270",      "275",      "302",      "325",      "337",      "359",      "368",      "374",      "388",      "405",      "411"    ]  },  "Cluster_38": {    "exemplar_id": "265",    "exemplar_question": "Who is the mayor of Paris?",    "members": [      "265",      "5",      "15",      "27",      "53",      "66",      "75",      "170",      "184",      "192",      "197",      "209",      "212",      "220",      "222",      "229",      "232",      "259",      "264",      "271",      "300",      "306",      "315",      "320",      "330",      "379",      "381",      "396",      "397",      "398"    ]  },  "Cluster_39": {    "exemplar_id": "279",    "exemplar_question": "Which city has the most inhabitants?",    "members": [      "279",      "84",      "110",      "121",      "123",      "133",      "224",      "269",      "332",      "340",      "349",      "408"    ]  },  "Cluster_40": {    "exemplar_id": "281",    "exemplar_question": "When will start the final match of the football world cup 2018?",    "members": [      "281"    ]  },  "Cluster_41": {    "exemplar_id": "282",    "exemplar_question": "Which films did Stanley Kubrick direct?",    "members": [      "282",      "14",      "70",      "124",      "153",      "221",      "248"    ]  },  "Cluster_42": {    "exemplar_id": "294",    "exemplar_question": "In which country is the Limerick Lake?",    "members": [      "294",      "95",      "203",      "205",      "243",      "257",      "273",      "292",      "346",      "395",      "406"    ]  },  "Cluster_43": {    "exemplar_id": "296",    "exemplar_question": "Give me all members of Prodigy.",    "members": [      "296",      "42",      "61",      "78",      "91",      "101",      "103",      "175",      "185",      "260",      "313",      "367",      "402"    ]  },  "Cluster_44": {    "exemplar_id": "307",    "exemplar_question": "How many languages are spoken in Turkmenistan?",    "members": [      "307",      "58",      "127",      "142",      "187",      "327",      "385"    ]  },  "Cluster_45": {    "exemplar_id": "308",    "exemplar_question": "Did Che Guevara have children?",    "members": [      "308",      "266",      "309",      "375"    ]  },  "Cluster_46": {    "exemplar_id": "310",    "exemplar_question": "To which party does the mayor of Paris belong?",    "members": [      "310",      "81",      "355",      "364"    ]  },  "Cluster_47": {    "exemplar_id": "328",    "exemplar_question": "Which scientist is known for the Manhattan Project and the Nobel Peace Prize?",    "members": [      "328"    ]  },  "Cluster_48": {    "exemplar_id": "335",    "exemplar_question": "Who wrote the book The Pillars of the Earth?",    "members": [      "335",      "21",      "195"    ]  },  "Cluster_49": {    "exemplar_id": "336",    "exemplar_question": "Do Prince Harry and Prince William have the same parents?",    "members": [      "336"    ]  },  "Cluster_50": {    "exemplar_id": "342",    "exemplar_question": "How much did Pulp Fiction cost?",    "members": [      "342",      "44",      "244",      "329"    ]  },  "Cluster_51": {    "exemplar_id": "345",    "exemplar_question": "Who is starring in Spanish movies produced by Benicio del Toro?",    "members": [      "345"    ]  },  "Cluster_52": {    "exemplar_id": "348",    "exemplar_question": "Where was Bach born?",    "members": [      "348",      "7",      "38",      "45",      "74",      "77",      "237",      "252",      "333",      "339"    ]  },  "Cluster_53": {    "exemplar_id": "363",    "exemplar_question": "How tall is Michael Jordan?",    "members": [      "363",      "156",      "287",      "304",      "312"    ]  },  "Cluster_54": {    "exemplar_id": "390",    "exemplar_question": "In which films did Julia Roberts as well as Richard Gere play?",    "members": [      "390"    ]  },  "Cluster_55": {    "exemplar_id": "400",    "exemplar_question": "What is the highest mountain in Australia?",    "members": [      "400",      "39",      "154",      "155",      "165",      "188",      "189",      "201",      "207",      "251",      "289",      "293",      "301",      "357"    ]  }}
+    questions_groups_qald_9_train_wikidata_level_word = { "Cluster_0": { "exemplar_id": "1", "exemplar_question": "List all boardgames by GMT.", "members": [ "1", "178", "249", "290" ] }, "Cluster_1": { "exemplar_id": "8", "exemplar_question": "Which airports does Air China serve?", "members": [ "8", "126", "196", "255" ] }, "Cluster_2": { "exemplar_id": "9", "exemplar_question": "Give me all actors starring in movies directed by and starring William Shatner.", "members": [ "9", "286" ] }, "Cluster_3": { "exemplar_id": "11", "exemplar_question": "Give me all Danish films.", "members": [ "11", "41", "51", "59", "71", "94", "118", "403" ] }, "Cluster_4": { "exemplar_id": "16", "exemplar_question": "Which state of the USA has the highest population density?", "members": [ "16", "22", "407" ] }, "Cluster_5": { "exemplar_id": "34", "exemplar_question": "Show me all basketball players that are higher than 2 meters.", "members": [ "34" ] }, "Cluster_6": { "exemplar_id": "36", "exemplar_question": "Which states border Illinois?", "members": [ "36", "48", "80", "102", "112", "122", "163", "253" ] }, "Cluster_7": { "exemplar_id": "43", "exemplar_question": "Which presidents were born in 1945?", "members": [ "43", "3", "17", "23", "72", "82", "100", "125", "139", "150", "162", "167", "263", "318", "326" ] }, "Cluster_8": { "exemplar_id": "50", "exemplar_question": "How many films did Hal Roach produce?", "members": [ "50", "56", "106", "130", "140", "258" ] }, "Cluster_9": { "exemplar_id": "54", "exemplar_question": "Give me all companies in Munich.", "members": [ "54", "20", "29", "64", "97", "113", "145", "161", "171", "181", "183", "204", "213", "231", "334", "347", "412" ] }, "Cluster_10": { "exemplar_id": "63", "exemplar_question": "In which films directed by Garry Marshall was Julia Roberts starring?", "members": [ "63" ] }, "Cluster_11": { "exemplar_id": "85", "exemplar_question": "How many employees does Google have?", "members": [ "85", "60", "76", "90", "144", "157", "168", "262", "284", "362", "382" ] }, "Cluster_12": { "exemplar_id": "86", "exemplar_question": "Give me all actors who were born in Berlin.", "members": [ "86", "33", "40", "69", "179" ] }, "Cluster_13": { "exemplar_id": "87", "exemplar_question": "Who created Goofy?", "members": [ "87", "2", "19", "37", "99", "129", "152", "191", "200", "210", "241", "350", "356", "365", "391", "413" ] }, "Cluster_14": { "exemplar_id": "108", "exemplar_question": "Which U.S. states are in the same time zone as Utah?", "members": [ "108", "25" ] }, "Cluster_15": { "exemplar_id": "119", "exemplar_question": "What other books have been written by the author of The Fault in Our Stars?", "members": [ "119" ] }, "Cluster_16": { "exemplar_id": "131", "exemplar_question": "Is Christian Bale starring in Batman Begins?", "members": [ "131", "314" ] }, "Cluster_17": { "exemplar_id": "134", "exemplar_question": "Which countries have more than two official languages?", "members": [ "134", "62", "338" ] }, "Cluster_18": { "exemplar_id": "136", "exemplar_question": "Show me all songs from Bruce Springsteen released between 1980 and 1990.", "members": [ "136" ] }, "Cluster_19": { "exemplar_id": "137", "exemplar_question": "Which television shows were created by John Cleese?", "members": [ "137", "12", "114", "199", "321", "378" ] }, "Cluster_20": { "exemplar_id": "141", "exemplar_question": "Give me the birthdays of all actors of the television show Charmed.", "members": [ "141", "55" ] }, "Cluster_21": { "exemplar_id": "147", "exemplar_question": "In which countries can you pay using the West African CFA franc?", "members": [ "147" ] }, "Cluster_22": { "exemplar_id": "148", "exemplar_question": "Which holidays are celebrated around the world?", "members": [ "148", "116", "174", "305" ] }, "Cluster_23": { "exemplar_id": "158", "exemplar_question": "List all episodes of the first season of the HBO television series The Sopranos!", "members": [ "158" ] }, "Cluster_24": { "exemplar_id": "160", "exemplar_question": "Does the new Battlestar Galactica series have more episodes than the old one?", "members": [ "160" ] }, "Cluster_25": { "exemplar_id": "164", "exemplar_question": "Give me a list of all bandleaders that play trumpet.", "members": [ "164", "24", "46", "143" ] }, "Cluster_26": { "exemplar_id": "169", "exemplar_question": "Which Chess players died in the same place they were born in?", "members": [ "169" ] }, "Cluster_27": { "exemplar_id": "172", "exemplar_question": "In which U.S. state is Fort Knox located?", "members": [ "172", "4", "115", "247", "297", "369" ] }, "Cluster_28": { "exemplar_id": "182", "exemplar_question": "Give me all films produced by Steven Spielberg with a budget of at least $80 million.", "members": [ "182" ] }, "Cluster_29": { "exemplar_id": "186", "exemplar_question": "Who is the heaviest player of the Chicago Bulls?", "members": [ "186", "31", "190", "202", "311" ] }, "Cluster_30": { "exemplar_id": "193", "exemplar_question": "Is Cola a beverage?", "members": [ "193", "104", "107", "166", "180", "211", "223", "235", "267", "268", "274", "343", "344", "358", "361" ] }, "Cluster_31": { "exemplar_id": "198", "exemplar_question": "Was the Cuban Missile Crisis earlier than the Bay of Pigs Invasion?", "members": [ "198" ] }, "Cluster_32": { "exemplar_id": "216", "exemplar_question": "how much is the elevation of D�sseldorf Airport ?", "members": [ "216", "217", "230", "278", "288" ] }, "Cluster_33": { "exemplar_id": "225", "exemplar_question": "How many people live in Poland?", "members": [ "225", "256", "324", "351" ] }, "Cluster_34": { "exemplar_id": "227", "exemplar_question": "Is the wife of president Obama called Michelle?", "members": [ "227", "245", "376" ] }, "Cluster_35": { "exemplar_id": "234", "exemplar_question": "What is the population of Cairo?", "members": [ "234", "10", "52", "65", "93", "120", "149", "151", "233", "236", "280", "283", "291", "303", "317", "353", "354", "370", "372", "380", "386", "393", "409" ] }, "Cluster_36": { "exemplar_id": "238", "exemplar_question": "Who is the author of the interpretation of dreams?", "members": [ "238", "67", "132", "194", "215", "285", "299" ] }, "Cluster_37": { "exemplar_id": "239", "exemplar_question": "When was the death of Shakespeare?", "members": [ "239", "35", "89", "92", "105", "138", "177", "214", "218", "219", "226", "254", "270", "275", "302", "325", "337", "359", "368", "374", "388", "405", "411" ] }, "Cluster_38": { "exemplar_id": "265", "exemplar_question": "Who is the mayor of Paris?", "members": [ "265", "5", "15", "27", "53", "66", "75", "170", "184", "192", "197", "209", "212", "220", "222", "229", "232", "259", "264", "271", "300", "306", "315", "320", "330", "379", "381", "396", "397", "398" ] }, "Cluster_39": { "exemplar_id": "279", "exemplar_question": "Which city has the most inhabitants?", "members": [ "279", "84", "110", "121", "123", "133", "224", "269", "332", "340", "349", "408" ] }, "Cluster_40": { "exemplar_id": "281", "exemplar_question": "When will start the final match of the football world cup 2018?", "members": [ "281" ] }, "Cluster_41": { "exemplar_id": "282", "exemplar_question": "Which films did Stanley Kubrick direct?", "members": [ "282", "14", "70", "124", "153", "221", "248" ] }, "Cluster_42": { "exemplar_id": "294", "exemplar_question": "In which country is the Limerick Lake?", "members": [ "294", "95", "203", "205", "243", "257", "273", "292", "346", "395", "406" ] }, "Cluster_43": { "exemplar_id": "296", "exemplar_question": "Give me all members of Prodigy.", "members": [ "296", "42", "61", "78", "91", "101", "103", "175", "185", "260", "313", "367", "402" ] }, "Cluster_44": { "exemplar_id": "307", "exemplar_question": "How many languages are spoken in Turkmenistan?", "members": [ "307", "58", "127", "142", "187", "327", "385" ] }, "Cluster_45": { "exemplar_id": "308", "exemplar_question": "Did Che Guevara have children?", "members": [ "308", "266", "309", "375" ] }, "Cluster_46": { "exemplar_id": "310", "exemplar_question": "To which party does the mayor of Paris belong?", "members": [ "310", "81", "355", "364" ] }, "Cluster_47": { "exemplar_id": "328", "exemplar_question": "Which scientist is known for the Manhattan Project and the Nobel Peace Prize?", "members": [ "328" ] }, "Cluster_48": { "exemplar_id": "335", "exemplar_question": "Who wrote the book The Pillars of the Earth?", "members": [ "335", "21", "195" ] }, "Cluster_49": { "exemplar_id": "336", "exemplar_question": "Do Prince Harry and Prince William have the same parents?", "members": [ "336" ] }, "Cluster_50": { "exemplar_id": "342", "exemplar_question": "How much did Pulp Fiction cost?", "members": [ "342", "44", "244", "329" ] }, "Cluster_51": { "exemplar_id": "345", "exemplar_question": "Who is starring in Spanish movies produced by Benicio del Toro?", "members": [ "345" ] }, "Cluster_52": { "exemplar_id": "348", "exemplar_question": "Where was Bach born?", "members": [ "348", "7", "38", "45", "74", "77", "237", "252", "333", "339" ] }, "Cluster_53": { "exemplar_id": "363", "exemplar_question": "How tall is Michael Jordan?", "members": [ "363", "156", "287", "304", "312" ] }, "Cluster_54": { "exemplar_id": "390", "exemplar_question": "In which films did Julia Roberts as well as Richard Gere play?", "members": [ "390" ] }, "Cluster_55": { "exemplar_id": "400", "exemplar_question": "What is the highest mountain in Australia?", "members": [ "400", "39", "154", "155", "165", "188", "189", "201", "207", "251", "289", "293", "301", "357" ] } }
     questions_groups_qald_9_train_dbpedia_level_word = {  "Cluster_0": {    "exemplar_id": "8",    "exemplar_question": "Which airports does Air China serve?",    "members": [      "8",      "70",      "126",      "196",      "255"    ]  },  "Cluster_1": {    "exemplar_id": "12",    "exemplar_question": "Which movies starring Brad Pitt were directed by Guy Ritchie?",    "members": [      "12",      "389"    ]  },  "Cluster_2": {    "exemplar_id": "16",    "exemplar_question": "Which state of the USA has the highest population density?",    "members": [      "16",      "22",      "373",      "407"    ]  },  "Cluster_3": {    "exemplar_id": "18",    "exemplar_question": "Which organizations were founded in 1950?",    "members": [      "18",      "3",      "17",      "23",      "26",      "43",      "72",      "80",      "82",      "100",      "114",      "117",      "125",      "139",      "142",      "150",      "167",      "263",      "318",      "323",      "326"    ]  },  "Cluster_4": {    "exemplar_id": "21",    "exemplar_question": "Who wrote the book The pillars of the Earth?",    "members": [      "21",      "195",      "311",      "335"    ]  },  "Cluster_5": {    "exemplar_id": "25",    "exemplar_question": "Which U.S. states are in the same timezone as Utah?",    "members": [      "25",      "108"    ]  },  "Cluster_6": {    "exemplar_id": "32",    "exemplar_question": "What are the top-10 action role-playing video games according to IGN?",    "members": [      "32"    ]  },  "Cluster_7": {    "exemplar_id": "34",    "exemplar_question": "Show me all basketball players that are higher than 2 meters.",    "members": [      "34"    ]  },  "Cluster_8": {    "exemplar_id": "41",    "exemplar_question": "Give me all cosmonauts.",    "members": [      "41",      "11",      "42",      "51",      "59",      "71",      "73",      "91",      "94",      "109",      "113",      "118",      "128",      "171",      "213",      "231",      "253",      "295",      "296",      "391",      "394",      "403"    ]  },  "Cluster_9": {    "exemplar_id": "50",    "exemplar_question": "How many films did Hal Roach produce?",    "members": [      "50",      "56",      "106",      "258",      "362"    ]  },  "Cluster_10": {    "exemplar_id": "54",    "exemplar_question": "Give me all companies in Munich.",    "members": [      "54",      "29",      "33",      "61",      "64",      "97",      "101",      "103",      "145",      "161",      "173",      "175",      "181",      "183",      "347"    ]  },  "Cluster_11": {    "exemplar_id": "58",    "exemplar_question": "How many airlines are there?",    "members": [      "58",      "127",      "140",      "163",      "168",      "250",      "262",      "334"    ]  },  "Cluster_12": {    "exemplar_id": "60",    "exemplar_question": "How many inhabitants does Maribor have?",    "members": [      "60",      "76",      "83",      "85",      "90",      "144",      "157",      "284",      "319",      "382"    ]  },  "Cluster_13": {    "exemplar_id": "63",    "exemplar_question": "In which films directed by Garry Marshall was Julia Roberts starring?",    "members": [      "63"    ]  },  "Cluster_14": {    "exemplar_id": "68",    "exemplar_question": "Give me all world heritage sites designated within the past two years.",    "members": [      "68"    ]  },  "Cluster_15": {    "exemplar_id": "86",    "exemplar_question": "Give me all actors who were born in Berlin.",    "members": [      "86",      "40",      "69",      "79",      "179"    ]  },  "Cluster_16": {    "exemplar_id": "87",    "exemplar_question": "Who created Goofy?",    "members": [      "87",      "2",      "19",      "37",      "99",      "112",      "129",      "162",      "184",      "191",      "200",      "210",      "241",      "302",      "365",      "413"    ]  },  "Cluster_17": {    "exemplar_id": "96",    "exemplar_question": "List all the musicals with music by Leonard Bernstein.",    "members": [      "96",      "249"    ]  },  "Cluster_18": {    "exemplar_id": "111",    "exemplar_question": "What is the total amount of men and women serving in the FDNY?",    "members": [      "111"    ]  },  "Cluster_19": {    "exemplar_id": "119",    "exemplar_question": "What other books have been written by the author of The Fault in Our Stars?",    "members": [      "119"    ]  },  "Cluster_20": {    "exemplar_id": "131",    "exemplar_question": "Is Christian Bale starring in Batman Begins?",    "members": [      "131",      "314"    ]  },  "Cluster_21": {    "exemplar_id": "135",    "exemplar_question": "Which countries have more than ten caves?",    "members": [      "135",      "6",      "30",      "47",      "62",      "134",      "199",      "338"    ]  },  "Cluster_22": {    "exemplar_id": "136",    "exemplar_question": "Show me all songs from Bruce Springsteen released between 1980 and 1990.",    "members": [      "136"    ]  },  "Cluster_23": {    "exemplar_id": "141",    "exemplar_question": "Give me the birthdays of all actors of the television show Charmed.",    "members": [      "141",      "55"    ]  },  "Cluster_24": {    "exemplar_id": "147",    "exemplar_question": "In which countries can you pay using the West African CFA franc?",    "members": [      "147"    ]  },  "Cluster_25": {    "exemplar_id": "148",    "exemplar_question": "Which holidays are celebrated around the world?",    "members": [      "148",      "174",      "305"    ]  },  "Cluster_26": {    "exemplar_id": "159",    "exemplar_question": "What does ICRO stand for?",    "members": [      "159",      "39",      "44",      "322",      "372"    ]  },  "Cluster_27": {    "exemplar_id": "160",    "exemplar_question": "Does the new Battlestar Galactica series have more episodes than the old one?",    "members": [      "160"    ]  },  "Cluster_28": {    "exemplar_id": "164",    "exemplar_question": "Give me a list of all bandleaders that play trumpet.",    "members": [      "164",      "24",      "46",      "143"    ]  },  "Cluster_29": {    "exemplar_id": "169",    "exemplar_question": "Which Chess players died in the same place they were born in?",    "members": [      "169"    ]  },  "Cluster_30": {    "exemplar_id": "172",    "exemplar_question": "In which U.S. state is Fort Knox located?",    "members": [      "172",      "4",      "115",      "206",      "297"    ]  },  "Cluster_31": {    "exemplar_id": "182",    "exemplar_question": "Give me all films produced by Steven Spielberg with a budget of at least $80 million.",    "members": [      "182"    ]  },  "Cluster_32": {    "exemplar_id": "188",    "exemplar_question": "What is the largest country in the world?",    "members": [      "188",      "65",      "98",      "105",      "189",      "251",      "357",      "370"    ]  },  "Cluster_33": {    "exemplar_id": "193",    "exemplar_question": "Is Cola a beverage?",    "members": [      "193",      "104",      "107",      "166",      "180",      "211",      "214",      "223",      "235",      "266",      "267",      "274",      "324",      "343",      "358"    ]  },  "Cluster_34": {    "exemplar_id": "198",    "exemplar_question": "Was the Cuban Missile Crisis earlier than the Bay of Pigs Invasion?",    "members": [      "198"    ]  },  "Cluster_35": {    "exemplar_id": "215",    "exemplar_question": "What is the location of the Houses of Parliament?",    "members": [      "215",      "49",      "67",      "116",      "132",      "176",      "194",      "238",      "299",      "352"    ]  },  "Cluster_36": {    "exemplar_id": "219",    "exemplar_question": "Who was the first King of England?",    "members": [      "219",      "53",      "74",      "152",      "190",      "218",      "254",      "270",      "330",      "337",      "339",      "359",      "384"    ]  },  "Cluster_37": {    "exemplar_id": "227",    "exemplar_question": "Is the wife of president Obama called Michelle?",    "members": [      "227",      "245",      "376"    ]  },  "Cluster_38": {    "exemplar_id": "234",    "exemplar_question": "What is the population of Cairo?",    "members": [      "234",      "10",      "45",      "52",      "93",      "120",      "149",      "151",      "209",      "217",      "230",      "233",      "236",      "275",      "278",      "280",      "283",      "288",      "291",      "293",      "317",      "353",      "354",      "380",      "386",      "393",      "409",      "411"    ]  },  "Cluster_39": {    "exemplar_id": "237",    "exemplar_question": "Where is Sungkyunkwan University?",    "members": [      "237",      "7",      "36",      "38",      "77",      "333",      "348",      "361",      "387"    ]  },  "Cluster_40": {    "exemplar_id": "257",    "exemplar_question": "In which ancient empire could you pay with cocoa beans?",    "members": [      "257"    ]  },  "Cluster_41": {    "exemplar_id": "265",    "exemplar_question": "Who is the mayor of Paris?",    "members": [      "265",      "5",      "15",      "27",      "31",      "66",      "75",      "146",      "170",      "186",      "192",      "197",      "202",      "204",      "208",      "212",      "216",      "220",      "222",      "229",      "232",      "242",      "259",      "264",      "285",      "300",      "306",      "315",      "320",      "379",      "381",      "396",      "397",      "398"    ]  },  "Cluster_42": {    "exemplar_id": "268",    "exemplar_question": "Does the Isar flow into a lake?",    "members": [      "268",      "57",      "374"    ]  },  "Cluster_43": {    "exemplar_id": "279",    "exemplar_question": "Which city has the most inhabitants?",    "members": [      "279",      "48",      "84",      "88",      "102",      "110",      "121",      "122",      "123",      "133",      "224",      "246",      "269",      "332",      "340",      "349",      "408"    ]  },  "Cluster_44": {    "exemplar_id": "282",    "exemplar_question": "Which films did Stanley Kubrick direct?",    "members": [      "282",      "124",      "153",      "221",      "248"    ]  },  "Cluster_45": {    "exemplar_id": "286",    "exemplar_question": "Give me all actors starring in movies directed by William Shatner.",    "members": [      "286",      "9",      "371",      "412"    ]  },  "Cluster_46": {    "exemplar_id": "290",    "exemplar_question": "List all games by GMT.",    "members": [      "290",      "1",      "178"    ]  },  "Cluster_47": {    "exemplar_id": "292",    "exemplar_question": "In which city did Nikos Kazantzakis die?",    "members": [      "292",      "130",      "243",      "247",      "369",      "377",      "399",      "406"    ]  },  "Cluster_48": {    "exemplar_id": "294",    "exemplar_question": "In which country is the Limerick Lake?",    "members": [      "294",      "203",      "205",      "273",      "276",      "346",      "366",      "395"    ]  },  "Cluster_49": {    "exemplar_id": "307",    "exemplar_question": "How many languages are spoken in Turkmenistan?",    "members": [      "307",      "187",      "298",      "327",      "385"    ]  },  "Cluster_50": {    "exemplar_id": "310",    "exemplar_question": "To which party does the mayor of Paris belong?",    "members": [      "310",      "81",      "355"    ]  },  "Cluster_51": {    "exemplar_id": "321",    "exemplar_question": "Which television shows were created by Walt Disney?",    "members": [      "321",      "137",      "378"    ]  },  "Cluster_52": {    "exemplar_id": "325",    "exemplar_question": "When was the Titanic completed?",    "members": [      "325",      "35",      "89",      "92",      "138",      "177",      "239",      "252",      "309",      "350",      "356",      "368",      "375",      "388",      "401"    ]  },  "Cluster_53": {    "exemplar_id": "328",    "exemplar_question": "Which scientist is known for the Manhattan Project and the Nobel Peace Prize?",    "members": [      "328"    ]  },  "Cluster_54": {    "exemplar_id": "331",    "exemplar_question": "List all episodes of the first season of the HBO television series The Sopranos.",    "members": [      "331",      "158"    ]  },  "Cluster_55": {    "exemplar_id": "341",    "exemplar_question": "What was the final result of the War of the Roses?",    "members": [      "341",      "226",      "281",      "410"    ]  },  "Cluster_56": {    "exemplar_id": "342",    "exemplar_question": "How much did Pulp Fiction cost?",    "members": [      "342",      "244",      "329"    ]  },  "Cluster_57": {    "exemplar_id": "344",    "exemplar_question": "Do Urdu and Persian have a common root?",    "members": [      "344",      "336"    ]  },  "Cluster_58": {    "exemplar_id": "345",    "exemplar_question": "Who is starring in Spanish movies produced by Benicio del Toro?",    "members": [      "345"    ]  },  "Cluster_59": {    "exemplar_id": "351",    "exemplar_question": "How many people live in Eurasia?",    "members": [      "351",      "225",      "256",      "316"    ]  },  "Cluster_60": {    "exemplar_id": "360",    "exemplar_question": "Does the Ford Motor Company have a manufacturing plant in Malaysia?",    "members": [      "360"    ]  },  "Cluster_61": {    "exemplar_id": "363",    "exemplar_question": "How tall is Michael Jordan?",    "members": [      "363",      "28",      "156",      "287",      "304",      "308",      "312",      "392"    ]  },  "Cluster_62": {    "exemplar_id": "390",    "exemplar_question": "In which films did Julia Roberts as well as Richard Gere play?",    "members": [      "390"    ]  },  "Cluster_63": {    "exemplar_id": "400",    "exemplar_question": "What is the highest mountain in Australia?",    "members": [      "400",      "154",      "155",      "165",      "201",      "207",      "289",      "301",      "303"    ]  },  "Cluster_64": {    "exemplar_id": "402",    "exemplar_question": "Give me the currency of China.",    "members": [      "402",      "13",      "20",      "78",      "185",      "260",      "271",      "313",      "367",      "383",      "405"    ]  },  "Cluster_65": {    "exemplar_id": "404",    "exemplar_question": "In which city are the headquarters of the United Nations?",    "members": [      "404",      "14",      "95",      "364"    ]  }}
 
-    question_groups = questions_groups_qald_9_train_dbpedia_level_word
+    question_groups = questions_groups_qald_9_train_wikidata_level_word
     make_pdf_report(input_files, core_files, question_groups)
