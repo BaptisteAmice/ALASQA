@@ -4,8 +4,14 @@ import os
 from glob import glob
 
 # === Configuration ===
-JSON_DIR = r'C:\Users\PC\Desktop\llmSparklis\benchmark\BestOutputs\for_paper\QALD9Plus\wikidata\train\one_shot_the_most\best_suggestion'
+JSON_DIR = r'C:\Users\PC\Desktop\llmSparklis\benchmark\BestOutputs\for_paper\QALD10\retry\beam'
 OUTPUT_FILE = "latex_table.txt"  # File to save LaTeX table
+
+# Recalculation options
+RECALCULATE_FILTER = ["unknown", "boolean"]
+
+float_precision = f"{{:.{2}f}}"  # Number of decimal places for float values
+
 
 # === Metrics & Categories to Extract ===
 FIELDS = {
@@ -35,15 +41,72 @@ def load_json_files(directory):
     filepaths = glob(os.path.join(directory, "*.json"))
     return [json.load(open(f, "r", encoding="utf-8")) for f in filepaths]
 
+def extract_stats_from_data(entry):
+    precisions = []
+    recalls = []
+    f1s = []
+    for item in entry.get("Data", {}).values():
+        precision = item.get("Precision")
+        precisions.append(precision)
+        recall = item.get("Recall")
+        recalls.append(recall)
+        f1 = item.get("F1Score")
+        f1s.append(f1)
+    return precisions, recalls, f1s
+
 def compute_stats(data, fields):
     stats = {category: {metric: [] for metric in metrics} for category, metrics in fields.items()}
-
+    ignored_number = 0
     for entry in data:
-        for category, metrics in fields.items():
-            for metric_label, json_key in metrics.items():
-                value = entry["Stats"].get(json_key)
-                if value is not None:
-                    stats[category][metric_label].append(value)
+        stats_entry = {category: {metric: [] for metric in metrics} for category, metrics in fields.items()}
+        for qid, item in entry.get("Data", {}).items():
+            result_type = item.get("BenchmarkResultType", "").lower()
+            
+            if result_type in RECALCULATE_FILTER:
+                ignored_number += 1
+                continue
+            else:
+                precision = item.get("Precision")
+                recall = item.get("Recall")
+                f1 = item.get("F1Score")
+
+                #skip if not a number
+                if precision is None or recall is None or f1 is None:
+                    ignored_number += 1
+                    continue
+
+                # Tous (global stats)
+                stats_entry["Tous"]["Précision"].append(precision)
+                stats_entry["Tous"]["Rappel"].append(recall)
+                stats_entry["Tous"]["F1-score"].append(f1)
+
+                # Par type (si connu)
+                if result_type == "boolean":
+                    category = "Bool"
+                elif result_type == "uri":
+                    category = "URIs"
+                elif result_type == "literal":
+                    category = "Literals"
+                else:
+                    continue
+                stats_entry[category]["Précision"].append(precision)
+                stats_entry[category]["Rappel"].append(recall)
+                stats_entry[category]["F1-score"].append(f1)
+        # Calculate mean
+        for category, metrics in stats_entry.items():
+            for metric, values in metrics.items():
+                if values:
+                    mean_value = statistics.mean(values)
+                    stats[category][metric].append(mean_value)
+
+    #dump to test.txt
+    with open("test.txt", "a", encoding="utf-8") as f:
+        f.write(f"Number of ignored entries: {ignored_number}\n")
+        f.write("Stats per category:\n")
+        for category, metrics in stats.items():
+            f.write(f"{category}:\n")
+            for metric, values in metrics.items():
+                f.write(f"  {metric}: {values}\n")
     return stats
 
 def format_mean_std(values):
@@ -51,7 +114,8 @@ def format_mean_std(values):
         return "N/A"
     mean = statistics.mean(values)
     std = statistics.stdev(values) if len(values) > 1 else 0.0
-    return f"{mean:.3f} $\\pm$ {std:.3f}"
+    print(f"Mean: {mean}, Std: {std} for values: {values}")
+    return f"{float_precision.format(mean)} $\\pm$ {float_precision.format(std)}"
 
 def generate_latex_table(stats):
     rows = []
@@ -60,12 +124,13 @@ def generate_latex_table(stats):
     rows.append(header)
     rows.append(title)
 
-    nb_files = len(stats["Tous"]["Précision"]) # Total number of files
+    nb_files = sum(1 for v in stats["Tous"].values() for _ in v)
 
     for category in ["Tous", "Bool", "URIs", "Literals"]:
-        pr = format_mean_std(stats[category]["Précision"])
-        rc = format_mean_std(stats[category]["Rappel"])
-        f1 = format_mean_std(stats[category]["F1-score"])
+        print(f"Processing category: {category}")
+        pr = format_mean_std(stats[category].get("Précision", []))
+        rc = format_mean_std(stats[category].get("Rappel", []))
+        f1 = format_mean_std(stats[category].get("F1-score", []))
         row = f"{category} & {pr} & {rc} & {f1} \\\\"
         rows.append(row)
 
