@@ -144,7 +144,7 @@ def find_response_type(response: dict) -> str:
         return 'None'
     elif isinstance(response, bool):
         return 'boolean'
-    elif isinstance(response, list) and len(response) > 0:
+    elif isinstance(response, list) and len(response) > 0 and response != [{}]:
         return recursive_dict_extract(response, 'type')[0]  # Find the first type
     else:
         return 'unknown'
