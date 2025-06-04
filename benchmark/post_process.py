@@ -378,6 +378,41 @@ def find_first_non_done_step(filtered_data): #todo remake
         non_done_steps.append(non_done_step)
     return non_done_steps
 
+def moving_average(x, w):
+    return [sum(x[i:i+w])/w for i in range(len(x)-w+1)]
+
+def plot_score_relative_to_time(filtered_data, window_size=5):
+    # Même regroupement que précédemment
+    scores_by_time = {}
+    for entry in filtered_data.values():
+        time = entry.get("SystemTime")
+        score = entry.get("F1Score")
+        if time is not None and score is not None:
+            scores_by_time.setdefault(time, []).append(score)
+
+    times = sorted(scores_by_time)
+    mean_scores = [sum(scores_by_time[t])/len(scores_by_time[t]) for t in times]
+
+    # Calculer moyenne glissante sur mean_scores
+    if len(mean_scores) < window_size:
+        window_size = len(mean_scores)
+
+    smooth_scores = moving_average(mean_scores, window_size)
+    smooth_times = times[(window_size-1)//2:-(window_size//2)]  # ajustement indices
+
+    # Tracer
+    import matplotlib.pyplot as plt
+    plt.figure(figsize=(10, 5))
+    plt.plot(times, mean_scores, 'o-', alpha=0.3, label='Moyenne brute')
+    plt.plot(smooth_times, smooth_scores, 'r-', label=f'Moyenne glissante (w={window_size})')
+    plt.xlabel("Temps (SystemTime)")
+    plt.ylabel("Score F1")
+    plt.title("Evolution du score F1 avec moyenne glissante")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+
 def plot_box_system_time(filtered_data):
     """
     Plot the boxplot of the SystemTime.
@@ -706,8 +741,6 @@ def generate_score_comparison_matrices_to_core(core_files: list[str], new_files:
 def generate_score_comparison_matrices_to_treshold(new_files: list[str], evaluated_criteria: str, max_columns=None):
     metrics = ["Precision", "Recall", "F1Score"]
     new_data_list = [load_and_filter_data(new_file, {}) for new_file in new_files]
-    
-    show = True
 
     # Collect all possible keys to determine the full question range
     all_keys = set()
@@ -1123,7 +1156,7 @@ def question_word_ratio_ranking(filtered_data_0, filtered_data_1, title_compleme
     word_count_1 = defaultdict(int)
 
 
-    smoothing = len(filtered_data_1) + len(filtered_data_0)  # Smoothing factor to avoid division by zero
+    smoothing = len(filtered_data_1) + len(filtered_data_0) + 1  # Smoothing factor to avoid division by zero
 
     for entry in filtered_data_0.values():
         question = entry.get("Question")
@@ -1206,7 +1239,7 @@ def question_tags_pp(filtered_data, file_name):
     }
     filtered_f1_at_0 = load_and_filter_data(file_name, constraints_f1_at_0)
 
-    smoothing = len(filtered_f1_at_1.values()) + len(filtered_f1_at_0.values())  # Smoothing factor to avoid division by zero
+    smoothing = len(filtered_f1_at_1.values()) + len(filtered_f1_at_0.values()) +1 # Smoothing factor to avoid division by zero
 
     #if no tags, return
     if not all_tags:
@@ -1508,6 +1541,7 @@ def make_pdf_report(files_names: list[str], core_files_names: list[str], questio
 
     precisions, recalls, f1_scores = extract_scores(filtered_valid_data)
     plot_box_system_time(filtered_valid_data)
+    plot_score_relative_to_time(filtered_valid_data)
 
     plot_confusion_matrix_bool(filtered_valid_data)
 
@@ -1665,6 +1699,7 @@ if __name__ == "__main__":
         r'C:\Users\PC\Desktop\llmSparklis\benchmark\BestOutputs\for_paper\QALD9Plus\wikidata\train\one_shot_the_most\best_suggestion\nemo\QALD-9-plus_sparklisllm-LLMFrameworkOneShotTheMost_20250516_162438.json',
         r'C:\Users\PC\Desktop\llmSparklis\benchmark\BestOutputs\for_paper\QALD9Plus\wikidata\train\one_shot_the_most\best_suggestion\nemo\QALD-9-plus_sparklisllm-LLMFrameworkOneShotTheMost_20250517_031140.json',
         r'C:\Users\PC\Desktop\llmSparklis\benchmark\BestOutputs\for_paper\QALD9Plus\wikidata\train\one_shot_the_most\best_suggestion\nemo\QALD-9-plus_sparklisllm-LLMFrameworkOneShotTheMost_20250517_142256.json',
+        r'C:\Users\PC\Desktop\llmSparklis\benchmark\BestOutputs\for_paper\QALD9Plus\wikidata\train\retry\best_suggestion\QALD-9-plus_sparklisllm-LLMFrameworkRetryWithoutTimeout_20250518_022648.json',
     ]
 
     input_files = [
