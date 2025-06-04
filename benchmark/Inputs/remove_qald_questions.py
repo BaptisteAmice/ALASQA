@@ -2,13 +2,11 @@ import json
 
 # List of IDs to remove
 nombres = [
-    81, 31, 210, 187, 173, 166, 149, 132, 126, 10, 1, 178, 129,
-    181, 50, 21, 96, 159, 107, 211, 144, 167, 151, 133, 165,
-    108, 201, 194, 97, 19, 190, 94, 8, 119, 116
+    25,87,145,195,258,330
 ]
 
 # Load the JSON file
-file = r"C:\Users\PC\Desktop\llmSparklis\benchmark\Inputs\qald_9_plus_test_dbpedia_patched.json"
+file = r"C:\Users\PC\Desktop\llmSparklis\benchmark\Inputs\qald_10_patched.json"
 with open(file, "r", encoding="utf-8") as f:
     data = json.load(f)
 

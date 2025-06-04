@@ -115,6 +115,7 @@ def auto_tag_questions(input_path: str, output_path: str, keep_existing_tags: bo
             "less ":["comparison"],
             "people ": ["person"],
             "who ": ["who", "person"], #not always a person but most of the time
+            "whom ": ["who", "person"],
             "author": ["author", "person"],
             "writer": ["author", "person"],
             "wrote": ["author", "person"],
@@ -196,6 +197,20 @@ def auto_tag_questions(input_path: str, output_path: str, keep_existing_tags: bo
             "hillel slovak": ["person"],
             "claudia": ["person"],
             "schiffer": ["person"],
+            "yayoi kusama": ["person"],
+            "allen ginsberg": ["person"],
+            "udo bölts": ["person"],
+            "leonid brezhnev": ["person"],
+            "adam ondra": ["person"],
+            "haruki murakami": ["person"],
+            "kobe bryant": ["person"],
+            "lebron james": ["person"],
+            "rawson marshall thurber": ["person"],
+            "joe cocker": ["person"],
+            "reinhold messner": ["person"],
+            "hemingway": ["person"],
+            "madonna": ["person"],
+            "mariah Carey": ["person"],
 
             "film": ["film"],
             "movie": ["film"],
@@ -237,6 +252,7 @@ def auto_tag_questions(input_path: str, output_path: str, keep_existing_tags: bo
             "munich": ["city", "location"],
             "maribor": ["city", "location"],
             "cairo": ["city", "location"],
+            "venice": ["city", "location"],
 
             "current": ["current"],
             "date": ["time"],
@@ -429,8 +445,8 @@ def pass_tags_to_output_of_run(input_path: str, output_path: str):
 
 
 if __name__ == "__main__":
-    input_file = "./benchmark/Inputs/qald_9_plus_train_wikidata_patched.json"
-    output_file = "./benchmark/Inputs/qald_9_plus_train_wikidata_patched.json"
+    input_file = "./benchmark/Inputs/qald_10_patched.json"
+    output_file = "./benchmark/Inputs/qald_10_patched.json"
     insert_tags_field(
         input_file,
         output_file

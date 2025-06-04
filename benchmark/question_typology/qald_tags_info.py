@@ -29,7 +29,7 @@ def list_question_for_tag_list(input_file: str, tags: list[str], union: bool = F
    
 
 if __name__ == "__main__":
-    input_file = "./benchmark/Inputs/qald_9_plus_train_wikidata_patched.json"
+    input_file = "../benchmark/Inputs/qald_9_plus_train_wikidata_patched.json"
 
     tags = ["boolean", "person"]
     questions = list_question_for_tag_list(input_file, tags, union=False)

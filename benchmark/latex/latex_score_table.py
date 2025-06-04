@@ -4,11 +4,11 @@ import os
 from glob import glob
 
 # === Configuration ===
-JSON_DIR = r'C:\Users\PC\Desktop\llmSparklis\benchmark\BestOutputs\for_paper\QALD10\retry\beam'
+JSON_DIR = r'C:\Users\PC\Desktop\llmSparklis\benchmark\BestOutputs\for_paper\QALD9Plus\wikidata\test\one_shot_the_most\dfs\en'
 OUTPUT_FILE = "latex_table.txt"  # File to save LaTeX table
 
 # Recalculation options
-RECALCULATE_FILTER = ["unknown", "boolean"]
+RECALCULATE_FILTER = ["unknown"]
 
 float_precision = f"{{:.{2}f}}"  # Number of decimal places for float values
 
