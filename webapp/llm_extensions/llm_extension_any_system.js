@@ -1032,9 +1032,12 @@ window.LLMFrameworkDirect = LLMFrameworkDirect; //to be able to use the class th
 window.LLMFrameworks.push(LLMFrameworkDirect.name); // to be able to access the class name in the interface and choose it in the dropdown
 
 
-//////////////////// Less relevant systems //////////////////////
+//////////////////// EXPERIMENTAL SYSTEMS //////////////////////
 
 class LLMFrameworkBooleanBySubquestions extends LLMFramework {
+    constructor(question, question_id) {
+        super(question, question_id, "count_references");
+    }
     async answerQuestionLogic() {
         // Get a list of necessary subquestions to reach the answer
         //Generation of the subquestions by the LLML
