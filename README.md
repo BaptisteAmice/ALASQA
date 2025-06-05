@@ -84,7 +84,3 @@ For the latter, it can make some queries fail because the queries are encapsulat
 - "before" and "after" commands compare string values rather than dates, which can lead to issues, especially with negative dates.
 
 - Commands executed on Wikidata can cause internal Sparklis queries to time out. A fallback mechanism has been implemented for the property command to mitigate such cases (e.g. a state ; property population).
-
-## License
-
-License: Apache Licence 2.0
