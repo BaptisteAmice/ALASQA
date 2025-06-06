@@ -1,6 +1,8 @@
+"""
+Not really unit testing, but allow to verify some properties of the system
+"""
 import unittest
 from system_evaluation import stats_calculation, recursive_dict_extract
-# Not really unit testing, but allow to verify some properties of the system
 
 class TestRecursiveDictExtract(unittest.TestCase):
 

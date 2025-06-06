@@ -1,3 +1,10 @@
+"""
+Defines functions to interact with web pages using Selenium WebDriver.
+
+This module enables automation of user interactions such as clicking,
+typing, navigating, and other browser actions by substituting manual inputs
+with programmatic commands executed through Selenium WebDriver.
+"""
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.firefox.options import Options

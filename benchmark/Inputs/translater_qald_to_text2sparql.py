@@ -1,3 +1,6 @@
+"""
+This script converts a JSON file containing QALD questions into a YAML format suitable for the text2sparql-client.
+"""
 import json
 import yaml
 import os

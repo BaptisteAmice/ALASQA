@@ -1,3 +1,6 @@
+"""
+This script gives information about the tags of the questions in a QALD JSON file.
+"""
 import json
 
 def list_question_for_tag_list(input_file: str, tags: list[str], union: bool = False) -> list[str]:

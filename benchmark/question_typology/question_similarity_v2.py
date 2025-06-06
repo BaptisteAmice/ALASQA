@@ -1,4 +1,10 @@
-#https://www.kaggle.com/code/leomauro/text-clustering-grouping-texts/code
+"""
+This scripts clusters questions based on their similarity using Affinity Propagation.
+It uses Levenshtein distance as the similarity measure and can operate at both character and word levels.
+
+It is inspired by this notebook:
+https://www.kaggle.com/code/leomauro/text-clustering-grouping-texts/code
+"""
 import sys
 import os
 import json

@@ -1,3 +1,6 @@
+"""
+This script removes specific questions from a QALD JSON file based on their IDs.
+"""
 import json
 
 # List of IDs to remove

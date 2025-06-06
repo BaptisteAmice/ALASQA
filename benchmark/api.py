@@ -1,4 +1,7 @@
-"""text2sparql-api"""
+"""
+This file implements a FastAPI application that serves as an API for the TEXT2SPARQL service.
+It allows users to submit natural language questions and receive SPARQL queries in response.
+"""
 
 import fastapi
 from fastapi.staticfiles import StaticFiles

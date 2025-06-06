@@ -1,9 +1,8 @@
-# Script to easily add tags
-# This script isn't sufficient and should be complemented by manual tagging
-
+"""
+This script adds a "tags" field to each question in a QALD JSON file, allowing for automatic tagging based on the content of the questions and their answers.
+"""
 import json
 import re
-
 
 def contains_literal_type(obj):
     if isinstance(obj, dict):

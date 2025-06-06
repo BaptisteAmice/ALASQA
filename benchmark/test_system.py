@@ -1,3 +1,8 @@
+"""
+Used to implement any system you want to test in the benchmark.
+SparklisLLM corresponds to the ALASQA system.
+If you want to test another system, you can create a new class that inherits from TestSystem (and update the factory method testSystemFactory).
+"""
 from abc import abstractmethod
 import interactions
 import config

@@ -1,3 +1,6 @@
+"""
+This script is used to extract successful command chains from a JSON file containing results from our system.
+"""
 import json
 import os
 import re

@@ -1,3 +1,7 @@
+"""
+This file extract data from benchmark files.
+Each benchmark has its own extractor class that implements the Extractor interface.
+"""
 from abc import abstractmethod
 import json
 
@@ -114,7 +118,3 @@ def extractorFactory(benchmark_name: str) -> Extractor:
         return ExtractorQald()
     else:
         raise ValueError('Unknown benchmark name')
-
-
-
-        

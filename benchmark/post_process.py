@@ -1,3 +1,8 @@
+"""
+Post-processing script for analyzing and visualizing the results of a benchmark.
+Will generate various plot in a PDF file.
+If show is set to True, the plots will also be displayed on the screen.
+"""
 from collections import defaultdict
 import json
 import logging

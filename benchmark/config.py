@@ -1,3 +1,6 @@
+"""
+This file is used to manually configure the benchmark evaluation parameters.
+"""
 import os
 import logging
 import benchmark_extraction

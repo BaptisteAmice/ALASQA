@@ -1,3 +1,8 @@
+"""
+Old script to find similar questions based on Levenshtein distance.
+The clustering seems to not work well, please use the new script instead.
+"""
+
 from collections import defaultdict
 import json
 

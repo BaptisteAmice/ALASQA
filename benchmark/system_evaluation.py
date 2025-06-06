@@ -1,3 +1,7 @@
+"""
+Script to execute to launch the evaluation of a system on a benchmark.
+Will create a JSON file with the results in the Outputs folder.
+"""
 import json
 import logging
 import datetime
