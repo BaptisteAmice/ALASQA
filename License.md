@@ -23,3 +23,7 @@
 ### Mintaka
 **License**: CC-BY-4.0
 [https://github.com/amazon-science/mintaka](https://github.com/amazon-science/mintaka)
+
+### text2sparql.aksw.org
+**License**: CC BY-SA 4.0
+[https://github.com/AKSW/text2sparql.aksw.org](https://github.com/AKSW/text2sparql.aksw.org)
