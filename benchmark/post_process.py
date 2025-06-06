@@ -6,6 +6,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.lines as mlines
 import matplotlib.table as tbl
 import matplotlib.patches as mpatches
+from matplotlib.ticker import NullFormatter
 import seaborn as sns
 import networkx as nx
 import numpy as np
@@ -401,26 +402,104 @@ def plot_score_relative_to_time(filtered_data, window_size=5):
     smooth_times = times[(window_size-1)//2:-(window_size//2)]  # ajustement indices
 
     # Tracer
-    import matplotlib.pyplot as plt
     plt.figure(figsize=(10, 5))
     plt.plot(times, mean_scores, 'o-', alpha=0.3, label='Moyenne brute')
     plt.plot(smooth_times, smooth_scores, 'r-', label=f'Moyenne glissante (w={window_size})')
-    plt.xlabel("Temps (SystemTime)")
+    plt.xlabel("Temps")
     plt.ylabel("Score F1")
-    plt.title("Evolution du score F1 avec moyenne glissante")
     plt.legend()
     plt.grid(True)
-    plt.show()
+    if not show:
+        plt.title("Evolution du score F1 avec moyenne glissante")
+    pp.savefig()
+    if show:
+        plt.show()
+
+
+def plot_cumulative_score_relative_to_time(filtered_data):
+    nb_scores = len(filtered_data)
+    scores_by_time = {}
+    for entry in filtered_data.values():
+        time = entry.get("SystemTime")
+        score = entry.get("F1Score")
+        if time is not None and score is not None:
+            scores_by_time.setdefault(time, []).append(score)
+
+    times = sorted(scores_by_time)
+
+    cumulative_scores = []
+    cum_sum = 0
+
+    for t in times:
+        scores = scores_by_time[t]
+        cum_sum += sum(scores)
+        avg = (cum_sum / nb_scores)
+        cumulative_scores.append(avg)
+
+    figure_font_size = 15
+
+    # Tracé
+    plt.figure(figsize=(12, 6))
+    plt.plot(times, cumulative_scores, 'b-', label='Score F1 moyen (progressif)')
+    plt.xlabel("Temps", fontsize=figure_font_size)
+    plt.ylabel("Score F1 moyen", fontsize=figure_font_size)
+
+    # Log scale
+    plt.yscale('log')
+    ax = plt.gca()
+    ax.yaxis.set_major_formatter(NullFormatter())
+    ax.yaxis.set_minor_formatter(NullFormatter())
+
+    # Ajout manuel de ticks + labels à des valeurs spécifiques
+    yticks = np.array([0.01, 0.05, 0.1, 0.3, 0.5, 0.7, 0.8, 0.9, 1.0])
+    yticks = yticks[yticks > min(cumulative_scores)]
+    ax.set_yticks(yticks)
+    ax.set_yticklabels([f"{y:.2f}" for y in yticks])
+    # taille des ticks
+    plt.tick_params(axis='y', which='major', labelsize=figure_font_size)
+    plt.tick_params(axis='x', which='major', labelsize=figure_font_size)
+
+    # Grille + légende
+    ax.grid(True, which='both', linestyle='--', linewidth=0.5)
+    plt.legend(fontsize=14)
+    plt.tight_layout()
+    if not show:
+        plt.title("Évolution du score F1 moyen avec échelle verticale compressée", fontsize=18)
+    pp.savefig()
+    if show:
+        plt.show()
 
 
 def plot_box_system_time(filtered_data):
     """
     Plot the boxplot of the SystemTime.
     """
+    figure_font_size = 15
     system_times = [entry.get("SystemTime") for entry in filtered_data.values()]
     plt.figure()
     plt.boxplot(system_times)
-    plt.ylabel("System Time (seconds)")
+    plt.ylabel("System Time (seconds)", fontsize=figure_font_size)
+
+    # logarithmic scale for better visibility
+    plt.yscale('log')
+    ax = plt.gca()
+
+    #remove the y-axis ticks
+    ax.yaxis.set_major_formatter(NullFormatter())
+    ax.yaxis.set_minor_formatter(NullFormatter())
+    ax.tick_params(axis='y', which='both', length=0)  # Cacher les traits de ticks
+    # Add 6 ticks logarithmically spread between the 0 and the max value
+    print("System times:", system_times)
+    max_time = max(system_times) if system_times else 1
+    min_time = min(system_times) if system_times else 0.1
+    print("Max system time:", max_time)
+    yticks = np.logspace(np.log10(min_time), np.log10(max_time), num=6)
+    ax.set_yticks(yticks)
+    ax.set_yticklabels([f"{y:.0f}" for y in yticks])
+
+    plt.tick_params(axis='y', which='major', labelsize=figure_font_size)
+
+    plt.tight_layout()
     if not show:
         plt.title("Boxplot of the system's response time")
     #hide x-axis ticks
@@ -1119,7 +1198,7 @@ def boolean_prediction_fiability_confusion_matrix_with_variability(file_names: l
         plt.show()
     plt.close()
 
-def question_word_ranking(filtered_valid_data, number_of_words=30):
+def question_word_ranking(filtered_valid_data, number_of_words=25):
     """
     Extracts the most frequent words from the questions in the filtered data.
     """
@@ -1137,11 +1216,13 @@ def question_word_ranking(filtered_valid_data, number_of_words=30):
 
     words, counts = zip(*sorted_words[:number_of_words])
 
+    fig_font_size = 14
     plt.figure(figsize=(12, 6))
     plt.bar(words, counts, color='skyblue', edgecolor='black')
-    plt.xticks(rotation=45, ha="right", fontsize=10)
-    plt.xlabel("Words")
-    plt.ylabel("Frequency")
+    plt.xticks(rotation=45, ha="right", fontsize=fig_font_size)
+    plt.yticks(fontsize=fig_font_size)
+    plt.xlabel("Words", fontsize=fig_font_size)
+    plt.ylabel("Frequency", fontsize=fig_font_size)
     if not show:
         plt.title('Top {number_of_words} most frequent words in questions')
 
@@ -1151,12 +1232,12 @@ def question_word_ranking(filtered_valid_data, number_of_words=30):
         plt.show()
     plt.close()
 
-def question_word_ratio_ranking(filtered_data_0, filtered_data_1, title_complement="", number_of_words=30):
+def question_word_ratio_ranking(filtered_data_0, filtered_data_1, title_complement="", number_of_words=25):
     word_count_0 = defaultdict(int)
     word_count_1 = defaultdict(int)
 
 
-    smoothing = len(filtered_data_1) + len(filtered_data_0) + 1  # Smoothing factor to avoid division by zero
+    smoothing = 10  # Smoothing factor to avoid division by zero and diminish the impact of small counts
 
     for entry in filtered_data_0.values():
         question = entry.get("Question")
@@ -1187,6 +1268,7 @@ def question_word_ratio_ranking(filtered_data_0, filtered_data_1, title_compleme
 
     words, ratios = zip(*sorted_ratios[:number_of_words])
 
+    fig_font_size = 14
     plt.figure(figsize=(12, 6))
 
     # plot a line for the global ratio
@@ -1195,9 +1277,10 @@ def question_word_ratio_ranking(filtered_data_0, filtered_data_1, title_compleme
 
     colors = ['springgreen' if r <= 1 else 'lightcoral' for r in ratios]
     plt.bar(words, ratios, color=colors, edgecolor='black')
-    plt.xticks(rotation=45, ha="right", fontsize=10)
-    plt.xlabel("Words")
-    plt.ylabel("Frequency Ratio (+"+str(smoothing)+" smoothing)")
+    plt.xticks(rotation=45, ha="right", fontsize=fig_font_size)
+    plt.yticks(fontsize=fig_font_size)
+    plt.xlabel("Words", fontsize=fig_font_size)
+    plt.ylabel("Frequency Ratio (+"+str(smoothing)+" smoothing)", fontsize=fig_font_size)
     if not show:
         plt.title(f'Top {number_of_words} worst words by ratio - {title_complement}')
 
@@ -1223,10 +1306,9 @@ def get_all_question_tags(filtered_data) -> set:
     
 
 
-def question_tags_pp(filtered_data, file_name):
+def question_tags_pp(filtered_data, file_name,number_of_tags=25):
     # Get data
     all_tags = get_all_question_tags(filtered_data)
-
 
     constraints_f1_at_1 = {
         "BenchmarkResult": lambda x : x not in [None, []],
@@ -1239,7 +1321,7 @@ def question_tags_pp(filtered_data, file_name):
     }
     filtered_f1_at_0 = load_and_filter_data(file_name, constraints_f1_at_0)
 
-    smoothing = len(filtered_f1_at_1.values()) + len(filtered_f1_at_0.values()) +1 # Smoothing factor to avoid division by zero
+    smoothing = 10 # Smoothing factor to avoid division by zero and diminish the impact of small counts
 
     #if no tags, return
     if not all_tags:
@@ -1260,15 +1342,17 @@ def question_tags_pp(filtered_data, file_name):
         all_tags_f1_scores.append(f1_scores)
 
     # Plot ranking of tags frequency for the 30 first tags
+    fig_font_size = 14
     tag_frequencies = [len(filtered_tags_data_dict[tag]) for tag in all_tags]
     sorted_tags = sorted(zip(all_tags, tag_frequencies), key=lambda x: x[1], reverse=True)
-    tags, frequencies = zip(*sorted_tags[0:30])
+    tags, frequencies = zip(*sorted_tags[0:number_of_tags])
     plt.figure(figsize=(12, 6))
     colors = ['lightblue' for f in frequencies]
     plt.bar(tags, frequencies, color=colors, edgecolor='black')
-    plt.xticks(rotation=45, ha="right", fontsize=10)
-    plt.xlabel("Tags")
-    plt.ylabel("Frequency")
+    plt.xticks(rotation=45, ha="right", fontsize= fig_font_size)
+    plt.yticks(fontsize=fig_font_size)
+    plt.xlabel("Tags", fontsize=fig_font_size)
+    plt.ylabel("Frequency", fontsize=fig_font_size)
     if not show:
         plt.title(f'Top {len(all_tags)} most frequent tags')
     plt.grid()
@@ -1305,6 +1389,9 @@ def question_tags_pp(filtered_data, file_name):
     # Sort tags by ratio
     sorted_tags = sorted(zip(all_tags, ratio_tags), key=lambda x: x[1], reverse=True)
     tags, ratios = zip(*sorted_tags)
+    # Keep only the top number_of_tags
+    tags = tags[:number_of_tags]
+    ratios = ratios[:number_of_tags]
 
     plt.figure(figsize=(12, 6))
 
@@ -1314,9 +1401,10 @@ def question_tags_pp(filtered_data, file_name):
 
     colors = ['springgreen' if r <= 1 else 'lightcoral' for r in ratios]
     plt.bar(tags, ratios, color=colors, edgecolor='black')
-    plt.xticks(rotation=45, ha="right", fontsize=10)
-    plt.xlabel("Tags")
-    plt.ylabel("Frequency Ratio (+"+str(smoothing)+" smoothing)")
+    plt.xticks(rotation=45, ha="right", fontsize=fig_font_size)
+    plt.yticks(fontsize=fig_font_size)
+    plt.xlabel("Tags", fontsize=fig_font_size)
+    plt.ylabel("Frequency Ratio (+"+str(smoothing)+" smoothing)", fontsize=fig_font_size)
     if not show:
         plt.title(f'Top {len(all_tags)} worst tags by ratio')
     plt.grid()
@@ -1542,6 +1630,7 @@ def make_pdf_report(files_names: list[str], core_files_names: list[str], questio
     precisions, recalls, f1_scores = extract_scores(filtered_valid_data)
     plot_box_system_time(filtered_valid_data)
     plot_score_relative_to_time(filtered_valid_data)
+    plot_cumulative_score_relative_to_time(filtered_valid_data)
 
     plot_confusion_matrix_bool(filtered_valid_data)
 
