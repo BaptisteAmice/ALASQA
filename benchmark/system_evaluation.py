@@ -349,7 +349,7 @@ def make_dict(meta: dict, questions_ids: list, questions: list,
     for i in range(len(questions_ids)):
         data[questions_ids[i]] = {
             'Question' : questions[i],
-            'Tags' : tags[i],
+            'Tags' : tags[i] if i < len(tags) else [],  # Ensure to create an empty list if tags are not provided
             **({'Error': errors[i]} if errors[i] != '' else {}), # only add if it's not an empty string
             'StepsStatus' : steps_status[i],
             'Precision' : precisions[i],
