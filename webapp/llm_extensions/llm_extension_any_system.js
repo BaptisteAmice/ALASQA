@@ -211,7 +211,7 @@ async function qa_control() {
         // Execute the logic of the extension
         await framework.answerQuestion();
     } else {
-        console.error(selectedClassName + " is not a valid system class, using LLMFrameworkOneShotby default");
+        console.error(selectedClassName + " is not a valid system class, using LLMFrameworkOneShot by default");
         framework = new LLMFrameworkOneShot(question, question_id);
         framework.errors += selectedClassName + " is not a valid system class";
     }
@@ -600,7 +600,7 @@ async function step_get_results(framework, place, overidding_sparql = null) {
  * Use a single interaction with the LLM to answer the question.
  * Execute in one time a series of commands to answer the question.
  */
-class LLMFrameworkOneShotTheMost extends LLMFramework {
+class LLMFrameworkOneShot extends LLMFramework {
     constructor(question, question_id) {
         super(question, question_id, "count_references");
     }
@@ -642,8 +642,8 @@ class LLMFrameworkOneShotTheMost extends LLMFramework {
         await this.executeStep(step_get_results, "Get results", [this, place, this.sparql]);
     }
 }
-window.LLMFrameworkOneShotTheMost = LLMFrameworkOneShotTheMost; //to be able to access the class
-window.LLMFrameworks.push(LLMFrameworkOneShotTheMost.name); //to be able to access the class name
+window.LLMFrameworkOneShot = LLMFrameworkOneShot; //to be able to access the class
+window.LLMFrameworks.push(LLMFrameworkOneShot.name); //to be able to access the class name
 
 class LLMFrameworkText2Sparql extends LLMFramework {
     constructor(question, question_id) {
@@ -767,7 +767,120 @@ class LLMFrameworkText2Sparql extends LLMFramework {
 window.LLMFrameworkText2Sparql = LLMFrameworkText2Sparql; //to be able to access the class
 window.LLMFrameworks.push(LLMFrameworkText2Sparql.name); //to be able to access the class name
 
-class LLMFrameworkRetryWithoutTimeout extends LLMFramework {
+class LLMFrameworkRetry extends LLMFramework { //todo test
+    constructor(question, question_id) {
+        super(question, question_id, "count_references");
+    }
+    async answerQuestionLogic() {
+        ////////////////////////// TRY ANSWERING WITH SPARKLIS
+        let i = 1;
+        let number_of_same_response_expected = 3;
+        let got_number_of_same_response_expected = false;
+        let valid_responses_queries = [];
+        let valid_responses_results = [];
+        while (!got_number_of_same_response_expected) {
+            this.reasoning_text += "<br>Try " + i + "<br>";
+            // Call llm generation
+            let output_llm = await this.executeStep(step_generation, "LLM generation", 
+                [this, commands_chain_system_prompt_the_most_improved(),"commands_chain_system_prompt_the_most_improved", this.question]
+            );
+            // Extract the commands from the LLM output
+            let extracted_commands_list = await this.executeStep(step_extract_tags, "Extracted commands",
+                [this, output_llm, "commands"]
+            );
+            // Execute the commands, wait for place evaluation and get the results
+            let extracted_commands = extracted_commands_list.at(-1) || "";
+            await this.executeStep(step_execute_commands, "Commands execution", [this, extracted_commands]);
+            
+            //get the current sparql query from the place
+            let place = sparklis.currentPlace();
+            this.sparql = place.sparql();
+
+            //if an action for group by is defined modify the query (done before step_remove_ordering_var_from_select)
+            if (this.group_by_action) {
+                this.sparql = await this.executeStep(step_group_by_and_count, "Group by and count", [this, this.sparql]);
+            }
+            //if the sparql query limit number is set, change the limit clause in the query
+            if (this.sparql_query_limit_number) {
+                //execute step
+                this.sparql = await this.executeStep(step_change_or_add_limit, "Add/change limit", [this, this.sparql, this.sparql_query_limit_number]);
+                //remove the ordering variable from the select clause
+                this.sparql = await this.executeStep(step_remove_ordering_var_from_select, "Remove ordering variable from select", [this, this.sparql]);
+            }
+            if (this.sparql_query_offset_number) {
+                this.sparql = await this.executeStep(step_change_or_add_offset, "Add/change offset", [this, this.sparql, this.sparql_query_offset_number]);
+            }
+            if (this.order_date) {
+                this.sparql = await this.executeStep(step_change_order_type_to_date, "Change order type to date", [this, this.sparql]);
+            }
+            console.log("sparql after modification", this.sparql);
+
+            //only wait for the results if the query is not empty
+            let results_array = [];
+            if (this.sparql != "" && this.sparql != undefined && this.sparql != null) {
+                await this.executeStep(step_get_results, "Get results", [this, place, this.sparql]);
+                try {
+                    results_array = JSON.parse(this.result_text);
+                } catch (e) {
+                    results_array = [];
+                }
+            }
+
+            //reset the variables to avoid side effects for the next queries
+            this.resetQueryAlterationsVariables();
+
+            //got a response if the query is not empty and has a response
+            let got_a_response = (this.sparql != "" && this.sparql != undefined && this.sparql != null)
+                            && (this.result_text != "" && this.result_text != undefined && this.result_text != null
+                            && results_array.length > 0);
+            console.log("result text", this.result_text);
+
+            if (got_a_response) {
+                //add to valid_responses
+                valid_responses_queries.push(this.sparql);
+                valid_responses_results.push(this.result_text);
+
+                if (valid_responses_queries.length >= number_of_same_response_expected) {
+                    //test if we have number_of_same_response_expected times the same query in valid_responses_queries
+                    //if it's the case, put it as the sparql query of the framework
+                    let query_count = valid_responses_queries.reduce((acc, query) => {
+                        acc[query] = (acc[query] || 0) + 1;
+                        return acc;
+                    }
+                    , {});
+                    let query_found = Object.keys(query_count).find(key => query_count[key] >= number_of_same_response_expected);
+                    if (query_found) {
+                        this.sparql = query_found;
+                        got_number_of_same_response_expected = true;
+                    }
+
+                    //if we don't have the same number of query, we can also check the results (and keep the query with the same id as one of the results)
+                    if (!got_number_of_same_response_expected) {
+                        let result_count = valid_responses_results.reduce((acc, result) => {
+                            acc[result] = (acc[result] || 0) + 1;
+                            return acc;
+                        }
+                        , {});
+                        let result_found = Object.keys(result_count).find(key => result_count[key] >= number_of_same_response_expected);
+                        if (result_found) {
+                            // get the query that corresponds to the result
+                            let query_found = valid_responses_queries[valid_responses_results.indexOf(result_found)];
+                            this.sparql = query_found;
+                            got_number_of_same_response_expected = true;
+                        }
+                    }
+                }
+            }
+            i++;
+        }   
+    }
+}
+window.LLMFrameworkRetry = LLMFrameworkRetry; //to be able to access the class
+window.LLMFrameworks.push(LLMFrameworkRetry.name); //to be able to access the class name
+
+
+class LLMFrameworkRetryDelegatesBoolsToLLM extends LLMFramework { //todo test
+    //get the highest score on benchmarks, but the reasoning behind boolean question isn't based on the KG
     constructor(question, question_id) {
         super(question, question_id, "count_references");
     }
@@ -922,8 +1035,8 @@ class LLMFrameworkRetryWithoutTimeout extends LLMFramework {
         }      
     }
 }
-window.LLMFrameworkRetryWithoutTimeout = LLMFrameworkRetryWithoutTimeout; //to be able to access the class
-window.LLMFrameworks.push(LLMFrameworkRetryWithoutTimeout.name); //to be able to access the class name
+window.LLMFrameworkRetryDelegatesBoolsToLLM = LLMFrameworkRetryDelegatesBoolsToLLM; //to be able to access the class
+window.LLMFrameworks.push(LLMFrameworkRetryDelegatesBoolsToLLM.name); //to be able to access the class name
 
 /**
  * Doesn't call the LLM but just pass the commands to the command extension.
