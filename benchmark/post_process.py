@@ -1774,15 +1774,6 @@ def make_pdf_report(files_names: list[str], core_files_names: list[str], questio
     # boxplot per question tag
     question_tags_pp(filtered_valid_data, file_name)
 
-    #failed cmd indexes (one of cmd_error_messages in Error)
-    constraints_failed_cmd = {
-        "Error": lambda x: isinstance(x, str) and any(cmd_error in x for cmd_error in cmd_error_messages)
-    }
-    filtered_failed_cmd_data = load_and_filter_data(file_name, constraints_failed_cmd)
-
-    # todo pour groupe questions similaires
-    # ->boite à moustache groupe de questions similaires
-
     # Close the pdf file
     pp.close()
     logging.info("PDF done.")

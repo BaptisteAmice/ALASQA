@@ -600,7 +600,7 @@ async function step_get_results(framework, place, overidding_sparql = null) {
  * Use a single interaction with the LLM to answer the question.
  * Execute in one time a series of commands to answer the question.
  */
-class LLMFrameworkOneShotTheMost extends LLMFramework { //todo test
+class LLMFrameworkOneShotTheMost extends LLMFramework {
     constructor(question, question_id) {
         super(question, question_id, "count_references");
     }
@@ -676,7 +676,6 @@ class LLMFrameworkText2Sparql extends LLMFramework {
         }
         //////////////////////////// IF BOOLEAN QUESTION JUST USE THE LLM
         if (!endpoint_is_corporate && extracted_type == "boolean") {
-            //todo try it several times
             let output = await this.executeStep(step_generation, "LLM generation", 
                 [this, direct_boolean_answering_prompt(),"direct_boolean_answering_prompt", this.question]
             );
@@ -739,7 +738,7 @@ class LLMFrameworkText2Sparql extends LLMFramework {
                 let results_array = [];
                 if (this.sparql != "" && this.sparql != undefined && this.sparql != null) {
                     await this.executeStep(step_get_results, "Get results", [this, place, this.sparql]);
-                    try {//todo mieux gérer cas où resulttext est vide
+                    try {
                         results_array = JSON.parse(this.result_text);
                     } catch (e) {
                         results_array = [];
@@ -844,7 +843,7 @@ class LLMFrameworkRetryWithoutTimeout extends LLMFramework {
             let results_array = [];
             if (this.sparql != "" && this.sparql != undefined && this.sparql != null) {
                 await this.executeStep(step_get_results, "Get results", [this, place, this.sparql]);
-                try {//todo mieux gérer cas où resulttext est vide
+                try {
                     results_array = JSON.parse(this.result_text);
                 } catch (e) {
                     results_array = [];
@@ -899,12 +898,12 @@ class LLMFrameworkRetryWithoutTimeout extends LLMFramework {
             i++;
         }
 
-        let sparklis_response_is_boolean = false; //todo check if the response is boolean
+        let sparklis_response_is_boolean = false;
 
         //if the expected type is a boolean, and the response from sparklis isn't a boolean, we will directly use the LLM to answer the question
         if (expected_response_type == "boolean" && !sparklis_response_is_boolean) {
             let number_of_same_boolean_response_needed = 2;
-            //todo try several times
+
              let output_bool = await this.executeStep(step_generation, "LLM generation", 
                 [this, direct_boolean_answering_prompt(),"direct_boolean_answering_prompt", this.question]
             );

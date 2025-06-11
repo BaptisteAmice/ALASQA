@@ -352,7 +352,7 @@ function choose_action_system_prompt() {
     - <action>add command</action>: If additional commands are needed to retrieve the desired information.`;
 }
 
-function refine_query_system_prompt() { //toimprove
+function refine_query_system_prompt() {
     return `You will be given a question, a SPARQL query, and the result of executing that query.
     Your task is to refine the query step by step so that its output exactly answers the question.
     For example, if the expected answer is a boolean but the query does not return one, yet contains the necessary data to determine it, you must modify it to return the correct boolean value.
@@ -361,7 +361,7 @@ function refine_query_system_prompt() { //toimprove
 }
 
 ///// Direct question to SPARQL
-function direct_qa_system_prompt(endpoint) { //todo une version dbpedia et une version wikidata
+function direct_qa_system_prompt(endpoint) {
     return `Given a natural language question, generate an appropriate SPARQL query to retrieve the relevant information from the knowledge graph. Use the SPARQL endpoint: ${endpoint}.
 
     Follow these steps:

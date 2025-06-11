@@ -414,7 +414,6 @@ if __name__ == "__main__":
         exit(1)
 
     logging.info("SPARQL endpoint: " + config.SPARQL_ENDPOINT)
-    #todo tester sparql_endpoint
 
     # Get the name of the used LLM model
     used_llm = getModelName(config.LLM_API_MODEL)
