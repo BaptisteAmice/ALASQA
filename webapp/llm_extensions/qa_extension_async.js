@@ -219,21 +219,35 @@ async function process_step(place, step, target_suggestion_ranking = 1) {
     } else if (step === "desc") {
 	let sugg = { type: "IncrOrder", order: { type: "DESC", conv: null } };
 	return apply_suggestion(place, "desc-order", sugg)
-	} else if ((match = /^groupBy\s+(.+)$/.exec(step))) {
+	} else if ((match = /^groupBy\s+(.+)$/.exec(step))) { //group by in post-process
 	LAST_INITIATED_COMMAND = "groupBy";
-	bus.dispatchEvent(new CustomEvent('groupby_action', { detail: { action: 'count' } }));
+	if (match[1] && ["count"].includes(match[1])) { //add any action you want to support here, then update the bus listener to handle it
+		bus.dispatchEvent(new CustomEvent('groupby_action', { detail: { action: match[1] } }));
+	} else {
+		bus.dispatchEvent(new CustomEvent('groupby_action', { detail: { action: 'count' } })); //if the action isn't recognized, we default to count
+	}
 	//Keep the current place and does nothing
 	return place;
-} else if ((match = /^group\s*(.+)$/.exec(step))) {
-		return new Promise((resolve, reject) => {
+	} else if ((match = /^group\s*(.+)$/.exec(step))) { //group by in sparklis
+		return new Promise((resolve, reject) => { //todo add the other direction if possible
 			apply_suggestion(place, "foreach", "IncrForeach")
 				.then(next_place => {
 					let next_sugg = { type: "IncrAggregId", aggreg: "SAMPLE", id: 1 };
 					if (match[1] === "count") {
 						next_sugg = { type: "IncrAggregId", aggreg: "COUNT_DISTINCT", id: 1 };
-					}
-					//todo add other aggregations
-					//todo add the other direction
+					} else if (match[1] === "sum") {
+						aggregation = { type: "SUM" };
+						next_sugg = { type: "IncrAggregId", aggreg: aggregation, id: 1 };
+					} else if (match[1] === "avg") {
+						aggregation = { type: "AVG" };
+						next_sugg = { type: "IncrAggregId", aggreg: aggregation, id: 1 };
+					} else if (match[1] === "max") {
+						aggregation = { type: "MAX" };
+						next_sugg = { type: "IncrAggregId", aggreg: aggregation, id: 1 };
+					} else if (match[1] === "min") {
+						aggregation = { type: "MIN" };
+						next_sugg = { type: "IncrAggregId", aggreg: aggregation, id: 1 };
+					} 
 
 					resolve(apply_suggestion(next_place, match[1], next_sugg));
 				})
