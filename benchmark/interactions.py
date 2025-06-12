@@ -126,30 +126,30 @@ def sparklisllm_question(driver, question, endpoint_sparql, system_name, suggest
     clear_button = driver.find_element(by=By.ID, value="chatbot-clear-button")
     clear_button.click()
 
-    #select the system
-    #get the system name after "sparklisllm-" in id=system-dropdown
-    specific_system_name = system_name.split("sparklisllm-")[1]    
+    #select the strategy
+    #get the strategy name after "sparklisllm-" in id=strategy-dropdown
+    specific_strategy_name = system_name.split("sparklisllm-")[1]    
     # Find the select dropdown element
-    dropdown = Select(driver.find_element("id", "system-dropdown"))
+    dropdown = Select(driver.find_element("id", "strategy-dropdown"))
     # Get all available option texts
     available_options = [option.text for option in dropdown.options]
 
-    # Check if the specific system name exists
-    if specific_system_name in available_options:
-        dropdown.select_by_visible_text(specific_system_name)
+    # Check if the specific strategy name exists
+    if specific_strategy_name in available_options:
+        dropdown.select_by_visible_text(specific_strategy_name)
     else:
-        logging.error(f"System {specific_system_name} not found in the dropdown")
+        logging.error(f"Strategy {specific_strategy_name} not found in the dropdown")
 
     # Find and select the suggestion commands algorithm (in suggestion-commands-algo-dropdown)
     # Find the select dropdown element
     dropdown = Select(driver.find_element("id", "suggestion-commands-algo-dropdown"))
     # Get all available option texts
     available_options = [option.text for option in dropdown.options]
-    # Check if the specific system name exists
+    # Check if the specific strategy name exists
     if suggestion_commands_algo in available_options:
         dropdown.select_by_visible_text(suggestion_commands_algo)
     else:
-        logging.error(f"System {suggestion_commands_algo} not found in the dropdown")
+        logging.error(f"Strategy {suggestion_commands_algo} not found in the dropdown")
 
     # Locate the text box and send the question
     logging.info(f"INPUT: {question}")

@@ -1,6 +1,6 @@
 # Technical Notes and Known Issues
 
-- You can implement new systems by adding classes in the file llm_extension_any_system.js. The tools for post-processing are already available, but only used in systems after the "EXPERIMENTAL SYSTEMS" comment. As the name suggests, these systems are experimental and have yet to be validated.
+- You can implement new system strategies by adding classes in the file llm_extension_any_system.js. The tools for post-processing are already available, but only used in strategies after the "EXPERIMENTAL STRATEGIES" comment. As the name suggests, these systems are experimental and have yet to be validated.
 
 - You can have bad results with DBpedia because of CORS.
 A solution is to use a dump locally hosted or to use a proxy endpoint.

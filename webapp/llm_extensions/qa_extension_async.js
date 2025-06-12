@@ -1,3 +1,5 @@
+// Core of extension SPARKLIS COMMANDS
+
 // reporting that this extension is active
 console.log("QA extension active");
 

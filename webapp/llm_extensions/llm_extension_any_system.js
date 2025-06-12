@@ -1,3 +1,4 @@
+// Core of extension SPARKLIS LLM
 //Dependencies: qa_extension.js, llm_add_interface_extension.js, llm_utils.js, prompts.js
 console.log("LLM any sytem extension loaded");
 
@@ -134,7 +135,7 @@ class LLMFramework {
         this.setCurrentStepStatus(STATUS_DONE)
         // change the logic of the suggestions for the qa extension
         window.select_sugg_logic = this.select_sugg_logic;
-        // call the system logic to answer the question
+        // call the strategy logic to answer the question
         await this.answerQuestionLogic();
         // reset the logic of the suggestions for the qa extension
         window.select_sugg_logic = null;
@@ -201,7 +202,7 @@ async function qa_control() {
 
     //the used framework type is inferred by the dropdown value (could also force a specific class here)
     // Get the selected value
-    let dropdown = document.getElementById("system-dropdown");
+    let dropdown = document.getElementById("strategy-dropdown");
     let selectedClassName = dropdown.value; // Example: "LLMFrameworkBooleanBySubquestions"
 
     let framework = null;
@@ -211,9 +212,9 @@ async function qa_control() {
         // Execute the logic of the extension
         await framework.answerQuestion();
     } else {
-        console.error(selectedClassName + " is not a valid system class, using LLMFrameworkOneShot by default");
+        console.error(selectedClassName + " is not a valid strategy class, using LLMFrameworkOneShot by default");
         framework = new LLMFrameworkOneShot(question, question_id);
-        framework.errors += selectedClassName + " is not a valid system class";
+        framework.errors += selectedClassName + " is not a valid strategy class";
     }
 
     /////////// ENDING ///////////
@@ -1144,7 +1145,7 @@ window.LLMFrameworkDirect = LLMFrameworkDirect; //to be able to use the class th
 window.LLMFrameworks.push(LLMFrameworkDirect.name); // to be able to access the class name in the interface and choose it in the dropdown
 
 
-//////////////////// EXPERIMENTAL SYSTEMS //////////////////////
+//////////////////// EXPERIMENTAL STRATEGIES //////////////////////
 
 class LLMFrameworkBooleanBySubquestions extends LLMFramework {
     constructor(question, question_id) {
