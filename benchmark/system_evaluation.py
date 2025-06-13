@@ -17,7 +17,7 @@ import config
 ERROR_PREFIX = "Error: "
 
 def main(benchmark_file: str, benchmark_name: str, 
-         tested_system_name: str, suggestion_commands_algo: str, 
+         tested_system_name: str, suggestion_commands_tactic: str, 
          endpoint: str, used_llm: str):
     """
     Evaluation of a system on a benchmark, based on the configuration in config.py.
@@ -27,11 +27,11 @@ def main(benchmark_file: str, benchmark_name: str,
     #This part is only done one time
     now = datetime.datetime.now()
     filename = benchmark_name+'_'+tested_system_name+'_'+now.strftime('%Y%m%d_%H%M%S')+'.json'
-    meta: dict = metadata(benchmark_name, tested_system_name, suggestion_commands_algo, endpoint, used_llm)
+    meta: dict = metadata(benchmark_name, tested_system_name, suggestion_commands_tactic, endpoint, used_llm)
     questions_ids, questions, benchmark_queries, tags = extract_benchmark(benchmark_file, benchmark_name)
 
     # Create the system object
-    system: TestSystem = testSystemFactory(tested_system_name, suggestion_commands_algo)
+    system: TestSystem = testSystemFactory(tested_system_name, suggestion_commands_tactic)
 
 
     # Initialize empty lists to accumulate results
@@ -95,7 +95,7 @@ def main(benchmark_file: str, benchmark_name: str,
     logging.info('########## System evaluation End ##########')
 
 
-def metadata(benchmark_name: str, tested_system_name: str, suggestion_commands_algo: str, endpoint: str, used_llm: str) -> dict:
+def metadata(benchmark_name: str, tested_system_name: str, suggestion_commands_tactic: str, endpoint: str, used_llm: str) -> dict:
     """
     Create a metadata dictionary.
     """
@@ -103,7 +103,7 @@ def metadata(benchmark_name: str, tested_system_name: str, suggestion_commands_a
     return {
         'BenchmarkName' : benchmark_name,
         'TestedSystem' : tested_system_name,
-        'SuggestionCommandsAlgo' : suggestion_commands_algo,
+        'SuggestionCommandsTactic' : suggestion_commands_tactic,
         'Date' : datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         'Endpoint' : endpoint,
         'UsedLLM' : used_llm
@@ -299,7 +299,8 @@ def make_dict(meta: dict, questions_ids: list, questions: list,
     valid_f1_scores = [f for f in f1_scores if f is not None]
     stats["MeanSystemTime"] = sum(all_system_times) / len(all_system_times)
     stats['NbQuestions'] = len(questions_ids)
-    stats['NbValidQuestions'] = min(len(valid_precisions), len(valid_recalls), len(valid_f1_scores)) #todo better name
+    # A question is considered valid if its benchmark query has results and therefore a precision, recall and f1 score can be calculated
+    stats['NbValidQuestions'] = min(len(valid_precisions), len(valid_recalls), len(valid_f1_scores))
 
     if len(valid_precisions) > 0:
         stats['MeanPrecision']  = sum(valid_precisions) / len(valid_precisions)
@@ -422,4 +423,4 @@ if __name__ == "__main__":
     # Start the evaluation
     for _ in range(config.NB_TESTS):
         main(config.BENCHMARK_FILE, config.BENCHMARK_NAME, config.TESTED_SYSTEM, 
-            config.SUGGESTION_COMMANDS_ALGO, config.SPARQL_ENDPOINT, used_llm)
+            config.SUGGESTION_COMMANDS_TACTIC, config.SPARQL_ENDPOINT, used_llm)

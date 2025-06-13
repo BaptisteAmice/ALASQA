@@ -89,7 +89,7 @@ def getStepsStatus(driver):
         logging.error(f"Error while getting the steps status: {e}")
         return "Failed to get steps status"
 
-def sparklisllm_question(driver, question, endpoint_sparql, system_name, suggestion_commands_algo) -> tuple[str, str, str, str]:
+def sparklisllm_question(driver, question, endpoint_sparql, system_name, suggestion_commands_tactic) -> tuple[str, str, str, str]:
     """
     Interaction with the SparklisLLM system to ask a question
     """
@@ -140,16 +140,16 @@ def sparklisllm_question(driver, question, endpoint_sparql, system_name, suggest
     else:
         logging.error(f"Strategy {specific_strategy_name} not found in the dropdown")
 
-    # Find and select the suggestion commands algorithm (in suggestion-commands-algo-dropdown)
+    # Find and select the suggestion commands algorithm (in suggestion-commands-tactic-dropdown)
     # Find the select dropdown element
-    dropdown = Select(driver.find_element("id", "suggestion-commands-algo-dropdown"))
+    dropdown = Select(driver.find_element("id", "suggestion-commands-tactic-dropdown"))
     # Get all available option texts
     available_options = [option.text for option in dropdown.options]
-    # Check if the specific strategy name exists
-    if suggestion_commands_algo in available_options:
-        dropdown.select_by_visible_text(suggestion_commands_algo)
+    # Check if the specific tactic name exists
+    if suggestion_commands_tactic in available_options:
+        dropdown.select_by_visible_text(suggestion_commands_tactic)
     else:
-        logging.error(f"Strategy {suggestion_commands_algo} not found in the dropdown")
+        logging.error(f"Tactic {suggestion_commands_tactic} not found in the dropdown")
 
     # Locate the text box and send the question
     logging.info(f"INPUT: {question}")

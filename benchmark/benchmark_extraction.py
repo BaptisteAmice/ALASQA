@@ -22,19 +22,10 @@ class Extractor:
         pass
 
 
-def trim_request(request: str) -> str: #todo doesn't work for mintaka #neigher for wikidata
-    """
-    Removes unnecessary characters from a SPARQL request.
-    """
-    #todo seems to do nothing, ensure it is needed and how to do it
-    request = request.replace('\\"', '"') # Replace \" with ", useful for QALD-10 and Mintaka1k
-    return request
-
-
 #####################################
 
 
-class ExtractorMintaka: #todo update for language and for filter, and for tags
+class ExtractorMintaka: #todo update to take the extraction_filter into account
     """
     Extracts data from the Mintaka1k benchmark
     """
@@ -51,8 +42,8 @@ class ExtractorMintaka: #todo update for language and for filter, and for tags
             ids.append(item['ID'])
             questions.append(item['Question'])
             request = item['Sparql ID based']
-            request_trimmed = trim_request(request)
-            sparql_requests.append(request_trimmed)
+            sparql_requests.append(request)
+            tags.append(item.get('tags', []))
         return [ids, questions, sparql_requests, tags]
     
 
@@ -97,8 +88,7 @@ class ExtractorQald:
             questions.append(question_in_language)
 
             request = item['query']['sparql']
-            request_trimmed = trim_request(request)
-            sparql_requests.append(request_trimmed)
+            sparql_requests.append(request)
 
             tags.append(item.get('tags', []))
 

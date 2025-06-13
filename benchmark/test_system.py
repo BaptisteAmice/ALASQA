@@ -11,9 +11,9 @@ class TestSystem:
     Abstract class for a tested system.
     A system is used to create queries from questions and endpoints.
     """
-    def __init__(self, system_name: str, suggestion_commands_algo: str):
+    def __init__(self, system_name: str, suggestion_commands_tactic: str):
         self.system_name = system_name
-        self.suggestion_commands_algo = suggestion_commands_algo
+        self.suggestion_commands_tactic = suggestion_commands_tactic
 
     def create_query(self, question: str, endpoint: str) -> tuple[str, str, str, str]:
         """
@@ -63,7 +63,7 @@ class Sparklisllm(TestSystem):
     def create_query_body(self, question: str, endpoint: str) -> tuple[str, str, str, str]:
         response, nl_query, error, steps_status, reasoning, driver = interactions.simulated_user(
             config.SPARKLIS_FILE,
-            lambda driver: interactions.sparklisllm_question(driver, question, endpoint, self.system_name, self.suggestion_commands_algo),
+            lambda driver: interactions.sparklisllm_question(driver, question, endpoint, self.system_name, self.suggestion_commands_tactic),
             driver=Sparklisllm.used_driver,
         )
         if Sparklisllm.keep_same_driver:
@@ -81,13 +81,13 @@ class Sparklisllm(TestSystem):
 
 #####################################
 
-def testSystemFactory(system_name: str, suggestion_commands_algo: str) -> TestSystem:
+def testSystemFactory(system_name: str, suggestion_commands_tactic: str) -> TestSystem:
     """
     Factory method to create a test system.
     """
     if system_name == "dummy":
-        return Dummy(system_name, suggestion_commands_algo)
+        return Dummy(system_name, suggestion_commands_tactic)
     elif "sparklisllm" in system_name:
-        return Sparklisllm(system_name, suggestion_commands_algo)
+        return Sparklisllm(system_name, suggestion_commands_tactic)
     else:
         raise ValueError('Unknown test system name')

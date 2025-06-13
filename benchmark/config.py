@@ -32,7 +32,7 @@ LLM_API = 'http://localhost:1234/v1/'
 LLM_API_MODEL = LLM_API + 'models'
 
 # User agent for the simulated browser (to avoid being blocked)
-USER_AGENT = 'SparklisLLM/0.1 ; baptiste.amice@irisa.fr'
+USER_AGENT = 'ALASQA/0.2 ; baptiste.amice@irisa.fr'
 
 # Output folder
 OUTPUT_FOLDER = script_dir + '/Outputs/'
@@ -48,8 +48,8 @@ BENCHMARK_FILE = script_dir + '/Inputs/' + 'qald_9_plus_train_wikidata_patched.j
 
 # Name of the tested benchmark (MINTAKA1K | QALD10 | QALD9_PLUS)
 BENCHMARK_NAME = benchmark_extraction.QALD9_PLUS
-# Filter on the extracted questions of the benchmark (e.g., {} to get all questions, {"tags": lambda x: x is not None and "aggregation" in x} to get only the questions with the tag "aggregation" in a QALD benchmark)
-BENCHMARK_QUESTIONS_FILTER = {"tags": lambda x: x is not None and "the most" in x}
+# Filter on the extracted questions of the benchmark (examples: {} to get all questions, {"answers": lambda answers: any("boolean" in answer for answer in answers)} to only get the questions with the tag "aggregation" in a QALD benchmarks, {"answers": lambda answers: any("boolean" in answer for answer in answers)} to only get boolean questions in a QALD benchmark)
+BENCHMARK_QUESTIONS_FILTER = {}
 
 # Separating the language in 2 variable enable different approaches (e.g., reasoning in the question language if the 2 are the same, or translating the question in the system language)
 # Language in which the question of the benchmark are extracted
@@ -60,13 +60,12 @@ LANGUAGE_SPARKLIS = 'en'
 # If True, the browser is hidden during the benchmark evaluation (less heavy, but less readable)
 HIDE_BROWSER_ON_BENCHMARK_EVALUATION = True
 
-# Name of the tested system
-TESTED_SYSTEM = 'sparklisllm-LLMFrameworkText2Sparql' # dummy | sparklisllm-[specific_system_name]
+# Name of the tested system and its strategy
+TESTED_SYSTEM = 'sparklisllm-LLMFrameworkOneShot' # dummy | sparklisllm-[specific_strategy_name]
 
 # Logic used to choose among suggestions
-SUGGESTION_COMMANDS_ALGO = 'best_at_individual_cmd' # best_at_individual_cmd | depth_first_search | beam_search
+SUGGESTION_COMMANDS_TACTIC = 'best_at_individual_cmd' # best_at_individual_cmd | depth_first_search | beam_search
 
 # SPARQL endpoint, only used in scripts and not by the API
 #SPARQL_ENDPOINT = 'https://dbpedia.org/sparql'
 SPARQL_ENDPOINT = 'https://query.wikidata.org/sparql'
-#SPARQL_ENDPOINT = 'https://skynet.coypu.org/wikidata/'
