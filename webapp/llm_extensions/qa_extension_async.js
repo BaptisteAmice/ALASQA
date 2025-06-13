@@ -4,7 +4,7 @@
 console.log("QA extension active");
 
 // list of ways to select suggestions
-window.suggestion_commands_algo = [
+window.suggestion_commands_tactic = [
 	"best_at_individual_cmd",
 	"depth_first_search",
 	"beam_search"
@@ -29,29 +29,29 @@ window.addEventListener(
 	});
 
 	// Create the dropdown for the suggestion algorithm selection
-    let suggestion_commands_algo_dropdown = document.createElement("select");
-    suggestion_commands_algo_dropdown.id = "suggestion-commands-algo-dropdown";
-    suggestion_commands_algo_dropdown.name = "suggestion-commands-algo-dropdown";
-    suggestion_commands_algo_dropdown.style.marginBottom = "10px";
-	suggestion_commands_algo_dropdown.style.marginRight = "10px";
-    suggestion_commands_algo_dropdown.style.padding = "8px";
-    suggestion_commands_algo_dropdown.style.fontSize = "14px";
-    suggestion_commands_algo_dropdown.style.border = "1px solid #ddd";
-    suggestion_commands_algo_dropdown.style.borderRadius = "5px";
-    suggestion_commands_algo_dropdown.style.cursor = "pointer";
-    suggestion_commands_algo_dropdown.style.backgroundColor = "#f8f9fa";
-    suggestion_commands_algo_dropdown.style.color = "black";
+    let suggestion_commands_tactic_dropdown = document.createElement("select");
+    suggestion_commands_tactic_dropdown.id = "suggestion-commands-tactic-dropdown";
+    suggestion_commands_tactic_dropdown.name = "suggestion-commands-tactic-dropdown";
+    suggestion_commands_tactic_dropdown.style.marginBottom = "10px";
+	suggestion_commands_tactic_dropdown.style.marginRight = "10px";
+    suggestion_commands_tactic_dropdown.style.padding = "8px";
+    suggestion_commands_tactic_dropdown.style.fontSize = "14px";
+    suggestion_commands_tactic_dropdown.style.border = "1px solid #ddd";
+    suggestion_commands_tactic_dropdown.style.borderRadius = "5px";
+    suggestion_commands_tactic_dropdown.style.cursor = "pointer";
+    suggestion_commands_tactic_dropdown.style.backgroundColor = "#f8f9fa";
+    suggestion_commands_tactic_dropdown.style.color = "black";
     
-    // Add the available algo to the dropdown
-    window.suggestion_commands_algo.forEach(algo => {
+    // Add the available tactic to the dropdown
+    window.suggestion_commands_tactic.forEach(algo => {
         let option = document.createElement("option");
         option.value = algo;
         option.text = algo;
-        suggestion_commands_algo_dropdown.appendChild(option);
+        suggestion_commands_tactic_dropdown.appendChild(option);
     });
 
 	// Add the dropdown next to the qa input field
-	qa.parentNode.insertBefore(suggestion_commands_algo_dropdown, qa);
+	qa.parentNode.insertBefore(suggestion_commands_tactic_dropdown, qa);
 });
 
 /* processing a question, i.e. a sequence of steps */
@@ -78,7 +78,7 @@ async function process_question(qa) {
     console.log("Steps: " + steps);
     let place = sparklis.currentPlace();
 
-	let commands_algo = $("#suggestion-commands-algo-dropdown").val();
+	let commands_algo = $("#suggestion-commands-tactic-dropdown").val();
 	console.log("Commands algo: ", commands_algo);
 	let final_place;
 	switch (commands_algo) {
