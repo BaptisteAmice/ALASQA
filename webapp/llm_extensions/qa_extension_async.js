@@ -655,7 +655,7 @@ async function count_references_select_sugg_logic(kind, query, forest, pred, lex
         return null;
     }
 
-    // Count total references for each suggestion
+    // Count total references for each suggestion (in the whole graph, while the score calculation only counts references in the current place)
     async function get_total_references(suggestion) {
         const uri = suggestion_uri(suggestion);
         const [objects_result, subjects_result] = await Promise.all([
