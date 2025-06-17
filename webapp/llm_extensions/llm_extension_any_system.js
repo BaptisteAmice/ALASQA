@@ -182,6 +182,53 @@ class LLMFramework {
         this.order_date = false;
         this.group_by_action = null;
     }
+
+    async execute_commands(framework, commands, outside_sparklis_processing) {
+        console.log("Executing commands:", commands);
+
+        // Execute the commands, wait for place evaluation and get the results
+        await this.executeStep(step_execute_commands, "Commands execution", [framework, commands]);
+        //get the current sparql query from the place
+        let place = sparklis.currentPlace();
+        this.sparql = place.sparql();
+
+        if (outside_sparklis_processing) {
+            //if an action for group by is defined modify the query (done before step_remove_ordering_var_from_select)
+            if (this.group_by_action) {
+                this.sparql = await this.executeStep(step_group_by_and_count, "Group by and count", [this, this.sparql]);
+            }
+            //if the sparql query limit number is set, change the limit clause in the query
+            if (this.sparql_query_limit_number) {
+                //execute step
+                this.sparql = await this.executeStep(step_change_or_add_limit, "Add/change limit", [this, this.sparql, this.sparql_query_limit_number]);
+                //remove the ordering variable from the select clause
+                this.sparql = await this.executeStep(step_remove_ordering_var_from_select, "Remove ordering variable from select", [this, this.sparql]);
+            }
+            if (this.sparql_query_offset_number) {
+                this.sparql = await this.executeStep(step_change_or_add_offset, "Add/change offset", [this, this.sparql, this.sparql_query_offset_number]);
+            }
+            if (this.order_date) {
+                this.sparql = await this.executeStep(step_change_order_type_to_date, "Change order type to date", [this, this.sparql]);
+            }
+        }
+        return place;
+
+    }
+
+    async generate_and_execute_commands(framework, question, outside_sparklis_processing) {
+        // Call llm generation
+        let output_llm = await this.executeStep(step_generation, "LLM generation", 
+            [framework, commands_chain_system_prompt_the_most_improved(),"commands_chain_system_prompt_the_most_improved", question]
+        );
+        // Extract the commands from the LLM output
+        let extracted_commands_list = await this.executeStep(step_extract_tags, "Extracted commands",
+            [framework, output_llm, "commands"]
+        );
+        let extracted_commands = extracted_commands_list.at(-1) || "";
+        // Execute the commands, wait for place evaluation and get the results
+        let place = await this.execute_commands(framework, extracted_commands, outside_sparklis_processing);
+        return place;
+    }
 }
 
 /**
@@ -606,40 +653,7 @@ class LLMFrameworkOneShot extends LLMFramework {
         super(question, question_id, "count_references");
     }
     async answerQuestionLogic() {
-        // Call llm generation
-        let output_llm = await this.executeStep(step_generation, "LLM generation", 
-            [this, commands_chain_system_prompt_the_most_improved(),"commands_chain_system_prompt_the_most_improved", this.question]
-        );
-        // Extract the commands from the LLM output
-        let extracted_commands_list = await this.executeStep(step_extract_tags, "Extracted commands",
-             [this, output_llm, "commands"]
-        );
-        // Execute the commands, wait for place evaluation and get the results
-        let extracted_commands = extracted_commands_list.at(-1) || "";
-        await this.executeStep(step_execute_commands, "Commands execution", [this, extracted_commands]);
-        
-        //get the current sparql query from the place
-        let place = sparklis.currentPlace();
-        this.sparql = place.sparql();
-
-        //if an action for group by is defined modify the query (done before step_remove_ordering_var_from_select)
-        if (this.group_by_action) {
-            this.sparql = await this.executeStep(step_group_by_and_count, "Group by and count", [this, this.sparql]);
-        }
-        //if the sparql query limit number is set, change the limit clause in the query
-        if (this.sparql_query_limit_number) {
-            //execute step
-            this.sparql = await this.executeStep(step_change_or_add_limit, "Add/change limit", [this, this.sparql, this.sparql_query_limit_number]);
-            //remove the ordering variable from the select clause
-            this.sparql = await this.executeStep(step_remove_ordering_var_from_select, "Remove ordering variable from select", [this, this.sparql]);
-        }
-        if (this.sparql_query_offset_number) {
-            this.sparql = await this.executeStep(step_change_or_add_offset, "Add/change offset", [this, this.sparql, this.sparql_query_offset_number]);
-        }
-        if (this.order_date) {
-            this.sparql = await this.executeStep(step_change_order_type_to_date, "Change order type to date", [this, this.sparql]);
-        }
-        console.log("sparql after modification", this.sparql);
+        let place = await this.generate_and_execute_commands(this, this.question, true);
         await this.executeStep(step_get_results, "Get results", [this, place, this.sparql]);
     }
 }
@@ -781,39 +795,7 @@ class LLMFrameworkRetry extends LLMFramework { //todo test
         let valid_responses_results = [];
         while (!got_number_of_same_response_expected) {
             this.reasoning_text += "<br>Try " + i + "<br>";
-            // Call llm generation
-            let output_llm = await this.executeStep(step_generation, "LLM generation", 
-                [this, commands_chain_system_prompt_the_most_improved(),"commands_chain_system_prompt_the_most_improved", this.question]
-            );
-            // Extract the commands from the LLM output
-            let extracted_commands_list = await this.executeStep(step_extract_tags, "Extracted commands",
-                [this, output_llm, "commands"]
-            );
-            // Execute the commands, wait for place evaluation and get the results
-            let extracted_commands = extracted_commands_list.at(-1) || "";
-            await this.executeStep(step_execute_commands, "Commands execution", [this, extracted_commands]);
-            
-            //get the current sparql query from the place
-            let place = sparklis.currentPlace();
-            this.sparql = place.sparql();
-
-            //if an action for group by is defined modify the query (done before step_remove_ordering_var_from_select)
-            if (this.group_by_action) {
-                this.sparql = await this.executeStep(step_group_by_and_count, "Group by and count", [this, this.sparql]);
-            }
-            //if the sparql query limit number is set, change the limit clause in the query
-            if (this.sparql_query_limit_number) {
-                //execute step
-                this.sparql = await this.executeStep(step_change_or_add_limit, "Add/change limit", [this, this.sparql, this.sparql_query_limit_number]);
-                //remove the ordering variable from the select clause
-                this.sparql = await this.executeStep(step_remove_ordering_var_from_select, "Remove ordering variable from select", [this, this.sparql]);
-            }
-            if (this.sparql_query_offset_number) {
-                this.sparql = await this.executeStep(step_change_or_add_offset, "Add/change offset", [this, this.sparql, this.sparql_query_offset_number]);
-            }
-            if (this.order_date) {
-                this.sparql = await this.executeStep(step_change_order_type_to_date, "Change order type to date", [this, this.sparql]);
-            }
+            let place = await this.generate_and_execute_commands(this, this.question, true);
             console.log("sparql after modification", this.sparql);
 
             //only wait for the results if the query is not empty
@@ -918,41 +900,8 @@ class LLMFrameworkRetryDelegatesBoolsToLLM extends LLMFramework { //todo test
         let valid_responses_results = [];
         while (!got_number_of_same_response_expected) {
             this.reasoning_text += "<br>Try " + i + "<br>";
-            // Call llm generation
-            let output_llm = await this.executeStep(step_generation, "LLM generation", 
-                [this, commands_chain_system_prompt_the_most_improved(),"commands_chain_system_prompt_the_most_improved", this.question]
-            );
-            // Extract the commands from the LLM output
-            let extracted_commands_list = await this.executeStep(step_extract_tags, "Extracted commands",
-                [this, output_llm, "commands"]
-            );
-            // Execute the commands, wait for place evaluation and get the results
-            let extracted_commands = extracted_commands_list.at(-1) || "";
-            await this.executeStep(step_execute_commands, "Commands execution", [this, extracted_commands]);
-            
-            //get the current sparql query from the place
-            let place = sparklis.currentPlace();
-            this.sparql = place.sparql();
-
-            //if an action for group by is defined modify the query (done before step_remove_ordering_var_from_select)
-            if (this.group_by_action) {
-                this.sparql = await this.executeStep(step_group_by_and_count, "Group by and count", [this, this.sparql]);
-            }
-            //if the sparql query limit number is set, change the limit clause in the query
-            if (this.sparql_query_limit_number) {
-                //execute step
-                this.sparql = await this.executeStep(step_change_or_add_limit, "Add/change limit", [this, this.sparql, this.sparql_query_limit_number]);
-                //remove the ordering variable from the select clause
-                this.sparql = await this.executeStep(step_remove_ordering_var_from_select, "Remove ordering variable from select", [this, this.sparql]);
-            }
-            if (this.sparql_query_offset_number) {
-                this.sparql = await this.executeStep(step_change_or_add_offset, "Add/change offset", [this, this.sparql, this.sparql_query_offset_number]);
-            }
-            if (this.order_date) {
-                this.sparql = await this.executeStep(step_change_order_type_to_date, "Change order type to date", [this, this.sparql]);
-            }
+            let place = await this.generate_and_execute_commands(this, this.question, true);
             console.log("sparql after modification", this.sparql);
-
             //only wait for the results if the query is not empty
             let results_array = [];
             if (this.sparql != "" && this.sparql != undefined && this.sparql != null) {
@@ -1048,31 +997,8 @@ class PassCommands extends LLMFramework {
         super(question, question_id, "count_references");
     }
     async answerQuestionLogic() {
-        let extracted_commands = this.question;
-        await this.executeStep(step_execute_commands, "Commands execution", [this, extracted_commands]);
-        
-        //get the current sparql query from the place
-        let place = sparklis.currentPlace();
-        this.sparql = place.sparql();
-
-        //if an action for group by is defined modify the query (done before step_remove_ordering_var_from_select)
-        if (this.group_by_action) {
-            this.sparql = await this.executeStep(step_group_by_and_count, "Group by and count", [this, this.sparql]);
-        }
-        //if the sparql query limit number is set, change the limit clause in the query
-        if (this.sparql_query_limit_number) {
-            //execute step
-            this.sparql = await this.executeStep(step_change_or_add_limit, "Add/change limit", [this, this.sparql, this.sparql_query_limit_number]);
-            //remove the ordering variable from the select clause
-            this.sparql = await this.executeStep(step_remove_ordering_var_from_select, "Remove ordering variable from select", [this, this.sparql]);
-        }
-        if (this.sparql_query_offset_number) {
-            this.sparql = await this.executeStep(step_change_or_add_offset, "Add/change offset", [this, this.sparql, this.sparql_query_offset_number]);
-        }
-        if (this.order_date) {
-            this.sparql = await this.executeStep(step_change_order_type_to_date, "Change order type to date", [this, this.sparql]);
-        }
-        console.log("sparql after modification", this.sparql);
+        let commands = this.question;
+        let place = await this.execute_commands(this, commands, true);
         await this.executeStep(step_get_results, "Get results", [this, place, this.sparql]);
     }
 }
@@ -1147,13 +1073,76 @@ window.LLMFrameworks.push(LLMFrameworkDirect.name); // to be able to access the 
 
 //////////////////// EXPERIMENTAL STRATEGIES //////////////////////
 
+class LLMFrameworkBooleanAnswerer extends LLMFramework { //todo ongoing writing
+    constructor(question, question_id) {
+        super(question, question_id, "count_references");
+    }
+
+    async answerQuestionLogic() {
+
+        let result_is_bool = false;
+        while (!result_is_bool) {
+            // Get a list of necessary subquestions to reach the answer
+            this.reasoning_text += "<br>Generating subquestions<br>";
+            //Generation of the subquestions by the LLM
+            let outputed_subquestions = await this.executeStep(step_generation, "LLM generation 1", 
+                [this, prompt_get_subquestions_for_boolean(),"prompt_get_subquestions_for_boolean", this.question]
+            );
+            // Extract the subquestions from the LLM output
+            this.reasoning_text += "<br>Extracting subquestions<br>";
+            let extracted_subquestions = [];
+            while (!extracted_subquestions || extracted_subquestions.length == 0) {
+                extracted_subquestions = await this.executeStep(step_extract_tags, "Extract subquestions", [this, outputed_subquestions, "subquestion"]);
+            }
+
+            //solve the subquestions
+            this.reasoning_text += "<br>Answering the subquestions<br>";
+            let subqueries = [];
+            let subanswers = [];
+            let place = null;
+            for (let subquestion of extracted_subquestions) {
+                let subquestion_try = 0;
+                let subquery_is_valid = false;
+                while (!subquery_is_valid) {
+                    this.reasoning_text += "<br>Subquestion " + subqueries.length + ": try " + subquestion_try + "<br>"; 
+                    sparklis.home(); // we want to reset sparklis between different queries
+                    this.resetQueryAlterationsVariables(); //reset the variables to avoid side effects for the next queries
+                    place = await this.generate_and_execute_commands(this, subquestion, true);
+                    console.log("sparql after modification", this.sparql);
+                    subquery_is_valid = this.sparql != "" && this.sparql != undefined && this.sparql != null;
+                }
+                //todo retry instead of only wait for the results if the query is empty
+                await this.executeStep(step_get_results, "Get results", [this, place]);
+                subqueries.push(this.sparql);
+                this.result_text = truncateResults(this.result_text, 6, 4000); //truncate results to avoid surpassing the token limit
+                subanswers.push(this.result_text);
+                this.reasoning_text += "<br>Subquestion query:<br>" + this.sparql;
+                this.reasoning_text += "<br>Subquestion result (truncated):<br>" + this.result_text;
+            }
+            //and then combine the results to generate a query answering the original question
+            sparklis.home(); // we want to reset sparklis between different queries
+            this.resetQueryAlterationsVariables(); //reset the variables to avoid side effects for the next queries
+            this.reasoning_text += "<br>Combining the results of the subquestions<br>";
+
+            //todo combine results
+            
+        }
+    }
+
+
+}
+window.LLMFrameworkBooleanAnswerer = LLMFrameworkBooleanAnswerer; //to be able to access the class
+window.LLMFrameworks.push(LLMFrameworkBooleanAnswerer.name); //to be able to access the class name in the
+
+
+
 class LLMFrameworkBooleanBySubquestions extends LLMFramework {
     constructor(question, question_id) {
         super(question, question_id, "count_references");
     }
     async answerQuestionLogic() {
         // Get a list of necessary subquestions to reach the answer
-        //Generation of the subquestions by the LLML
+        //Generation of the subquestions by the LLM
         let outputed_subquestions = await this.executeStep(step_generation, "LLM generation 1", 
             [this, prompt_get_subquestions(),"prompt_get_subquestions", this.question]
         );
@@ -1236,7 +1225,7 @@ class LLMFrameworkBySubquestions extends LLMFramework {
     }
     async answerQuestionLogic() {
         // Get a list of necessary subquestions to reach the answer
-        //Generation of the subquestions by the LLML
+        //Generation of the subquestions by the LLM
         let outputed_subquestions = await this.executeStep(step_generation, "LLM generation 1", 
             [this, prompt_get_subquestions(),"prompt_get_subquestions", this.question]
         );
