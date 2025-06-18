@@ -398,22 +398,22 @@ function prompt_convert_query_to_boolean_query() {
 
 function prompt_is_boolean_expected() {
     return `
-    Determine whether the expected answer to the given question is a boolean (i.e., "true" or "false", a yes/no question). 
-    Think step by step, then respond strictly with <answer>boolean</answer> if the answer is a boolean value. Otherwise, respond with <answer>non-boolean</answer>.
-    You must absolutely end your question with <answer>boolean</answer> or <answer>non-boolean</answer>.
+Determine whether the expected answer to the given question is a boolean (i.e., "true" or "false", a yes/no question). 
+Think step by step, then respond strictly with <answer>boolean</answer> if the answer is a boolean value. Otherwise, respond with <answer>non-boolean</answer>.
+You must absolutely end your question with <answer>boolean</answer> or <answer>non-boolean</answer>.
 
-    Examples:
-    - What is the boiling point of water? → The question is asking for a specific value, not a yes/no question. → <answer>non-boolean</answer>
-    - Did Tom Brady win a Super Bowl before 2005? → The question is asking for a yes/no answer based on a specific event. → <answer>boolean</answer>
-    - Do all of batman's partner speak english as native language? → The question is asking for a yes/no answer based on either or not every batman's partner speaks english as native language. → <answer>boolean</answer>
-    - In welcher Abteilung ist Frau Müller? → The question is asking for a specific department, not a yes/no question. → <answer>non-boolean</answer>
-    - Which pope succeeded John Paul II? → The question is asking for a specific name, not a yes/no question. → <answer>non-boolean</answer>
+Examples:
+- What is the boiling point of water? → The question is asking for a specific value, not a yes/no question. → <answer>non-boolean</answer>
+- Did Tom Brady win a Super Bowl before 2005? → The question is asking for a yes/no answer based on a specific event. → <answer>boolean</answer>
+- Do all of batman's partner speak english as native language? → The question is asking for a yes/no answer based on either or not every batman's partner speaks english as native language. → <answer>boolean</answer>
+- In welcher Abteilung ist Frau Müller? → The question is asking for a specific department, not a yes/no question. → <answer>non-boolean</answer>
+- Which pope succeeded John Paul II? → The question is asking for a specific name, not a yes/no question. → <answer>non-boolean</answer>
 
-    Now, analyze the following question accordingly:
+Now, analyze the following question accordingly:
     `;
 }
 
-function prompt_get_subquestions() {
+function prompt_get_subquestions() { //todo revoir
     return `
     Your task is to decompose a given question into a set of necessary subquestions that will provide the data needed to answer it. Follow these principles:
 
@@ -448,7 +448,7 @@ function prompt_get_subquestions() {
     `;
 }
 
-function prompt_use_subquestions_for_any() {
+function prompt_use_subquestions_for_any() { //todo revoir
     return `
     You are an AI system that processes a question by analyzing the responses to its subqueries and generating a new query that directly retrieves the final answer.
     # **Instructions**
@@ -562,129 +562,139 @@ function prompt_use_subquestions_for_any() {
 
 function prompt_get_subquestions_for_boolean() {
     return `
-    Your task is to decompose a given **boolean question** (i.e., a yes/no question) into a set of necessary subquestions that will provide the data needed to answer it. Follow these principles:
+Your task is to decompose a given **boolean question** (i.e., a yes/no question) into a set of necessary subquestions that will provide the data needed to answer it. Follow these principles:
 
-    1. Identify key data points required to resolve the question.  
-    2. Formulate each subquestion as a direct factual inquiry.  
-    3. Ensure minimal yet complete coverage—only include subquestions that are strictly necessary.  
+1. Identify key data points required to resolve the question.  
+2. Formulate each subquestion as a direct factual inquiry.  
+3. Ensure minimal yet complete coverage—only include subquestions that are strictly necessary.  
 
-    ### Output Format:  
-    - Return each subquestion between <subquestion> tags.
+### Output Format:  
+- Return each subquestion between <subquestion> tags.
 
-    ### Examples:
+### Examples:
 
-    - **Q:** "Do more than 100,000,000 people speak Japanese?"  
-    **Response:**  
-    <subquestion>How many people speak Japanese?</subquestion>
+- **Q:** "Do more than 100,000,000 people speak Japanese?"  
+**Response:**  
+<subquestion>How many people speak Japanese?</subquestion>
 
-    - **Q:** "Were Angela Merkel and Tony Blair born in the same year?"  
-    **Response:**  
-    <subquestion>Which year was Angela Merkel born?</subquestion>  
-    <subquestion>Which year was Tony Blair born?</subquestion>
+- **Q:** "Were Angela Merkel and Tony Blair born in the same year?"  
+**Response:**  
+<subquestion>Which year was Angela Merkel born?</subquestion>  
+<subquestion>Which year was Tony Blair born?</subquestion>
 
-    - **Q:** "Was Shaquille O'Neal a basketball player?"  
-    **Response:**  
-    <subquestion>What was the occupation of Shaquille O'Neal ?</subquestion>
+- **Q:** "Was Shaquille O'Neal a basketball player?"  
+**Response:**  
+<subquestion>What was the occupation of Shaquille O'Neal ?</subquestion>
     `;
 }
 
-function prompt_use_subquestions_for_boolean() {
-    return `
-    You are an AI system that processes a question by analyzing the responses to its subqueries and generating a new query that provides the final answer.
-    
-    ### Instructions:
-    1. Extract relevant numerical or textual data from the JSON responses provided in <subanswer> tags.
-    2. Construct a new SPARQL query that directly retrieves the answer to the original question.
-    3. Return the new query enclosed in <query> tags.
-    
-    ### Examples:
-    
-    #### Example 1:
-    **Input:**
-    <question>Do more than 100,000,000 people speak Japanese?</question>
-    <subquestion1>How many people speak Japanese?</subquestion1>
-    <subquery1>
-    SELECT DISTINCT ?P1098_7
-    WHERE { wd:Q5287 p:P1098 [ ps:P1098 ?P1098_7 ] . }
-    LIMIT 200
-    </subquery1> 
-    <subanswer1>{
-        "columns": [
-            "P1098_7"
-        ],
-        "rows": [
-            [
-                {
-                    "type": "number",
-                    "number": 128000000,
-                    "str": "128000000",
-                    "datatype": "http://www.w3.org/2001/XMLSchema#decimal"
-                }
-            ]
+//todo manque traduction des uris pour wikidata
+function prompt_use_subquestions_for_boolean() { //todo wikidata vs dbpedia vs corporate
+    let endpoint_family = getEndpointFamily();
+    let prompt;
+    if (endpoint_family === 'dbpedia') {
+        //todo
+    } else if (endpoint_family === 'wikidata') {
+        prompt = `
+You are an AI system that processes a question by analyzing the responses to its subqueries and generating a new query that provides the final answer.
+
+### Instructions:
+1. Extract relevant numerical or textual data from the JSON responses provided in <subanswer> tags.
+2. Construct a new SPARQL query that directly retrieves the answer to the original question.
+3. Return the new query enclosed in <query> tags.
+
+### Examples:
+
+#### Example 1:
+**Input:**
+<question>Do more than 100,000,000 people speak Japanese?</question>
+<subquestion1>How many people speak Japanese?</subquestion1>
+<subquery1>
+SELECT DISTINCT ?P1098_7
+WHERE { wd:Q5287 p:P1098 [ ps:P1098 ?P1098_7 ] . }
+LIMIT 200
+</subquery1> 
+<subanswer1>{
+    "columns": [
+        "P1098_7"
+    ],
+    "rows": [
+        [
+            {
+                "type": "number",
+                "number": 128000000,
+                "str": "128000000",
+                "datatype": "http://www.w3.org/2001/XMLSchema#decimal"
+            }
         ]
-    }</subanswer1>
-    
-    **Output:**
-    <query>
-    ASK WHERE {
-      wd:Q5287 p:P1098 [ ps:P1098 ?count ] .
-      FILTER(?count > 100000000)
-    }
-    </query>
-    
-    #### Example 2:
-    **Input:**
-    <question>Were Angela Merkel and Tony Blair born in the same year?</question>
-    <subquestion1>Which year was Angela Merkel born in?</subquestion1>
-    <subquery1>
-        SELECT DISTINCT ?P569_7
-        WHERE { wd:Q94746073 p:P569 [ ps:P569 ?P569_7 ] . }
-        LIMIT 200
-    </subquery1>
-    <subanswer1>{
-        "head" : {
-          "vars" : [ "P569_133" ]
-        },
-        "results" : {
-          "bindings" : [ {
-            "P569_133" : {
-              "datatype" : "http://www.w3.org/2001/XMLSchema#dateTime",
-              "type" : "literal",
-              "value" : "1932-01-01T00:00:00Z"
-            }
-          } ]
+    ]
+}</subanswer1>
+
+**Output:**
+<query>
+ASK WHERE {
+  wd:Q5287 p:P1098 [ ps:P1098 ?count ] .
+  FILTER(?count > 100000000)
+}
+</query>
+
+#### Example 2:
+**Input:**
+<question>Were Angela Merkel and Tony Blair born in the same year?</question>
+<subquestion1>Which year was Angela Merkel born in?</subquestion1>
+<subquery1>
+    SELECT DISTINCT ?P569_7
+    WHERE { wd:Q94746073 p:P569 [ ps:P569 ?P569_7 ] . }
+    LIMIT 200
+</subquery1>
+<subanswer1>{
+    "head" : {
+      "vars" : [ "P569_133" ]
+    },
+    "results" : {
+      "bindings" : [ {
+        "P569_133" : {
+          "datatype" : "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type" : "literal",
+          "value" : "1932-01-01T00:00:00Z"
         }
-      }</subanswer1>
-    <subquestion2>Which year was Tony Blair born in?</subquestion2>
-    <subquery2>
-        SELECT DISTINCT ?P569_7
-        WHERE { wd:Q9545 p:P569 [ ps:P569 ?P569_7 ] . }
-        LIMIT 200
-    </subquery2>
-    <subanswer2>{
-        "head" : {
-          "vars" : [ "P569_7" ]
-        },
-        "results" : {
-          "bindings" : [ {
-            "P569_7" : {
-              "datatype" : "http://www.w3.org/2001/XMLSchema#dateTime",
-              "type" : "literal",
-              "value" : "1953-05-06T00:00:00Z"
-            }
-          } ]
-        }
-      }</subanswer2>
-    
-    **Output:**
-    <query>
-    ASK WHERE {
-      wd:Q94746073 p:P569 [ ps:P569 ?year1 ] .
-      wd:Q9545 p:P569 [ ps:P569 ?year2 ] .
-      FILTER(YEAR(?year1) = YEAR(?year2))
+      } ]
     }
-    </query>
-    
-    Now, given a new input, extract relevant information, construct a new query that retrieves the answer, and return it in <query> tags.
+  }</subanswer1>
+<subquestion2>Which year was Tony Blair born in?</subquestion2>
+<subquery2>
+    SELECT DISTINCT ?P569_7
+    WHERE { wd:Q9545 p:P569 [ ps:P569 ?P569_7 ] . }
+    LIMIT 200
+</subquery2>
+<subanswer2>{
+    "head" : {
+      "vars" : [ "P569_7" ]
+    },
+    "results" : {
+      "bindings" : [ {
+        "P569_7" : {
+          "datatype" : "http://www.w3.org/2001/XMLSchema#dateTime",
+          "type" : "literal",
+          "value" : "1953-05-06T00:00:00Z"
+        }
+      } ]
+    }
+  }</subanswer2>
+
+**Output:**
+<query>
+ASK WHERE {
+  wd:Q94746073 p:P569 [ ps:P569 ?year1 ] .
+  wd:Q9545 p:P569 [ ps:P569 ?year2 ] .
+  FILTER(YEAR(?year1) = YEAR(?year2))
+}
+</query>
+
+Now, given a new input, extract relevant information, construct a new query that retrieves the answer, and return it in <query> tags.
     `;
+    } else if (endpoint_family === 'corporate') {
+        //todo
+    }
+    return prompt;
 }

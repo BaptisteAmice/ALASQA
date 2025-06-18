@@ -21,6 +21,7 @@ function usualPrompt(systemPrompt, userPrompt) {
  * @param {boolean} streamOption - if true, the response will be streamed
  * @param {*} updateCallback - function to call when the LLM sends a response
  * @param {*} usedTemperature - the temperature to use for the LLM
+ * @param {Array} stop_sequences - the sequences that will stop the LLM generation
  * @returns 
  */
 async function sendPrompt(input, streamOption = true, updateCallback = null, usedTemperature = 0.8, stop_sequences = ["Q:"]) {
@@ -226,10 +227,17 @@ function truncateResults(results_text, res_number_to_keep, max_number_of_char = 
  * @param {boolean} withLabels - If true, add labels to the results for Wikidata URIs
  * @returns {Promise<Object>} - The results of the SPARQL query
  */
-async function getQueryResults(sparqlQuery, withLabels = false) {
+async function getQueryResults(sparqlQuery, withLabels) {
     let results = await sparklis.evalSparql(sparqlQuery);
+    //todo set with labels to true
+
+    // If the query is an ASK query, replace the results with a boolean value (like other query services would do) //todo check it's always true and not just for wikidata
+    if (isAskQuery(sparqlQuery)) {
+        results = results.rows.length > 0;
+    }
+
     //only look for labels if needed
-    if (withLabels) {
+    if (withLabels && results && results.rows) {
         for (let row of results.rows) {
             for (let value of row) {
                 // for each value, if it is a wikidata uri, add the corresponding label from wikidata
@@ -241,3 +249,12 @@ async function getQueryResults(sparqlQuery, withLabels = false) {
     }
     return results;
 }
+
+function isAskQuery(sparqlQuery) {
+  if (typeof sparqlQuery !== 'string') return false;
+  const trimmed = sparqlQuery.trim().toUpperCase();
+  // Check if the query starts with ASK after optional PREFIX declarations
+  const askRegex = /^(?:\s*PREFIX\s+\w*:\s*<[^>]*>\s*)*ASK\b/;
+  return askRegex.test(trimmed);
+}
+

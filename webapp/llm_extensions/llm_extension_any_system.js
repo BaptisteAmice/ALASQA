@@ -596,21 +596,15 @@ function step_remove_ordering_var_from_select(framework, query) {
 /**
  * Function to query the results of the SPARQL query and parse them.
  * @param {*} framework 
- * @param {*} place 
+ * @param {*} sparql 
+ * @param {*} withLabels 
  * @returns 
  */
-async function step_get_results(framework, place, overidding_sparql = null) {
+async function step_get_results(framework, sparql, withLabels = false) {
     framework.reasoning_text += "<br>" + framework.getCurrentStep()["Name"] + "<br>";
-    let sparql;
-    //if a query is given, we use it instead of the one from the place
-    if (overidding_sparql) {
-        sparql = overidding_sparql;
-    } else {
-        sparql = place.sparql();
-    }
     let results;
     try { 
-        results = await getQueryResults(sparql);
+        results = await getQueryResults(sparql, withLabels);
     } catch (e) {
         //catch error thrown by wikidata endpoint
         let message = error_messages[3];
@@ -620,8 +614,13 @@ async function step_get_results(framework, place, overidding_sparql = null) {
         framework.setCurrentStepStatus(STATUS_FAILED);
     }
 
+    //transform the results to a string
+
     let result_text = "";
-    if (results && results.rows) {
+    //either bool or rows
+    if (results === true || results === false) {
+        result_text = results.toString();
+    } else if (results && results.rows) {
         try {
             let rows = results.rows;
             result_text = JSON.stringify(rows);
@@ -654,7 +653,10 @@ class LLMFrameworkOneShot extends LLMFramework {
     }
     async answerQuestionLogic() {
         let place = await this.generate_and_execute_commands(this, this.question, true);
-        await this.executeStep(step_get_results, "Get results", [this, place, this.sparql]);
+        await this.executeStep(step_get_results, "Get results", [this, this.sparql]);
+
+        //todo essayer de comparer l'eval sparql de sparklis avec celui de yasgui
+
     }
 }
 window.LLMFrameworkOneShot = LLMFrameworkOneShot; //to be able to access the class
@@ -752,7 +754,7 @@ class LLMFrameworkText2Sparql extends LLMFramework {
                 //only wait for the results if the query is not empty
                 let results_array = [];
                 if (this.sparql != "" && this.sparql != undefined && this.sparql != null) {
-                    await this.executeStep(step_get_results, "Get results", [this, place, this.sparql]);
+                    await this.executeStep(step_get_results, "Get results", [this, this.sparql]);
                     try {
                         results_array = JSON.parse(this.result_text);
                     } catch (e) {
@@ -801,7 +803,7 @@ class LLMFrameworkRetry extends LLMFramework { //todo test
             //only wait for the results if the query is not empty
             let results_array = [];
             if (this.sparql != "" && this.sparql != undefined && this.sparql != null) {
-                await this.executeStep(step_get_results, "Get results", [this, place, this.sparql]);
+                await this.executeStep(step_get_results, "Get results", [this, this.sparql]);
                 try {
                     results_array = JSON.parse(this.result_text);
                 } catch (e) {
@@ -905,7 +907,7 @@ class LLMFrameworkRetryDelegatesBoolsToLLM extends LLMFramework { //todo test
             //only wait for the results if the query is not empty
             let results_array = [];
             if (this.sparql != "" && this.sparql != undefined && this.sparql != null) {
-                await this.executeStep(step_get_results, "Get results", [this, place, this.sparql]);
+                await this.executeStep(step_get_results, "Get results", [this, this.sparql]);
                 try {
                     results_array = JSON.parse(this.result_text);
                 } catch (e) {
@@ -999,7 +1001,7 @@ class PassCommands extends LLMFramework {
     async answerQuestionLogic() {
         let commands = this.question;
         let place = await this.execute_commands(this, commands, true);
-        await this.executeStep(step_get_results, "Get results", [this, place, this.sparql]);
+        await this.executeStep(step_get_results, "Get results", [this, this.sparql]);
     }
 }
 window.PassCommands = PassCommands; //to be able to access the class
@@ -1082,17 +1084,23 @@ class LLMFrameworkBooleanAnswerer extends LLMFramework { //todo ongoing writing
 
         let result_is_bool = false;
         while (!result_is_bool) {
-            // Get a list of necessary subquestions to reach the answer
-            this.reasoning_text += "<br>Generating subquestions<br>";
-            //Generation of the subquestions by the LLM
-            let outputed_subquestions = await this.executeStep(step_generation, "LLM generation 1", 
-                [this, prompt_get_subquestions_for_boolean(),"prompt_get_subquestions_for_boolean", this.question]
-            );
-            // Extract the subquestions from the LLM output
-            this.reasoning_text += "<br>Extracting subquestions<br>";
             let extracted_subquestions = [];
+            let subquestion_creation_try = 1;
             while (!extracted_subquestions || extracted_subquestions.length == 0) {
+                this.reasoning_text += "<br>Subquestions creation, try" + subquestion_creation_try + "<br>";
+
+                // Get a list of necessary subquestions to reach the answer
+                this.reasoning_text += "<br>Generating subquestions<br>";
+                //Generation of the subquestions by the LLM
+                let outputed_subquestions = await this.executeStep(step_generation, "LLM generation 1", 
+                    [this, prompt_get_subquestions_for_boolean(),"prompt_get_subquestions_for_boolean", this.question]
+                ); //todo check prompt
+                
+                // Extract the subquestions from the LLM output
+                this.reasoning_text += "<br>Extracting subquestions<br>";
                 extracted_subquestions = await this.executeStep(step_extract_tags, "Extract subquestions", [this, outputed_subquestions, "subquestion"]);
+
+                subquestion_creation_try++;
             }
 
             //solve the subquestions
@@ -1112,7 +1120,7 @@ class LLMFrameworkBooleanAnswerer extends LLMFramework { //todo ongoing writing
                     subquery_is_valid = this.sparql != "" && this.sparql != undefined && this.sparql != null;
                 }
                 //todo retry instead of only wait for the results if the query is empty
-                await this.executeStep(step_get_results, "Get results", [this, place]);
+                await this.executeStep(step_get_results, "Get results", [this, this.sparql]);
                 subqueries.push(this.sparql);
                 this.result_text = truncateResults(this.result_text, 6, 4000); //truncate results to avoid surpassing the token limit
                 subanswers.push(this.result_text);
@@ -1124,8 +1132,29 @@ class LLMFrameworkBooleanAnswerer extends LLMFramework { //todo ongoing writing
             this.resetQueryAlterationsVariables(); //reset the variables to avoid side effects for the next queries
             this.reasoning_text += "<br>Combining the results of the subquestions<br>";
 
-            //todo combine results
-            
+            //make the input data for the comparison prompt
+            let input_data_dict = { "question": this.question};
+            for (let i = 0; i < subanswers.length; i++) {
+                input_data_dict["subquery" + (i+1).toString()] = subqueries[i];
+            }
+            for (let i = 0; i < subanswers.length; i++) {
+                input_data_dict["subanswer" + (i+1).toString()] = subanswers[i];
+            }
+            let input_comparison = data_input_prompt(input_data_dict, true);
+
+            let output_combined = await this.executeStep(step_generation, "LLM generation", 
+                [this, prompt_use_subquestions_for_boolean(),"prompt_use_subquestions_for_boolean",
+                     input_comparison]
+            ); //todo alternatives prompt
+            let extracted_query_list = await this.executeStep(step_extract_tags, "Extracted query", [this, output_combined, "query"]);
+            let extracted_query = extracted_query_list.at(-1) || "";
+            this.sparql = extracted_query;
+
+            //todo get wikidata id traduction to help llm
+
+            //execute the generated sparql query
+            await this.executeStep(step_get_results, "Get results of created query", [this, extracted_query, true]); 
+            result_is_bool = (this.result_text == "true" || this.result_text == "false");
         }
     }
 
@@ -1161,7 +1190,7 @@ class LLMFrameworkBooleanBySubquestions extends LLMFramework {
             let extracted_commands = extracted_commands_list.at(-1) || "";
             await this.executeStep(step_execute_commands, "Commands execution", [this, extracted_commands]);
             let place = sparklis.currentPlace();
-            await this.executeStep(step_get_results, "Get results", [this, place]);
+            await this.executeStep(step_get_results, "Get results", [this, this.sparql]);
         } else if (extracted_subquestions.length > 0) {
             //if we have multiple subquestions we will execute them 
             // for questions such as "Were Angela Merkel and Tony Blair born in the same year?"
@@ -1178,7 +1207,7 @@ class LLMFrameworkBooleanBySubquestions extends LLMFramework {
                 let extracted_commands = extracted_commands_list.at(-1) || "";
                 await this.executeStep(step_execute_commands, "Commands execution", [this, extracted_commands]);
                 let place = sparklis.currentPlace();
-                await this.executeStep(step_get_results, "Get results", [this, place]);
+                await this.executeStep(step_get_results, "Get results", [this, this.sparql]);
                 subqueries.push(this.sparql);
                 this.result_text = truncateResults(this.result_text, 6, 4000); //truncate results to avoid surpassing the token limit
                 subanswers.push(this.result_text);
@@ -1244,7 +1273,7 @@ class LLMFrameworkBySubquestions extends LLMFramework {
             let extracted_commands = extracted_commands_list.at(-1) || "";
             await this.executeStep(step_execute_commands, "Commands execution", [this, extracted_commands]);
             let place = sparklis.currentPlace();
-            await this.executeStep(step_get_results, "Get results", [this, place]);
+            await this.executeStep(step_get_results, "Get results", [this, this.sparql]);
         } else if (extracted_subquestions.length > 0) {
             //if we have multiple subquestions we will execute them 
             // for questions such as "Were Angela Merkel and Tony Blair born in the same year?"
@@ -1261,7 +1290,7 @@ class LLMFrameworkBySubquestions extends LLMFramework {
                 let extracted_commands = extracted_commands_list.at(-1) || "";
                 await this.executeStep(step_execute_commands, "Commands execution", [this, extracted_commands]);
                 let place = sparklis.currentPlace();
-                await this.executeStep(step_get_results, "Get results", [this, place]);
+                await this.executeStep(step_get_results, "Get results", [this, this.sparql]);
                 subqueries.push(this.sparql);
                 this.result_text = truncateResults(this.result_text, 4, 4000); //truncate results to avoid surpassing the token limit
                 subanswers.push(this.result_text);
