@@ -1075,12 +1075,15 @@ window.LLMFrameworks.push(LLMFrameworkDirect.name); // to be able to access the 
 
 //////////////////// EXPERIMENTAL STRATEGIES //////////////////////
 
+//todo problem: if a command chain fail, it can end on a valid entity and return true
+//maybe we should do a and between return true and all commands executed ?
 class LLMFrameworkBooleanAnswerer extends LLMFramework { //todo ongoing writing
     constructor(question, question_id) {
         super(question, question_id, "count_references");
     }
 
     async answerQuestionLogic() {
+        const final_query_generation_max_try = 3;
 
         let result_is_bool = false;
         let global_try = 1;
@@ -1111,10 +1114,10 @@ class LLMFrameworkBooleanAnswerer extends LLMFramework { //todo ongoing writing
             let subanswers = [];
             let place = null;
             for (let subquestion of extracted_subquestions) {
-                let subquestion_try = 0;
+                let subquestion_try = 1;
                 let subquery_is_valid = false;
                 while (!subquery_is_valid) {
-                    this.reasoning_text += "<br>Subquestion " + subqueries.length + ": try " + subquestion_try + "<br>"; 
+                    this.reasoning_text += "<br>Answering subquestion " + subqueries.length + ": try " + subquestion_try + "<br>"; 
                     sparklis.home(); // we want to reset sparklis between different queries
                     this.resetQueryAlterationsVariables(); //reset the variables to avoid side effects for the next queries
                     place = await this.generate_and_execute_commands(this, subquestion, true);
@@ -1143,22 +1146,30 @@ class LLMFrameworkBooleanAnswerer extends LLMFramework { //todo ongoing writing
             }
             let input_comparison = data_input_prompt(input_data_dict, true);
 
-            let output_combined = await this.executeStep(step_generation, "LLM generation", 
-                [this, prompt_use_subquestions_for_boolean(),"prompt_use_subquestions_for_boolean",
-                     input_comparison]
-            ); //todo alternatives prompt
-            let extracted_query_list = await this.executeStep(step_extract_tags, "Extracted query", [this, output_combined, "query"]);
-            let extracted_query = extracted_query_list.at(-1) || "";
-            this.sparql = extracted_query;
+            let final_query_generation_try = 1;
+            while (final_query_generation_try <= final_query_generation_max_try && !result_is_bool) {
+                this.reasoning_text += "<br>Final query generation try " + final_query_generation_try + "<br>";
+                let output_combined = await this.executeStep(step_generation, "LLM generation", 
+                    [this, prompt_use_subquestions_for_boolean(),"prompt_use_subquestions_for_boolean",
+                        input_comparison]
+                ); //todo alternatives prompt
+                let extracted_query_list = await this.executeStep(step_extract_tags, "Extracted query", [this, output_combined, "query"]);
+                let extracted_query = extracted_query_list.at(-1) || "";
+                this.sparql = extracted_query;
 
-            this.reasoning_text += "<br>Generated final query:<br>" + this.sparql;
+                this.reasoning_text += "<br>Generated final query:<br>" + this.sparql;
 
-            //execute the generated sparql query
-            await this.executeStep(step_get_results, "Get results of created query", [this, extracted_query, false]); 
-            result_is_bool = (this.result_text == "true" || this.result_text == "false");
-            if (!result_is_bool) {
-                this.reasoning_text += "<br>Result is not a boolean, trying again<br>";
+                //execute the generated sparql query
+                await this.executeStep(step_get_results, "Get results of created query", [this, extracted_query, false]); 
+                result_is_bool = (this.result_text == "true" || this.result_text == "false");
+                if (!result_is_bool) {
+                    this.reasoning_text += "<br>Result is not a boolean, trying again the final query generation<br>";
+                }
+                final_query_generation_try++;
             }
+            if (!result_is_bool) {
+                this.reasoning_text += "<br>Result is not a boolean and tried to many times to generate the final query. Retrying the whole process<br>";
+            } 
             global_try++;
         }
     }

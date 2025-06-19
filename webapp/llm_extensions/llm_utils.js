@@ -120,9 +120,9 @@ async function getWikidataLabel(wikidataURI, language = "en") {
     try {
         const response = await fetch(url);
         const data = await response.json();
-        let label ="Label not found";
+        let label ="Label not fetched";
         try {
-            data.entities[entityId]?.labels[language]?.value || "Label not found";
+            label = data.entities[entityId]?.labels[language]?.value || "Label not found";
         }
         catch(err) {
             console.error("Error fetching label:", err);
