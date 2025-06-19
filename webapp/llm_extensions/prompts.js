@@ -589,6 +589,7 @@ Your task is to decompose a given **boolean question** (i.e., a yes/no question)
 }
 
 //todo manque traduction des uris pour wikidata: pour les requetes aussi?
+//todo remove useless fields from input (type, etc.)
 function prompt_use_subquestions_for_boolean() { //todo wikidata vs dbpedia vs corporate
     let endpoint_family = getEndpointFamily();
     let prompt;
@@ -596,74 +597,82 @@ function prompt_use_subquestions_for_boolean() { //todo wikidata vs dbpedia vs c
         //todo
     } else if (endpoint_family === 'wikidata') {
         prompt = `
-You are an AI system that processes a question by analyzing the responses to its subqueries and generating a new query that provides the final answer.
+You are an AI system that answers a **yes/no question** using the answers to related subquestions. The question is always boolean. Your job is to read the subanswers and write a **new SPARQL query** that directly gives the final boolean answer.
 
-### Instructions:
-1. Extract relevant numerical or textual data from the JSON responses provided in <subanswer> tags.
-2. Construct a new SPARQL query that directly retrieves the answer to the original question. 
-3. Return the new query enclosed in <query> tags. Do NOT include any comments or explanations in the SPARQL query. The query must be clean and executable.
+### Your task:
+1. **Read the original question.**
+2. **Look at the answers to the subquestions** (in <subanswer> tags). Extract numbers, dates, names, or other relevant facts.
+3. **Write a SPARQL query** that gives the final answer directly. Use the facts you found to build this query.
+4. Your output must be inside <query> tags. The query should be **clean, short, and executable** — no comments or extra text.
 
-IMPORTANT: Always use the correct SPARQL property prefixes:
-- Use wdt:Pxxx for direct claims (simplified value, no qualifiers).
-- Use p:Pxxx only to access full statements (with qualifiers, sources, etc.) — **never** use p:Pxxx directly with an entity like wd:Qxxx.
-- If using p:Pxxx, you must access the value via ps:Pxxx inside a blank node.
+### SPARQL rules:
+- Use \`wdt:Pxxx\` for direct facts (always prefer this for simple properties).
+- Use \`p:Pxxx/ps:Pxxx\` only if qualifiers or full statements are needed.
+- Do not use \`p:Pxxx\` alone.
+- Use filters like \`FILTER(?x > 100)\` or \`FILTER(YEAR(?date1) = YEAR(?date2))\` when comparing values.
+
+---
 
 ### Examples:
 
 #### Example 1:
 **Input:**
-<question>Do more than 100,000,000 people speak Japanese?</question>
-<subquestion1>How many people speak Japanese?</subquestion1>
+<question>Do more than 100,000,000 people speak Japanese?</question>  
+<subquestion1>How many people speak Japanese?</subquestion1>  
 <subquery1>
 SELECT DISTINCT ?P1098_7
 WHERE { wd:Q5287 p:P1098 [ ps:P1098 ?P1098_7 ] . }
 LIMIT 200
-</subquery1> 
+</subquery1>  
 <subanswer1>
-[[{"type":"number","number":128000000,"str":"128000000","datatype":"http://www.w3.org/2001/XMLSchema#decimal"}]]
+[[{"type":"number","number":128000000}]]
 </subanswer1>
 
-**Output:**
+**Your output:**
 <query>
 ASK WHERE {
-  wd:Q5287 p:P1098 [ ps:P1098 ?count ] .
+  wd:Q5287 wdt:P1098 ?count .
   FILTER(?count > 100000000)
 }
 </query>
 
+---
+
 #### Example 2:
 **Input:**
-<question>Were Angela Merkel and Tony Blair born in the same year?</question>
-<subquestion1>Which year was Angela Merkel born in?</subquestion1>
+<question>Were Angela Merkel and Tony Blair born in the same year?</question>  
+<subquestion1>Which year was Angela Merkel born in?</subquestion1>  
 <subquery1>
-    SELECT DISTINCT ?P569_7
-    WHERE { wd:Q567 p:P569 [ ps:P569 ?P569_7 ] . }
-    LIMIT 200
-</subquery1>
+SELECT DISTINCT ?P569_7
+WHERE { wd:Q567 p:P569 [ ps:P569 ?P569_7 ] . }
+LIMIT 200
+</subquery1>  
 <subanswer1>
-[[{"datatype":"http://www.w3.org/2001/XMLSchema#dateTime","type":"literal","value":"1932-01-01T00:00:00Z"}]]
-</subanswer1>
-<subquestion2>Which year was Tony Blair born in?</subquestion2>
+[[{"value":"1954-07-17T00:00:00Z"}]]
+</subanswer1>  
+<subquestion2>Which year was Tony Blair born in?</subquestion2>  
 <subquery2>
-    SELECT DISTINCT ?P569_7
-    WHERE { wd:Q9545 p:P569 [ ps:P569 ?P569_7 ] . }
-    LIMIT 200
-</subquery2>
+SELECT DISTINCT ?P569_7
+WHERE { wd:Q9545 p:P569 [ ps:P569 ?P569_7 ] . }
+LIMIT 200
+</subquery2>  
 <subanswer2>
-[[{"datatype":"http://www.w3.org/2001/XMLSchema#dateTime","type":"literal","value":"1953-05-06T00:00:00Z"}]]
+[[{"value":"1953-05-06T00:00:00Z"}]]
 </subanswer2>
 
-**Output:**
+**Your output:**
 <query>
 ASK WHERE {
-  wd:Q567 p:P569 [ ps:P569 ?year1 ] .
-  wd:Q9545 p:P569 [ ps:P569 ?year2 ] .
-  FILTER(YEAR(?year1) = YEAR(?year2))
+  wd:Q567 wdt:P569 ?date1 .
+  wd:Q9545 wdt:P569 ?date2 .
+  FILTER(YEAR(?date1) = YEAR(?date2))
 }
 </query>
 
-Now, given a new input, extract relevant information, construct a new query that retrieves the answer, and return it in <query> tags.
-    `;
+---
+
+Now do the same for the next input. Use the subanswers to build a direct query that answers the original question. Return only the final query inside <query> tags.
+`;
     } else if (endpoint_family === 'corporate') {
         //todo
     }

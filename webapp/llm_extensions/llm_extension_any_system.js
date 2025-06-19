@@ -26,6 +26,54 @@ const STATUS_FAILED = "FAILED";
 window.LLMFrameworks = [];
 
 /**
+ * List of known prefixes for different knowledge bases.
+ * Used to shorten the URIs in the LLM prompts.
+ * To update if you want to identify more prefixes.
+ **/
+const PREFIX_MAPS = {
+    wikidata: {
+        "http://www.wikidata.org/entity/": "wd:",
+        "http://www.wikidata.org/prop/direct/": "wdt:",
+        "http://www.wikidata.org/prop/": "p:",
+        "http://www.wikidata.org/prop/statement/": "ps:",
+        "http://www.wikidata.org/prop/qualifier/": "pq:",
+        "http://www.wikidata.org/prop/reference/": "pr:",
+        "http://www.wikidata.org/prop/qualifier/value/": "pqv:",
+        "http://www.wikidata.org/prop/statement/value/": "psv:",
+        "http://www.wikidata.org/prop/reference/value/": "prv:",
+        "http://schema.org/": "schema:"
+    },
+    dbpedia: {
+        "http://dbpedia.org/resource/": "dbr:",
+        "http://dbpedia.org/ontology/": "dbo:",
+        "http://dbpedia.org/property/": "dbp:",
+        "http://dbpedia.org/class/yago/": "yago:",
+        "http://purl.org/dc/terms/": "dct:",
+        "http://xmlns.com/foaf/0.1/": "foaf:",
+        "http://www.w3.org/2000/01/rdf-schema#": "rdfs:",
+        "http://www.w3.org/1999/02/22-rdf-syntax-ns#": "rdf:",
+        "http://www.w3.org/2002/07/owl#": "owl:"
+    }
+};
+
+/**
+ * Shorten a URI using the known prefixes for a given graph.
+ * @param {*} uri 
+ * @param {*} graph 
+ * @returns 
+ */
+function shortenUri(uri, graph) {
+    const prefixes = PREFIX_MAPS[graph];
+    for (const [full, prefix] of Object.entries(prefixes)) {
+        if (uri.startsWith(full)) {
+            return uri.replace(full, prefix);
+        }
+    }
+    return uri;
+}
+
+
+/**
  * Class to handle the logic of the LLM extension
  */
 class LLMFramework {
@@ -600,7 +648,7 @@ function step_remove_ordering_var_from_select(framework, query) {
  * @param {*} withLabels 
  * @returns 
  */
-async function step_get_results(framework, sparql, withLabels = false) {
+async function step_get_results(framework, sparql, withLabels = false, removeDispensableData = false) {
     framework.reasoning_text += "<br>" + framework.getCurrentStep()["Name"] + "<br>";
     let results;
     try { 
@@ -612,6 +660,20 @@ async function step_get_results(framework, sparql, withLabels = false) {
         framework.errors += message;
         //step failed
         framework.setCurrentStepStatus(STATUS_FAILED);
+    }
+    
+    // Remove dispensable data if requested (be careful with map(), it may update the array before previous call of console.log())
+    if (removeDispensableData && results && results.rows) {
+        // Shorten URIs in the results and remove type information
+        results.rows = results.rows.map(row =>
+        row.map(cell => {
+            const { type, datatype, uri, ...rest } = cell;
+            return {
+                ...rest,
+                ...(uri ? { uri: shortenUri(uri, getEndpointFamily()) } : {}),
+                };
+            })
+        );
     }
 
     //transform the results to a string
@@ -654,9 +716,6 @@ class LLMFrameworkOneShot extends LLMFramework {
     async answerQuestionLogic() {
         let place = await this.generate_and_execute_commands(this, this.question, true);
         await this.executeStep(step_get_results, "Get results", [this, this.sparql]);
-
-        //todo essayer de comparer l'eval sparql de sparklis avec celui de yasgui
-
     }
 }
 window.LLMFrameworkOneShot = LLMFrameworkOneShot; //to be able to access the class
@@ -784,7 +843,7 @@ class LLMFrameworkText2Sparql extends LLMFramework {
 window.LLMFrameworkText2Sparql = LLMFrameworkText2Sparql; //to be able to access the class
 window.LLMFrameworks.push(LLMFrameworkText2Sparql.name); //to be able to access the class name
 
-class LLMFrameworkRetry extends LLMFramework { //todo test
+class LLMFrameworkRetry extends LLMFramework {
     constructor(question, question_id) {
         super(question, question_id, "count_references");
     }
@@ -864,7 +923,7 @@ window.LLMFrameworkRetry = LLMFrameworkRetry; //to be able to access the class
 window.LLMFrameworks.push(LLMFrameworkRetry.name); //to be able to access the class name
 
 
-class LLMFrameworkRetryDelegatesBoolsToLLM extends LLMFramework { //todo test
+class LLMFrameworkRetryDelegatesBoolsToLLM extends LLMFramework {
     //get the highest score on benchmarks, but the reasoning behind boolean question isn't based on the KG
     constructor(question, question_id) {
         super(question, question_id, "count_references");
@@ -1075,25 +1134,35 @@ window.LLMFrameworks.push(LLMFrameworkDirect.name); // to be able to access the 
 
 //////////////////// EXPERIMENTAL STRATEGIES //////////////////////
 
-//todo version alternative sans les retry -> hérite et max des boucles à 1
 //todo problem: if a command chain fail, it can end on a valid entity and return true
 //maybe we should do a and between return true and all commands executed ?
-//todo probleme: c'est pas supposé s'arreter tant que la valeur finale ne retourne pas un bool
-class LLMFrameworkBooleanAnswerer extends LLMFramework { //todo ongoing writing
-    constructor(question, question_id) {
+//todo voir si on peut diminuer le nbre de tokens en entrée
+/**
+ * LLM Framework that generates subquestions to answer a boolean question.
+ * Use several tries to generate the subquestions and the final query.
+ */
+class LLMFrameworkBooleanBySubquestions extends LLMFramework {
+    constructor(
+        question, question_id,
+        global_max_try = Infinity,
+        subquestion_creation_max_try = Infinity,
+        final_query_generation_max_try = 3
+    ) {
         super(question, question_id, "count_references");
+        this.global_max_try = global_max_try; //max number of tries to generate the subquestions
+        this.subquestion_creation_max_try = subquestion_creation_max_try; //max number of tries
+        this.final_query_generation_max_try = final_query_generation_max_try; //max number of tries to generate the final query
     }
 
     async answerQuestionLogic() {
-        const final_query_generation_max_try = 3;
-
         let result_is_bool = false;
         let global_try = 1;
-        while (!result_is_bool) {
+        while (!result_is_bool && global_try <= this.global_max_try) {
             this.reasoning_text += "<br>Global try " + global_try + "<br>";
             let extracted_subquestions = [];
             let subquestion_creation_try = 1;
-            while (!extracted_subquestions || extracted_subquestions.length == 0) {
+            while ((!extracted_subquestions || extracted_subquestions.length == 0)
+                && subquestion_creation_try <= this.subquestion_creation_max_try) {
                 this.reasoning_text += "<br>Subquestions creation, try" + subquestion_creation_try + "<br>";
 
                 // Get a list of necessary subquestions to reach the answer
@@ -1101,7 +1170,7 @@ class LLMFrameworkBooleanAnswerer extends LLMFramework { //todo ongoing writing
                 //Generation of the subquestions by the LLM
                 let outputed_subquestions = await this.executeStep(step_generation, "LLM generation 1", 
                     [this, prompt_get_subquestions_for_boolean(),"prompt_get_subquestions_for_boolean", this.question]
-                ); //todo check prompt
+                );
                 
                 // Extract the subquestions from the LLM output
                 this.reasoning_text += "<br>Extracting subquestions<br>";
@@ -1128,7 +1197,7 @@ class LLMFrameworkBooleanAnswerer extends LLMFramework { //todo ongoing writing
                     subquery_is_valid = this.sparql != "" && this.sparql != undefined && this.sparql != null;
                     subquestion_try++;
                 }
-                await this.executeStep(step_get_results, "Get results", [this, this.sparql, true]);
+                await this.executeStep(step_get_results, "Get results", [this, this.sparql, true, true]);
                 subqueries.push(this.sparql);
                 this.result_text = truncateResults(this.result_text, 6, 4000); //truncate results to avoid surpassing the token limit
                 subanswers.push(this.result_text);
@@ -1152,7 +1221,7 @@ class LLMFrameworkBooleanAnswerer extends LLMFramework { //todo ongoing writing
             let input_comparison = data_input_prompt(input_data_dict, true);
 
             let final_query_generation_try = 1;
-            while (final_query_generation_try <= final_query_generation_max_try && !result_is_bool) {
+            while (final_query_generation_try <= this.final_query_generation_max_try && !result_is_bool) {
                 this.reasoning_text += "<br>Final query generation try " + final_query_generation_try + "<br>";
                 console.log("input_comparison",input_comparison);
                 let output_combined = await this.executeStep(step_generation, "LLM generation", 
@@ -1179,96 +1248,9 @@ class LLMFrameworkBooleanAnswerer extends LLMFramework { //todo ongoing writing
             global_try++;
         }
     }
-
-
 }
-window.LLMFrameworkBooleanAnswerer = LLMFrameworkBooleanAnswerer; //to be able to access the class
-window.LLMFrameworks.push(LLMFrameworkBooleanAnswerer.name); //to be able to access the class name in the
-
-
-
-class LLMFrameworkBooleanBySubquestions extends LLMFramework {
-    constructor(question, question_id) {
-        super(question, question_id, "count_references");
-    }
-    async answerQuestionLogic() {
-        // Get a list of necessary subquestions to reach the answer
-        //Generation of the subquestions by the LLM
-        let outputed_subquestions = await this.executeStep(step_generation, "LLM generation 1", 
-            [this, prompt_get_subquestions(),"prompt_get_subquestions", this.question]
-        );
-        // Extract the subquestions from the LLM output
-        let extracted_subquestions = await this.executeStep(step_extract_tags, "Extract subquestions", [this, outputed_subquestions, "subquestion"]);
-        //Adapt the bahavior depending on the number of subquestions
-        if (extracted_subquestions.length == 0) {
-            //if we don't have a subquery we will execute the commands as is
-            //for questions such as "What is the capital of France?"
-            sparklis.home(); // we want to reset sparklis between different queries
-            this.reasoning_text += "<br>No subquestion needed, executing the commands directly<br>";
-            let output_commands_query = await this.executeStep(step_generation, "LLM generation", 
-                [this, commands_chain_system_prompt_the_most_improved(),"commands_chain_system_prompt_the_most_improved", this.question]
-            );
-            let extracted_commands_list = await this.executeStep(step_extract_tags, "Extracted commands", [this, output_commands_query, "commands"]);
-            let extracted_commands = extracted_commands_list.at(-1) || "";
-            await this.executeStep(step_execute_commands, "Commands execution", [this, extracted_commands]);
-            let place = sparklis.currentPlace();
-            await this.executeStep(step_get_results, "Get results", [this, this.sparql]);
-        } else if (extracted_subquestions.length > 0) {
-            //if we have multiple subquestions we will execute them 
-            // for questions such as "Were Angela Merkel and Tony Blair born in the same year?"
-            this.reasoning_text += "<br>Subquestions needed, answering them first<br>";
-            let subqueries = [];
-            let subanswers = [];
-            for (let subquestion of extracted_subquestions) {
-                sparklis.home(); // we want to reset sparklis between different queries
-                this.reasoning_text += "<br>Subquestion:<br>";
-                let output_commands_subquestion = await this.executeStep(step_generation, "LLM generation", 
-                    [this, commands_chain_system_prompt_the_most_improved(),"commands_chain_system_prompt_the_most_improved", subquestion]
-                );
-                let extracted_commands_list = await this.executeStep(step_extract_tags, "Extracted commands", [this, output_commands_subquestion, "commands"]);
-                let extracted_commands = extracted_commands_list.at(-1) || "";
-                await this.executeStep(step_execute_commands, "Commands execution", [this, extracted_commands]);
-                let place = sparklis.currentPlace();
-                await this.executeStep(step_get_results, "Get results", [this, this.sparql]);
-                subqueries.push(this.sparql);
-                this.result_text = truncateResults(this.result_text, 6, 4000); //truncate results to avoid surpassing the token limit
-                subanswers.push(this.result_text);
-                this.reasoning_text += "<br>Subquestion query:<br>" + this.sparql;
-                this.reasoning_text += "<br>Subquestion result (truncated):<br>" + this.result_text;
-            }
-            //and then combine the results to generate a query answering the original question
-            sparklis.home(); // we want to reset sparklis between different queries
-            this.reasoning_text += "<br>Combining the results of the subquestions<br>";
-
-            //make the input data for the comparison prompt
-            let input_data_dict = { "question": this.question};
-            for (let i = 0; i < subanswers.length; i++) {
-                input_data_dict["subquery" + (i+1).toString()] = subqueries[i];
-            }
-            for (let i = 0; i < subanswers.length; i++) {
-                input_data_dict["subanswer" + (i+1).toString()] = subanswers[i];
-            }
-            let input_comparison = data_input_prompt(input_data_dict, true);
-
-            let output_combined = await this.executeStep(step_generation, "LLM generation", 
-                [this, prompt_use_subquestions_for_boolean(),"prompt_use_subquestions_for_boolean",
-                     input_comparison]
-            );
-            let extracted_query_list = await this.executeStep(step_extract_tags, "Extracted commands", [this, output_combined, "query"]);
-            let extracted_query = extracted_query_list.at(-1) || "";
-            this.sparql = extracted_query;
-        } else {
-            //error
-            let message = error_messages[5];
-            console.log(message);
-            this.errors += message;
-            // Step failed
-            this.setCurrentStepStatus(STATUS_FAILED);
-        }
-    }
-}
-window.LLMFrameworkBooleanBySubquestions = LLMFrameworkBooleanBySubquestions;
-window.LLMFrameworks.push(LLMFrameworkBooleanBySubquestions.name);
+window.LLMFrameworkBooleanBySubquestions = LLMFrameworkBooleanBySubquestions; //to be able to access the class
+window.LLMFrameworks.push(LLMFrameworkBooleanBySubquestions.name); //to be able to access the class name in the
 
 class LLMFrameworkBySubquestions extends LLMFramework {
     constructor(question, question_id) {
