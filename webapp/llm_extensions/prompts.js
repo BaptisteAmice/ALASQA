@@ -479,7 +479,7 @@ function prompt_use_subquestions_for_any() { //todo revoir
     **Input:**
     <question>Were Angela Merkel and Tony Blair born in the same year?</question>
     <subquestion1>Which year was Angela Merkel born in?</subquestion1>
-    <subquery1>SELECT DISTINCT ?P569_7 WHERE { wd:Q94746073 p:P569 [ ps:P569 ?P569_7 ] . } LIMIT 200</subquery1>
+    <subquery1>SELECT DISTINCT ?P569_7 WHERE { wd:Q567 p:P569 [ ps:P569 ?P569_7 ] . } LIMIT 200</subquery1>
     <subanswer1>{
         "head" : {
           "vars" : [ "P569_133" ]
@@ -515,7 +515,7 @@ function prompt_use_subquestions_for_any() { //todo revoir
     
     **Output:**
     I need to compare the results of the subqueries to return a boolean value.
-    <query>ASK WHERE { wd:Q94746073 p:P569 [ ps:P569 ?year1 ] . wd:Q9545 p:P569 [ ps:P569 ?year2 ] . FILTER(YEAR(?year1) = YEAR(?year2)) }</query>
+    <query>ASK WHERE { wd:Q567 p:P569 [ ps:P569 ?year1 ] . wd:Q9545 p:P569 [ ps:P569 ?year2 ] . FILTER(YEAR(?year1) = YEAR(?year2)) }</query>
     
     ## Example 3: Finding the most something
     **Input:**
@@ -603,6 +603,11 @@ You are an AI system that processes a question by analyzing the responses to its
 2. Construct a new SPARQL query that directly retrieves the answer to the original question. 
 3. Return the new query enclosed in <query> tags. Do NOT include any comments or explanations in the SPARQL query. The query must be clean and executable.
 
+IMPORTANT: Always use the correct SPARQL property prefixes:
+- Use wdt:Pxxx for direct claims (simplified value, no qualifiers).
+- Use p:Pxxx only to access full statements (with qualifiers, sources, etc.) — **never** use p:Pxxx directly with an entity like wd:Qxxx.
+- If using p:Pxxx, you must access the value via ps:Pxxx inside a blank node.
+
 ### Examples:
 
 #### Example 1:
@@ -632,7 +637,7 @@ ASK WHERE {
 <subquestion1>Which year was Angela Merkel born in?</subquestion1>
 <subquery1>
     SELECT DISTINCT ?P569_7
-    WHERE { wd:Q94746073 p:P569 [ ps:P569 ?P569_7 ] . }
+    WHERE { wd:Q567 p:P569 [ ps:P569 ?P569_7 ] . }
     LIMIT 200
 </subquery1>
 <subanswer1>
@@ -651,7 +656,7 @@ ASK WHERE {
 **Output:**
 <query>
 ASK WHERE {
-  wd:Q94746073 p:P569 [ ps:P569 ?year1 ] .
+  wd:Q567 p:P569 [ ps:P569 ?year1 ] .
   wd:Q9545 p:P569 [ ps:P569 ?year2 ] .
   FILTER(YEAR(?year1) = YEAR(?year2))
 }
