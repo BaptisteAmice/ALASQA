@@ -1075,8 +1075,10 @@ window.LLMFrameworks.push(LLMFrameworkDirect.name); // to be able to access the 
 
 //////////////////// EXPERIMENTAL STRATEGIES //////////////////////
 
+//todo version alternative sans les retry -> hérite et max des boucles à 1
 //todo problem: if a command chain fail, it can end on a valid entity and return true
 //maybe we should do a and between return true and all commands executed ?
+//todo probleme: c'est pas supposé s'arreter tant que la valeur finale ne retourne pas un bool
 class LLMFrameworkBooleanAnswerer extends LLMFramework { //todo ongoing writing
     constructor(question, question_id) {
         super(question, question_id, "count_references");
@@ -1113,16 +1115,18 @@ class LLMFrameworkBooleanAnswerer extends LLMFramework { //todo ongoing writing
             let subqueries = [];
             let subanswers = [];
             let place = null;
+            let current_subquestion = 1;
             for (let subquestion of extracted_subquestions) {
                 let subquestion_try = 1;
                 let subquery_is_valid = false;
                 while (!subquery_is_valid) {
-                    this.reasoning_text += "<br>Answering subquestion " + subqueries.length + ": try " + subquestion_try + "<br>"; 
+                    this.reasoning_text += "<br>Answering subquestion " + current_subquestion + ": try " + subquestion_try + "<br>"; 
                     sparklis.home(); // we want to reset sparklis between different queries
                     this.resetQueryAlterationsVariables(); //reset the variables to avoid side effects for the next queries
                     place = await this.generate_and_execute_commands(this, subquestion, true);
                     console.log("sparql after modification", this.sparql);
                     subquery_is_valid = this.sparql != "" && this.sparql != undefined && this.sparql != null;
+                    subquestion_try++;
                 }
                 await this.executeStep(step_get_results, "Get results", [this, this.sparql, true]);
                 subqueries.push(this.sparql);
@@ -1130,6 +1134,7 @@ class LLMFrameworkBooleanAnswerer extends LLMFramework { //todo ongoing writing
                 subanswers.push(this.result_text);
                 this.reasoning_text += "<br>Subquestion query:<br>" + this.sparql;
                 this.reasoning_text += "<br>Subquestion result (truncated):<br>" + this.result_text;
+                current_subquestion++;
             }
             //and then combine the results to generate a query answering the original question
             sparklis.home(); // we want to reset sparklis between different queries
@@ -1149,6 +1154,7 @@ class LLMFrameworkBooleanAnswerer extends LLMFramework { //todo ongoing writing
             let final_query_generation_try = 1;
             while (final_query_generation_try <= final_query_generation_max_try && !result_is_bool) {
                 this.reasoning_text += "<br>Final query generation try " + final_query_generation_try + "<br>";
+                console.log("input_comparison",input_comparison);
                 let output_combined = await this.executeStep(step_generation, "LLM generation", 
                     [this, prompt_use_subquestions_for_boolean(),"prompt_use_subquestions_for_boolean",
                         input_comparison]
@@ -1161,7 +1167,7 @@ class LLMFrameworkBooleanAnswerer extends LLMFramework { //todo ongoing writing
 
                 //execute the generated sparql query
                 await this.executeStep(step_get_results, "Get results of created query", [this, extracted_query, false]); 
-                result_is_bool = (this.result_text == "true" || this.result_text == "false");
+                result_is_bool = (this.result_text === "true" || this.result_text === "false");
                 if (!result_is_bool) {
                     this.reasoning_text += "<br>Result is not a boolean, trying again the final query generation<br>";
                 }

@@ -588,7 +588,7 @@ Your task is to decompose a given **boolean question** (i.e., a yes/no question)
     `;
 }
 
-//todo manque traduction des uris pour wikidata
+//todo manque traduction des uris pour wikidata: pour les requetes aussi?
 function prompt_use_subquestions_for_boolean() { //todo wikidata vs dbpedia vs corporate
     let endpoint_family = getEndpointFamily();
     let prompt;
@@ -600,8 +600,8 @@ You are an AI system that processes a question by analyzing the responses to its
 
 ### Instructions:
 1. Extract relevant numerical or textual data from the JSON responses provided in <subanswer> tags.
-2. Construct a new SPARQL query that directly retrieves the answer to the original question.
-3. Return the new query enclosed in <query> tags.
+2. Construct a new SPARQL query that directly retrieves the answer to the original question. 
+3. Return the new query enclosed in <query> tags. Do NOT include any comments or explanations in the SPARQL query. The query must be clean and executable.
 
 ### Examples:
 
@@ -614,21 +614,9 @@ SELECT DISTINCT ?P1098_7
 WHERE { wd:Q5287 p:P1098 [ ps:P1098 ?P1098_7 ] . }
 LIMIT 200
 </subquery1> 
-<subanswer1>{
-    "columns": [
-        "P1098_7"
-    ],
-    "rows": [
-        [
-            {
-                "type": "number",
-                "number": 128000000,
-                "str": "128000000",
-                "datatype": "http://www.w3.org/2001/XMLSchema#decimal"
-            }
-        ]
-    ]
-}</subanswer1>
+<subanswer1>
+[[{"type":"number","number":128000000,"str":"128000000","datatype":"http://www.w3.org/2001/XMLSchema#decimal"}]]
+</subanswer1>
 
 **Output:**
 <query>
@@ -647,40 +635,18 @@ ASK WHERE {
     WHERE { wd:Q94746073 p:P569 [ ps:P569 ?P569_7 ] . }
     LIMIT 200
 </subquery1>
-<subanswer1>{
-    "head" : {
-      "vars" : [ "P569_133" ]
-    },
-    "results" : {
-      "bindings" : [ {
-        "P569_133" : {
-          "datatype" : "http://www.w3.org/2001/XMLSchema#dateTime",
-          "type" : "literal",
-          "value" : "1932-01-01T00:00:00Z"
-        }
-      } ]
-    }
-  }</subanswer1>
+<subanswer1>
+[[{"datatype":"http://www.w3.org/2001/XMLSchema#dateTime","type":"literal","value":"1932-01-01T00:00:00Z"}]]
+</subanswer1>
 <subquestion2>Which year was Tony Blair born in?</subquestion2>
 <subquery2>
     SELECT DISTINCT ?P569_7
     WHERE { wd:Q9545 p:P569 [ ps:P569 ?P569_7 ] . }
     LIMIT 200
 </subquery2>
-<subanswer2>{
-    "head" : {
-      "vars" : [ "P569_7" ]
-    },
-    "results" : {
-      "bindings" : [ {
-        "P569_7" : {
-          "datatype" : "http://www.w3.org/2001/XMLSchema#dateTime",
-          "type" : "literal",
-          "value" : "1953-05-06T00:00:00Z"
-        }
-      } ]
-    }
-  }</subanswer2>
+<subanswer2>
+[[{"datatype":"http://www.w3.org/2001/XMLSchema#dateTime","type":"literal","value":"1953-05-06T00:00:00Z"}]]
+</subanswer2>
 
 **Output:**
 <query>

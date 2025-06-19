@@ -232,7 +232,7 @@ async function getQueryResults(sparqlQuery, withLabels) {
     //todo set with labels to true
 
     // If the query is an ASK query, replace the results with a boolean value (like other query services would do) //todo check it's always true and not just for wikidata
-    if (isAskQuery(sparqlQuery)) {
+    if (results && isAskQuery(sparqlQuery)) { //the query also needs to not return an error
         results = results.rows.length > 0;
     }
 
