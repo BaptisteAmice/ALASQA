@@ -1083,7 +1083,9 @@ class LLMFrameworkBooleanAnswerer extends LLMFramework { //todo ongoing writing
     async answerQuestionLogic() {
 
         let result_is_bool = false;
+        let global_try = 1;
         while (!result_is_bool) {
+            this.reasoning_text += "<br>Global try " + global_try + "<br>";
             let extracted_subquestions = [];
             let subquestion_creation_try = 1;
             while (!extracted_subquestions || extracted_subquestions.length == 0) {
@@ -1119,8 +1121,7 @@ class LLMFrameworkBooleanAnswerer extends LLMFramework { //todo ongoing writing
                     console.log("sparql after modification", this.sparql);
                     subquery_is_valid = this.sparql != "" && this.sparql != undefined && this.sparql != null;
                 }
-                //todo retry instead of only wait for the results if the query is empty
-                await this.executeStep(step_get_results, "Get results", [this, this.sparql]);
+                await this.executeStep(step_get_results, "Get results", [this, this.sparql, true]);
                 subqueries.push(this.sparql);
                 this.result_text = truncateResults(this.result_text, 6, 4000); //truncate results to avoid surpassing the token limit
                 subanswers.push(this.result_text);
@@ -1150,11 +1151,15 @@ class LLMFrameworkBooleanAnswerer extends LLMFramework { //todo ongoing writing
             let extracted_query = extracted_query_list.at(-1) || "";
             this.sparql = extracted_query;
 
-            //todo get wikidata id traduction to help llm
+            this.reasoning_text += "<br>Generated final query:<br>" + this.sparql;
 
             //execute the generated sparql query
-            await this.executeStep(step_get_results, "Get results of created query", [this, extracted_query, true]); 
+            await this.executeStep(step_get_results, "Get results of created query", [this, extracted_query, false]); 
             result_is_bool = (this.result_text == "true" || this.result_text == "false");
+            if (!result_is_bool) {
+                this.reasoning_text += "<br>Result is not a boolean, trying again<br>";
+            }
+            global_try++;
         }
     }
 
