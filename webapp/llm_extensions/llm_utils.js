@@ -84,12 +84,12 @@ async function sendPrompt(input, streamOption = true, updateCallback = null, use
 
 ////////// UTILS //////////
 /**
- * Remove prefixes from a SPARQL query
+ * Remove all PREFIX declarations from a SPARQL query
+ * @param {string} sparqlQuery - the SPARQL query to clean
+ * @returns 
  */
 function removePrefixes(sparqlQuery) {
-    return sparqlQuery.split('\n')
-        .filter(line => !line.startsWith('PREFIX'))
-        .join('\n');
+    return sparqlQuery.replace(/PREFIX\s+[^\s]+:\s+<[^>]+>\s*/gi, '').trim();
 }
 
 /**
@@ -109,8 +109,8 @@ function waitForEvaluation(place) {
 
 /**
  * Get the label corresponding to a Wikidata URI and add it to the result text as a new field
- * @param {string} wikidataURI
- * @param {string} language 
+ * @param {string} wikidataURI - the Wikidata URI to get the label for
+ * @param {string} language - the language to get the label in (default is "en")
  * @returns 
  */
 async function getWikidataLabel(wikidataURI, language = "en") {
@@ -190,9 +190,10 @@ function getSentenceFromDiv() {
 }
 
 /**
- * Only keep the first n results (to avoid too long prompts)
- * @param {*} results_text 
- * @param {*} res_number_to_keep 
+ * Truncate the results text to a certain number of results and/or a maximum number of characters.
+ * @param {string} results_text - the results text to truncate
+ * @param {number|null} res_number_to_keep - the number of results to keep
+ * @param {number|null} max_number_of_char - the maximum number of characters to keep in the results text
  * @returns 
  */
 function truncateResults(results_text, res_number_to_keep, max_number_of_char = null) {
@@ -205,7 +206,7 @@ function truncateResults(results_text, res_number_to_keep, max_number_of_char = 
     }
 
     //truncate the results if there are too many
-    if (resultsArray.length > res_number_to_keep) {
+    if (res_number_to_keep != null && resultsArray.length > res_number_to_keep) {
         resultsArray = resultsArray.slice(0, res_number_to_keep);
         truncated_results_text = JSON.stringify(resultsArray);
         //add ... to indicate that there are more results
@@ -247,6 +248,11 @@ async function getQueryResults(sparqlQuery, withLabels) {
     return results;
 }
 
+/**
+ * Check if a SPARQL query is an ASK query
+ * @param {string} sparqlQuery - the SPARQL query to check
+ * @returns 
+ */
 function isAskQuery(sparqlQuery) {
   if (typeof sparqlQuery !== 'string') return false;
   const trimmed = sparqlQuery.trim().toUpperCase();
