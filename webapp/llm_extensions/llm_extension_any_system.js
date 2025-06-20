@@ -420,6 +420,9 @@ async function step_execute_commands(framework, commands) {
     let place = sparklis.currentPlace();
     //wait for evaluation of the place
     await waitForEvaluation(place);
+
+    let remaining_commands = qa.value;
+    let no_remaining_commands = remaining_commands === "";
     return;
 }
 
@@ -695,6 +698,7 @@ async function step_get_results(framework, sparql, withLabels = false, removeDis
     } else {
         //step failed
         framework.setCurrentStepStatus(STATUS_FAILED);
+        result_text = "No results";
     }
     //update the attributes of the framework to retrieve them later
     framework.sparql = sparql;
@@ -1137,6 +1141,7 @@ window.LLMFrameworks.push(LLMFrameworkDirect.name); // to be able to access the 
 //todo problem: if a command chain fail, it can end on a valid entity and return true
 //maybe we should do a and between return true and all commands executed ?
 //todo voir si on peut diminuer le nbre de tokens en entrée
+//todo the check of boolean failed, see if the patch worked
 /**
  * LLM Framework that generates subquestions to answer a boolean question.
  * Use several tries to generate the subquestions and the final query.
