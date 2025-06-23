@@ -1145,33 +1145,51 @@ class LLMFrameworkSimpleBooleans extends LLMFramework {
         super(question, question_id, "count_references");
     }
     async answerQuestionLogic() {
+        let framework = this;
         // Call llm generation
-        let output_llm = await this.executeStep(step_generation, "LLM generation", 
-            [framework, prompt_get_subquestions_for_boolean_algo_ver(),"prompt_get_subquestions_for_boolean_algo_ver", question]
+        let output_llm = await framework.executeStep(step_generation, "LLM generation", 
+            [framework, prompt_get_subquestions_for_boolean_algo_ver(),"prompt_get_subquestions_for_boolean_algo_ver", framework.question]
         );
         // Extract the commands from the LLM output
-        let extracted_commands1_list = await this.executeStep(step_extract_tags, "Extracted commands 1",
+        let extracted_commands1 = (await framework.executeStep(step_extract_tags, "Extracted commands 1",
             [framework, output_llm, "commands1"]
-        );
-        let extracted_commands1 = extracted_commands1_list.at(-1) || "";
-        let extracted_commands2_list = await this.executeStep(step_extract_tags, "Extracted commands 2",
-            [framework, output_llm, "commands1"]
-        );
-        let extracted_commands2 = extracted_commands2_list.at(-1) || "";
+        )).at(-1) || "";
+        let extracted_commands2 = (await framework.executeStep(step_extract_tags, "Extracted commands 2",
+            [framework, output_llm, "commands2"]
+        )).at(-1) || "";
+        let operator = (await framework.executeStep(step_extract_tags, "Extracted operator",
+            [framework, output_llm, "operator"]
+        )).at(-1) || "";
+
+        if (!extracted_commands1 || extracted_commands1 === "") {
+            framework.reasoning_text += "<br>No commands extracted from the LLM output for commands1.<br>";
+            console.error("No commands extracted from the LLM output for commands1.");
+            return;
+        }
         // Execute the commands, wait for place evaluation and get the results
-        outside_sparklis_processing = false;
-        let place1 = await this.execute_commands(framework, extracted_commands1, outside_sparklis_processing);
-        let place2 = await this.execute_commands(framework, extracted_commands2, outside_sparklis_processing);
+        let outside_sparklis_processing = false;
+        let place1 = await framework.execute_commands(framework, extracted_commands1, outside_sparklis_processing);
+        
+        // Commands2 and operator are optional, so we check if they are defined
+        if (extracted_commands2 && extracted_commands2 !== "" && operator && operator !== "") {
+            // Get SPARQL queries from the places
+            let sparql1 = place1.sparql();
+            let place2 = await framework.execute_commands(framework, extracted_commands2, outside_sparklis_processing);
+            let sparql2 = place2.sparql();
 
-        // Get SPARQL queries from the places
-        let sparql1 = place1.sparql();
-        let sparql2 = place2.sparql();
+            // Merge the two SPARQL queries
+            let merged_sparql = combineSparqlQueries(sparql1, sparql2, operator);
+            framework.sparql = merged_sparql;
 
-        // Merge the two SPARQL queries
-        let merged_sparql = generateAskQuery(sparql1, sparql2);
-        //todo better mergeand finish
+            // Get results for the merged SPARQL query
+            await framework.executeStep(step_get_results, "Get results", [framework, merged_sparql]);
 
+            // Update the reasoning text with the merged SPARQL query and results
+            framework.reasoning_text += "<br>Merged SPARQL query:<br>" + merged_sparql;
+            framework.reasoning_text += "<br>Results:<br>" + framework.result_text;
 
+            //todo better mergeand finish
+        }
     }
 }
 window.LLMFrameworkSimpleBooleans = LLMFrameworkSimpleBooleans; //to be able to access the class
@@ -1245,7 +1263,7 @@ class LLMFrameworkBooleanBySubquestions extends LLMFramework {
                 }
                 await this.executeStep(step_get_results, "Get results", [this, this.sparql, true, true]);
                 subqueries.push(this.sparql);
-                this.result_text = truncateResults(this.result_text, 6, 4000); //truncate results to avoid surpassing the token limit
+                this.result_text = truncateResults(this.result_text, 20, 4000); //truncate results to avoid surpassing the token limit
                 subanswers.push(this.result_text);
                 this.reasoning_text += "<br>Subquestion query:<br>" + this.sparql;
                 this.reasoning_text += "<br>Subquestion result (truncated):<br>" + this.result_text;
@@ -1368,7 +1386,7 @@ class LLMFrameworkAggregySubquestions extends LLMFramework {
                 }
                 await this.executeStep(step_get_results, "Get results", [this, this.sparql, true, true]);
                 subqueries.push(this.sparql);
-                this.result_text = truncateResults(this.result_text, 6, 4000); //truncate results to avoid surpassing the token limit
+                this.result_text = truncateResults(this.result_text, 20, 4000); //truncate results to avoid surpassing the token limit
                 subanswers.push(this.result_text);
                 this.reasoning_text += "<br>Subquestion query:<br>" + this.sparql;
                 this.reasoning_text += "<br>Subquestion result (truncated):<br>" + this.result_text;

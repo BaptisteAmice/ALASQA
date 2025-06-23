@@ -303,64 +303,63 @@ function extract_uris_from_string_list(queries) {
   return unique_uris;
 }
 
-//todo tester
 /**
- * Generate a SPARQL ASK query to check if a triple (subject, property, object) exists,
- * with optional subject and/or candidate object(s).
+ * Combines two SPARQL SELECT queries into a boolean ASK query with a comparison operator.
+ * If the SELECT variables have the same name, rename the second variable to avoid collision.
  *
- * @param {string|null} subject - e.g. 'wd:Q142' or null
- * @param {string} property - e.g. 'P36'
- * @param {string[]} candidates - list of object IDs like 'wd:Q90' (can be empty or null)
- * @param {string} endpoint_family - e.g. 'wikidata'
- * @returns {string | undefined}
+ * @param {string} query1 - First SPARQL SELECT query
+ * @param {string} query2 - Second SPARQL SELECT query
+ * @param {string} operator - Comparison operator ('=', '!=', '<', '>', 'IN', 'NOT IN', etc.)
+ * @returns {string} - Combined SPARQL ASK query
  */
-function generateAskQuery(subject, property, candidates = [], endpoint_family) {
-    if (endpoint_family !== "wikidata") {
-        console.warn("Endpoint family not supported for ASK query generation: " + endpoint_family);
-        return;
-    }
+function combineSparqlQueries(query1, query2, operator) {
+  // Extract first variable from SELECT clause
+  const extractSelectVar = (query) => {
+    const selectMatch = query.match(/SELECT\s+(?:DISTINCT\s+)?([\s\S]+?)WHERE/i);
+    if (!selectMatch) throw new Error("Could not find SELECT clause.");
+    const vars = selectMatch[1].match(/\?[a-zA-Z_][\w]*/g);
+    if (!vars || vars.length === 0) throw new Error("No variable found in SELECT.");
+    return vars[0]; // Use first variable
+  };
 
-    const hasSubject = typeof subject === 'string' && subject.startsWith("wd:");
-    const hasCandidates = Array.isArray(candidates) && candidates.length > 0;
+  // Extract WHERE pattern (contents inside {...})
+  const extractPattern = (query) => {
+    const whereMatch = query.match(/WHERE\s*{([\s\S]+?)}\s*(LIMIT|ORDER|$)/i);
+    if (!whereMatch) throw new Error("Could not extract WHERE clause.");
+    return whereMatch[1].trim();
+  };
 
-    if (hasSubject && hasCandidates) {
-        // Subject + candidate(s)
-        const valuesBlock = candidates
-            .filter(id => id.startsWith("wd:"))
-            .map(id => `    ${id}`)
-            .join("\n");
+  const var1 = extractSelectVar(query1);
+  let var2 = extractSelectVar(query2);
+  let pattern2 = extractPattern(query2);
 
-        return `ASK {
-            VALUES ?candidate {
-            ${valuesBlock}
-            }
-            ${subject} p:${property} [ ps:${property} ?candidate ] .
-            }`.trim();
+  // If variable names collide, rename var2 and replace in pattern2
+  if (var1 === var2) {
+    const newVar2 = var2 + "_2";
+    // Replace var2 occurrences with newVar2 in pattern2, with word boundary to avoid partial matches
+    const regexVar2 = new RegExp(`\\${var2}\\b`, "g");
+    pattern2 = pattern2.replace(regexVar2, newVar2);
+    var2 = newVar2;
+  }
 
-    } else if (hasSubject && !hasCandidates) {
-        // Subject only
-        return `ASK {
-            ${subject} p:${property} [ ps:${property} ?anyValue ] .
-            }`.trim();
+  const pattern1 = extractPattern(query1);
 
-    } else if (!hasSubject && hasCandidates) {
-        // Candidates only (inverse search: any subject having that candidate as value for the property)
-        const valuesBlock = candidates
-            .filter(id => id.startsWith("wd:"))
-            .map(id => `    ${id}`)
-            .join("\n");
+  // Compose ASK query with FILTER
+  let askQuery = `ASK {\n`;
+  askQuery += `  {\n    ${pattern1}\n  }\n`;
+  askQuery += `  {\n    ${pattern2}\n  }\n`;
 
-        return `ASK {
-            VALUES ?candidate {
-            ${valuesBlock}
-            }
-            ?subject p:${property} [ ps:${property} ?candidate ] .
-            }`.trim();
+  if (["=", "!=", "<", ">", "<=", ">="].includes(operator)) {
+    askQuery += `  FILTER (${var1} ${operator} ${var2})\n`;
+  } else if (operator.toUpperCase() === "IN") {
+    askQuery += `  FILTER (${var1} IN (${var2}))\n`;
+  } else if (operator.toUpperCase() === "NOT IN") {
+    askQuery += `  FILTER (${var1} NOT IN (${var2}))\n`;
+  } else {
+    throw new Error(`Unsupported operator: ${operator}`);
+  }
 
-    } else {
-        // Neither subject nor candidates — invalid case for ASK
-        console.warn("Cannot generate ASK query without subject or candidates.");
-        return;
-    }
+  askQuery += `}`;
+
+  return askQuery;
 }
-

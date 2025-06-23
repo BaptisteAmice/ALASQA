@@ -277,8 +277,8 @@ A:
   }
   return prompt;
 }
-//BillOfMaterial of AeroVibe Matrix
-//a BillOfMaterial; property name ; AeroVibe Matrix
+
+
 function forward_commands_chain_system_prompt() {
     return `
     ## Task: Generate knowledge graph query commands for Sparklis (SPARQL-based tool).
@@ -677,4 +677,68 @@ Now do the same for the next input. Use the subanswers to build a direct query t
         //todo
     }
     return prompt;
+}
+
+function prompt_get_subquestions_for_boolean_algo_ver() {
+  let endpoint_family = getEndpointFamily();
+  let prompt;
+  if (endpoint_family === 'dbpedia') {
+    prompt = `todo`; //todo
+  } else if (endpoint_family === 'wikidata') {
+    prompt = `
+## Task: Generate knowledge graph query commands for Sparklis (SPARQL-based tool) on a Wikidata endpoint.
+You will only be asked boolean questions.
+
+## Format:
+Always output either:
+- A single Command Sequence – for simple numeric/date conditions): <commands1>...</commands1>
+- A full Comparison – for testing membership or matching: <commands1>...</commands1><operator>...</operator><commands2>...</commands2>
+Use semicolons (;) to separate commands inside each tag.
+
+### Available Commands:
+- a [class] → Retrieve entities of a given class (e.g., "a book" to find books). **⚠️ IMPORTANT:** If the question already contains the name of an entity (e.g., the title of the book), DO NOT use "a [class]". Directly query the entity instead.
+- [entity] → Retrieve a specific entity (e.g., "Albert Einstein" to find the entity representing Einstein). Use this when asking about a specific thing or individual.
+- property [property] → Retrieve a specific property (e.g., "property height" to find the height of an entity).
+- higherThan [number], lowerThan [constant number] → Value constraints (e.g., "property weight; higherThan 10").
+- after [date], before [date] → Time constraints (e.g., "property release date ; after 2000").
+- groupBy count → Can only be used if a property as been called previously. Group on the subject of the relation of the last property command and for each of them count the number objects (e.g. property film director ; groupBy count).
+- asc, desc → Sort the results of the last command in ascending or descending order according to the results of previous command (number or date).
+- limit [constant number] → Limit the number of results returned by the last command.
+- offset [constant number] → Skip the first N results.
+- match [string] → Return the list of entities or values that match the given string
+
+### ⚠️ Best Practice:
+**When using property X ; Entity Y, this means "filter the results to only those where property X is linked to Entity Y".**
+**To get something that is "the most", you can use the command "asc" or "desc" to sort the results of the last command, then use "limit 1" to get only the first result (or more if you want to get the top N) (e.g., "a human ; property height; desc; limit 1" to get the tallest person).**
+**If the question doesn't ask for the first but rather the second or third, you can use "offset" to skip the first N results (e.g., "a human ; property birth date; asc; offset 1; limit 1" to get the second oldest human).**
+**It is also possible to use it combined with "groupBy count". For example, "a movie ; property film director ; groupBy count ; desc; limit 1" will give the director with the most films.**
+
+### Availables operators:
+- IN → Used to check if a specific entity or value is part of the results of the first command sequence.
+- NOT IN → Used to check if a specific entity or value is not part of the results of the first command sequence.
+- <, >, <=, >=, =, != → Used to compare numeric or date values.
+
+## Examples:
+
+Q: Is Paris the capital of France?
+A: <commands1>a country ; property capital</commands1>
+<operator>IN</operator>
+<commands2>match Paris</commands2>
+
+Q: Was Albert Einstein born in Germany?
+A: <commands1>albert einstein ; property place of birth ; property country</commands1>
+<operator>IN</operator>
+<commands2>match germany</commands2>
+
+Q: Is the Everest higher than 8000 meters?
+A: <commands1>mount everest ; property elevation ; higherThan 8000</commands1>
+
+Q: Is India the most populous country?
+A: <commands1>a country ; property population ; desc ; limit 1</commands1>
+<operator>IN</operator>
+<commands2>match India</commands2>`;
+  } else if (endpoint_family === 'corporate' || true) {
+    prompt = `todo`; //todo
+  }
+  return prompt;
 }
