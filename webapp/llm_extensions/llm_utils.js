@@ -261,3 +261,106 @@ function isAskQuery(sparqlQuery) {
   return askRegex.test(trimmed);
 }
 
+/**
+ * Extract URIs from a list of SPARQL queries.
+ * This function looks for both full URIs (like <http://www.wikidata.org/entity/Q5>)
+ * and prefixed URIs (like wd:Q5, p:P735, etc.).
+ * It returns a list of unique URIs found in the queries.
+ * It only return the last part of the URI (after the last slash, hash, or colon).
+ * @param {list<string>} queries 
+ * @returns 
+ */
+function extract_uris_from_string_list(queries) {
+  const uris = [];
+
+  const fullUriRegex = /<([^>]+)>/g;
+  const prefixedUriRegex = /\b(?:\w+):(\w+)\b/g;
+
+  for (const query of queries) {
+    let match;
+
+    // Match full URIs like <http://www.wikidata.org/entity/Q5>
+    while ((match = fullUriRegex.exec(query)) !== null) {
+      const fullUri = match[1];
+      const lastSlashIndex = fullUri.lastIndexOf('/');
+      const lastHashIndex = fullUri.lastIndexOf('#');
+      const lastColonIndex = fullUri.lastIndexOf(':');
+      const delimiterIndex = Math.max(lastSlashIndex, lastHashIndex, lastColonIndex);
+      const finalPart = fullUri.substring(delimiterIndex + 1);
+      if (finalPart !== "") {
+        uris.push(finalPart);
+      }
+    }
+
+    // Match prefixed names like wd:Q5, p:P735, etc.
+    while ((match = prefixedUriRegex.exec(query)) !== null) {
+      uris.push(match[1]);
+    }
+  }
+
+  // Remove duplicates
+  const unique_uris = [...new Set(uris)];
+  return unique_uris;
+}
+
+//todo tester
+/**
+ * Generate a SPARQL ASK query to check if a triple (subject, property, object) exists,
+ * with optional subject and/or candidate object(s).
+ *
+ * @param {string|null} subject - e.g. 'wd:Q142' or null
+ * @param {string} property - e.g. 'P36'
+ * @param {string[]} candidates - list of object IDs like 'wd:Q90' (can be empty or null)
+ * @param {string} endpoint_family - e.g. 'wikidata'
+ * @returns {string | undefined}
+ */
+function generateAskQuery(subject, property, candidates = [], endpoint_family) {
+    if (endpoint_family !== "wikidata") {
+        console.warn("Endpoint family not supported for ASK query generation: " + endpoint_family);
+        return;
+    }
+
+    const hasSubject = typeof subject === 'string' && subject.startsWith("wd:");
+    const hasCandidates = Array.isArray(candidates) && candidates.length > 0;
+
+    if (hasSubject && hasCandidates) {
+        // Subject + candidate(s)
+        const valuesBlock = candidates
+            .filter(id => id.startsWith("wd:"))
+            .map(id => `    ${id}`)
+            .join("\n");
+
+        return `ASK {
+            VALUES ?candidate {
+            ${valuesBlock}
+            }
+            ${subject} p:${property} [ ps:${property} ?candidate ] .
+            }`.trim();
+
+    } else if (hasSubject && !hasCandidates) {
+        // Subject only
+        return `ASK {
+            ${subject} p:${property} [ ps:${property} ?anyValue ] .
+            }`.trim();
+
+    } else if (!hasSubject && hasCandidates) {
+        // Candidates only (inverse search: any subject having that candidate as value for the property)
+        const valuesBlock = candidates
+            .filter(id => id.startsWith("wd:"))
+            .map(id => `    ${id}`)
+            .join("\n");
+
+        return `ASK {
+            VALUES ?candidate {
+            ${valuesBlock}
+            }
+            ?subject p:${property} [ ps:${property} ?candidate ] .
+            }`.trim();
+
+    } else {
+        // Neither subject nor candidates — invalid case for ASK
+        console.warn("Cannot generate ASK query without subject or candidates.");
+        return;
+    }
+}
+

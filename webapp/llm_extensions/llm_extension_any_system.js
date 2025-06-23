@@ -1138,6 +1138,28 @@ window.LLMFrameworks.push(LLMFrameworkDirect.name); // to be able to access the 
 
 //////////////////// EXPERIMENTAL STRATEGIES //////////////////////
 
+
+//todo
+class LLMFrameworkSimpleBooleans extends LLMFramework {
+    constructor(question, question_id) {
+        super(question, question_id, "count_references");
+    }
+    async answerQuestionLogic() {
+        //is paris the capital of france
+            //what is the capital of france
+            //paris
+        
+        //was marc chagall a jew
+            //march chagall religion
+            //jew
+
+
+    }
+}
+window.LLMFrameworkSimpleBooleans = LLMFrameworkSimpleBooleans; //to be able to access the class
+window.LLMFrameworks.push(LLMFrameworkSimpleBooleans.name); //to be able to access the class name in the
+
+
 //todo problem: if a command chain fail, it can end on a valid entity and return true
 //maybe we should do a and between return true and all commands executed ?
 //todo voir si on peut diminuer le nbre de tokens en entrée
@@ -1149,9 +1171,9 @@ window.LLMFrameworks.push(LLMFrameworkDirect.name); // to be able to access the 
 class LLMFrameworkBooleanBySubquestions extends LLMFramework {
     constructor(
         question, question_id,
-        global_max_try = Infinity,
+        global_max_try = 2,
         subquestion_creation_max_try = Infinity,
-        final_query_generation_max_try = 3
+        final_query_generation_max_try = 5
     ) {
         super(question, question_id, "count_references");
         this.global_max_try = global_max_try; //max number of tries to generate the subquestions
@@ -1226,7 +1248,11 @@ class LLMFrameworkBooleanBySubquestions extends LLMFramework {
             let input_comparison = data_input_prompt(input_data_dict, true);
 
             let final_query_generation_try = 1;
-            while (final_query_generation_try <= this.final_query_generation_max_try && !result_is_bool) {
+            //todo also check that no new id have been introduced
+            let existing_uris = extract_uris_from_string_list(subqueries).join(extract_uris_from_string_list(subanswers)); // list of queries and results URIs
+            let hallucinated_uri = false; //will be set to true if a new id is generated in the final query in comparison to the subqueries and their results
+
+            while (final_query_generation_try <= this.final_query_generation_max_try && (!result_is_bool || hallucinated_uri)) {
                 this.reasoning_text += "<br>Final query generation try " + final_query_generation_try + "<br>";
                 console.log("input_comparison",input_comparison);
                 let output_combined = await this.executeStep(step_generation, "LLM generation", 
@@ -1245,6 +1271,13 @@ class LLMFrameworkBooleanBySubquestions extends LLMFramework {
                 if (!result_is_bool) {
                     this.reasoning_text += "<br>Result is not a boolean, trying again the final query generation<br>";
                 }
+
+                const generated_uris = extract_uris_from_string_list(this.sparql);
+                hallucinated_uri = !generated_uris.find(uri => !existing_uris.includes(uri));
+                if (hallucinated_uri) {
+                    this.reasoning_text += `<br>New URI generated (hallucinated) in the final query: ${hallucinated_uri}. This is not allowed, trying again the final query generation<br>`;
+                }
+
                 final_query_generation_try++;
             }
             if (!result_is_bool) {
@@ -1257,57 +1290,73 @@ class LLMFrameworkBooleanBySubquestions extends LLMFramework {
 window.LLMFrameworkBooleanBySubquestions = LLMFrameworkBooleanBySubquestions; //to be able to access the class
 window.LLMFrameworks.push(LLMFrameworkBooleanBySubquestions.name); //to be able to access the class name in the
 
-class LLMFrameworkBySubquestions extends LLMFramework {
-    constructor(question, question_id) {
+class LLMFrameworkAggregySubquestions extends LLMFramework {
+    constructor(
+        question, question_id,
+        global_max_try = 2,
+        subquestion_creation_max_try = Infinity,
+        final_query_generation_max_try = 5
+    ) {
         super(question, question_id, "count_references");
+        this.global_max_try = global_max_try; //max number of tries to generate the subquestions
+        this.subquestion_creation_max_try = subquestion_creation_max_try; //max number of tries
+        this.final_query_generation_max_try = final_query_generation_max_try; //max number of tries to generate the final query
     }
+
     async answerQuestionLogic() {
-        // Get a list of necessary subquestions to reach the answer
-        //Generation of the subquestions by the LLM
-        let outputed_subquestions = await this.executeStep(step_generation, "LLM generation 1", 
-            [this, prompt_get_subquestions(),"prompt_get_subquestions", this.question]
-        );
-        // Extract the subquestions from the LLM output
-        let extracted_subquestions = await this.executeStep(step_extract_tags, "Extract subquestions", [this, outputed_subquestions, "subquestion"]);
-        //Adapt the bahavior depending on the number of subquestions
-        if (extracted_subquestions.length == 0) {
-            //if we don't have a subquery we will execute the commands as is
-            //for questions such as "What is the capital of France?"
-            sparklis.home(); // we want to reset sparklis between different queries
-            this.reasoning_text += "<br>No subquestion needed, executing the commands directly<br>";
-            let output_commands_query = await this.executeStep(step_generation, "LLM generation", 
-                [this, commands_chain_system_prompt_the_most_improved(),"commands_chain_system_prompt_the_most_improved", this.question]
-            );
-            let extracted_commands_list = await this.executeStep(step_extract_tags, "Extracted commands", [this, output_commands_query, "commands"]);
-            let extracted_commands = extracted_commands_list.at(-1) || "";
-            await this.executeStep(step_execute_commands, "Commands execution", [this, extracted_commands]);
-            let place = sparklis.currentPlace();
-            await this.executeStep(step_get_results, "Get results", [this, this.sparql]);
-        } else if (extracted_subquestions.length > 0) {
-            //if we have multiple subquestions we will execute them 
-            // for questions such as "Were Angela Merkel and Tony Blair born in the same year?"
-            this.reasoning_text += "<br>Subquestions needed, answering them first<br>";
+        let result_is_valid = false;
+        let global_try = 1;
+        while (!result_is_valid && global_try <= this.global_max_try) {
+            this.reasoning_text += "<br>Global try " + global_try + "<br>";
+            let extracted_subquestions = [];
+            let subquestion_creation_try = 1;
+            while ((!extracted_subquestions || extracted_subquestions.length == 0)
+                && subquestion_creation_try <= this.subquestion_creation_max_try) {
+                this.reasoning_text += "<br>Subquestions creation, try" + subquestion_creation_try + "<br>";
+
+                // Get a list of necessary subquestions to reach the answer
+                this.reasoning_text += "<br>Generating subquestions<br>";
+                //Generation of the subquestions by the LLM
+                let outputed_subquestions = await this.executeStep(step_generation, "LLM generation 1", 
+                    [this, prompt_get_subquestions(),"prompt_get_subquestions", this.question]
+                ); //todo update prompt
+                
+                // Extract the subquestions from the LLM output
+                this.reasoning_text += "<br>Extracting subquestions<br>";
+                extracted_subquestions = await this.executeStep(step_extract_tags, "Extract subquestions", [this, outputed_subquestions, "subquestion"]);
+
+                subquestion_creation_try++;
+            }
+
+            //solve the subquestions
+            this.reasoning_text += "<br>Answering the subquestions<br>";
             let subqueries = [];
             let subanswers = [];
+            let place = null;
+            let current_subquestion = 1;
             for (let subquestion of extracted_subquestions) {
-                sparklis.home(); // we want to reset sparklis between different queries
-                this.reasoning_text += "<br>Subquestion:<br>";
-                let output_commands_subquestion = await this.executeStep(step_generation, "LLM generation", 
-                    [this, forward_commands_chain_system_prompt(),"forward_commands_chain_system_prompt", subquestion]
-                );
-                let extracted_commands_list = await this.executeStep(step_extract_tags, "Extracted commands", [this, output_commands_subquestion, "commands"]);
-                let extracted_commands = extracted_commands_list.at(-1) || "";
-                await this.executeStep(step_execute_commands, "Commands execution", [this, extracted_commands]);
-                let place = sparklis.currentPlace();
-                await this.executeStep(step_get_results, "Get results", [this, this.sparql]);
+                let subquestion_try = 1;
+                let subquery_is_valid = false;
+                while (!subquery_is_valid) {
+                    this.reasoning_text += "<br>Answering subquestion " + current_subquestion + ": try " + subquestion_try + "<br>"; 
+                    sparklis.home(); // we want to reset sparklis between different queries
+                    this.resetQueryAlterationsVariables(); //reset the variables to avoid side effects for the next queries
+                    place = await this.generate_and_execute_commands(this, subquestion, true);
+                    console.log("sparql after modification", this.sparql);
+                    subquery_is_valid = this.sparql != "" && this.sparql != undefined && this.sparql != null;
+                    subquestion_try++;
+                }
+                await this.executeStep(step_get_results, "Get results", [this, this.sparql, true, true]);
                 subqueries.push(this.sparql);
-                this.result_text = truncateResults(this.result_text, 4, 4000); //truncate results to avoid surpassing the token limit
+                this.result_text = truncateResults(this.result_text, 6, 4000); //truncate results to avoid surpassing the token limit
                 subanswers.push(this.result_text);
                 this.reasoning_text += "<br>Subquestion query:<br>" + this.sparql;
                 this.reasoning_text += "<br>Subquestion result (truncated):<br>" + this.result_text;
+                current_subquestion++;
             }
             //and then combine the results to generate a query answering the original question
             sparklis.home(); // we want to reset sparklis between different queries
+            this.resetQueryAlterationsVariables(); //reset the variables to avoid side effects for the next queries
             this.reasoning_text += "<br>Combining the results of the subquestions<br>";
 
             //make the input data for the comparison prompt
@@ -1320,22 +1369,43 @@ class LLMFrameworkBySubquestions extends LLMFramework {
             }
             let input_comparison = data_input_prompt(input_data_dict, true);
 
-            let output_combined = await this.executeStep(step_generation, "LLM generation", 
-                [this, prompt_use_subquestions_for_any(),"prompt_use_subquestions_for_any",
-                     input_comparison]
-            );
-            let extracted_query_list = await this.executeStep(step_extract_tags, "Extracted commands", [this, output_combined, "query"]);
-            let extracted_query = extracted_query_list.at(-1) || "";
-            this.sparql = extracted_query;
-        } else {
-            //error
-            let message = error_messages[5];
-            console.log(message);
-            this.errors += message;
-            // Step failed
-            this.setCurrentStepStatus(STATUS_FAILED);
+            let final_query_generation_try = 1;
+            let existing_uris = extract_uris_from_string_list(subqueries).join(extract_uris_from_string_list(subanswers)); // list of queries and results URIs
+            let hallucinated_uri = false; //will be set to true if a new id is generated in the final query in comparison to the subqueries and their results
+            while (final_query_generation_try <= this.final_query_generation_max_try && (!result_is_valid || hallucinated_uri)) {
+                this.reasoning_text += "<br>Final query generation try " + final_query_generation_try + "<br>";
+                console.log("input_comparison",input_comparison);
+                let output_combined = await this.executeStep(step_generation, "LLM generation", 
+                    [this, prompt_use_subquestions_for_any(),"prompt_use_subquestions_for_any",
+                        input_comparison] //todo update prompt
+                ); //todo alternatives prompt
+                let extracted_query_list = await this.executeStep(step_extract_tags, "Extracted query", [this, output_combined, "query"]);
+                let extracted_query = extracted_query_list.at(-1) || "";
+                this.sparql = extracted_query;
+
+                this.reasoning_text += "<br>Generated final query:<br>" + this.sparql;
+
+                //execute the generated sparql query
+                await this.executeStep(step_get_results, "Get results of created query", [this, extracted_query, false]); 
+                result_is_valid = true; //todo
+                if (!result_is_valid) {
+                    this.reasoning_text += "<br>Result is not valid, trying again the final query generation<br>";
+                }
+                final_query_generation_try++;
+            }
+            if (!result_is_valid) {
+                this.reasoning_text += "<br>Result is not valid and tried to many times to generate the final query. Retrying the whole process<br>";
+            } 
+
+            const generated_uris = extract_uris_from_string_list(this.sparql);
+            hallucinated_uri = !generated_uris.find(uri => !existing_uris.includes(uri));
+            if (hallucinated_uri) {
+                this.reasoning_text += `<br>New URI generated (hallucinated) in the final query: ${hallucinated_uri}. This is not allowed, trying again the final query generation<br>`;
+            }
+            
+            global_try++;
         }
     }
 }
-window.LLMFrameworkBySubquestions = LLMFrameworkBySubquestions;
-window.LLMFrameworks.push(LLMFrameworkBySubquestions.name);
+window.LLMFrameworkAggregySubquestions = LLMFrameworkAggregySubquestions; //to be able to access the class
+window.LLMFrameworks.push(LLMFrameworkAggregySubquestions.name); //to be able to access the class name in the
