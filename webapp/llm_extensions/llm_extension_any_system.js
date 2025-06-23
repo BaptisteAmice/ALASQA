@@ -1272,8 +1272,8 @@ class LLMFrameworkBooleanBySubquestions extends LLMFramework {
                     this.reasoning_text += "<br>Result is not a boolean, trying again the final query generation<br>";
                 }
 
-                const generated_uris = extract_uris_from_string_list(this.sparql);
-                hallucinated_uri = !generated_uris.find(uri => !existing_uris.includes(uri));
+                const generated_uris = extract_uris_from_string_list([this.sparql]);
+                hallucinated_uri = !generated_uris.every(uri => existing_uris.includes(uri));
                 if (hallucinated_uri) {
                     this.reasoning_text += `<br>New URI generated (hallucinated) in the final query: ${hallucinated_uri}. This is not allowed, trying again the final query generation<br>`;
                 }
@@ -1397,8 +1397,8 @@ class LLMFrameworkAggregySubquestions extends LLMFramework {
                 this.reasoning_text += "<br>Result is not valid and tried to many times to generate the final query. Retrying the whole process<br>";
             } 
 
-            const generated_uris = extract_uris_from_string_list(this.sparql);
-            hallucinated_uri = !generated_uris.find(uri => !existing_uris.includes(uri));
+            const generated_uris = extract_uris_from_string_list([this.sparql]);
+            hallucinated_uri = !generated_uris.every(uri => existing_uris.includes(uri));
             if (hallucinated_uri) {
                 this.reasoning_text += `<br>New URI generated (hallucinated) in the final query: ${hallucinated_uri}. This is not allowed, trying again the final query generation<br>`;
             }
