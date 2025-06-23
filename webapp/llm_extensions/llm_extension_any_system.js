@@ -1145,13 +1145,31 @@ class LLMFrameworkSimpleBooleans extends LLMFramework {
         super(question, question_id, "count_references");
     }
     async answerQuestionLogic() {
-        //is paris the capital of france
-            //what is the capital of france
-            //paris
-        
-        //was marc chagall a jew
-            //march chagall religion
-            //jew
+        // Call llm generation
+        let output_llm = await this.executeStep(step_generation, "LLM generation", 
+            [framework, prompt_get_subquestions_for_boolean_algo_ver(),"prompt_get_subquestions_for_boolean_algo_ver", question]
+        );
+        // Extract the commands from the LLM output
+        let extracted_commands1_list = await this.executeStep(step_extract_tags, "Extracted commands 1",
+            [framework, output_llm, "commands1"]
+        );
+        let extracted_commands1 = extracted_commands1_list.at(-1) || "";
+        let extracted_commands2_list = await this.executeStep(step_extract_tags, "Extracted commands 2",
+            [framework, output_llm, "commands1"]
+        );
+        let extracted_commands2 = extracted_commands2_list.at(-1) || "";
+        // Execute the commands, wait for place evaluation and get the results
+        outside_sparklis_processing = false;
+        let place1 = await this.execute_commands(framework, extracted_commands1, outside_sparklis_processing);
+        let place2 = await this.execute_commands(framework, extracted_commands2, outside_sparklis_processing);
+
+        // Get SPARQL queries from the places
+        let sparql1 = place1.sparql();
+        let sparql2 = place2.sparql();
+
+        // Merge the two SPARQL queries
+        let merged_sparql = generateAskQuery(sparql1, sparql2);
+        //todo better mergeand finish
 
 
     }
@@ -1160,6 +1178,7 @@ window.LLMFrameworkSimpleBooleans = LLMFrameworkSimpleBooleans; //to be able to 
 window.LLMFrameworks.push(LLMFrameworkSimpleBooleans.name); //to be able to access the class name in the
 
 
+//todo when command chain fail, the expected result can be false, but we need to get the uri to build the final query
 //todo problem: if a command chain fail, it can end on a valid entity and return true
 //maybe we should do a and between return true and all commands executed ?
 //todo voir si on peut diminuer le nbre de tokens en entrée
@@ -1273,9 +1292,10 @@ class LLMFrameworkBooleanBySubquestions extends LLMFramework {
                 }
 
                 const generated_uris = extract_uris_from_string_list([this.sparql]);
-                hallucinated_uri = !generated_uris.every(uri => existing_uris.includes(uri));
+                let hallucinated_uris_list = generated_uris.filter(uri => !existing_uris.includes(uri));
+                hallucinated_uri = hallucinated_uris_list.length > 0;
                 if (hallucinated_uri) {
-                    this.reasoning_text += `<br>New URI generated (hallucinated) in the final query: ${hallucinated_uri}. This is not allowed, trying again the final query generation<br>`;
+                    this.reasoning_text += `<br>New URI generated (hallucinated) in the final query: ${[...new Set(hallucinated_uris_list)].join(", ")}. This is not allowed, trying again the final query generation<br>`;
                 }
 
                 final_query_generation_try++;
@@ -1398,9 +1418,10 @@ class LLMFrameworkAggregySubquestions extends LLMFramework {
             } 
 
             const generated_uris = extract_uris_from_string_list([this.sparql]);
-            hallucinated_uri = !generated_uris.every(uri => existing_uris.includes(uri));
+            let hallucinated_uris_list = generated_uris.filter(uri => !existing_uris.includes(uri));
+            hallucinated_uri = hallucinated_uris_list.length > 0;
             if (hallucinated_uri) {
-                this.reasoning_text += `<br>New URI generated (hallucinated) in the final query: ${hallucinated_uri}. This is not allowed, trying again the final query generation<br>`;
+                this.reasoning_text += `<br>New URI generated (hallucinated) in the final query: ${[...new Set(hallucinated_uris_list)].join(", ")}. This is not allowed, trying again the final query generation<br>`;
             }
             
             global_try++;
