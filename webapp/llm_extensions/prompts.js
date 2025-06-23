@@ -716,18 +716,20 @@ Use semicolons (;) to separate commands inside each tag.
 ### Availables operators:
 - IN → Used to check if a specific entity or value is part of the results of the first command sequence.
 - NOT IN → Used to check if a specific entity or value is not part of the results of the first command sequence.
-- <, >, <=, >=, =, != → Used to compare numeric or date values.
+- = → Used to check if the results of the first command sequence match a specific entity or value.
+- != → Used to check if the results of the first command sequence do not match a specific entity or value.
+- <, >, <=, >= → Used to compare numeric or date values.
 
 ## Examples:
 
 Q: Is Paris the capital of France?
 A: <commands1>a country ; property capital</commands1>
-<operator>IN</operator>
+<operator>=</operator>
 <commands2>match Paris</commands2>
 
 Q: Was Albert Einstein born in Germany?
 A: <commands1>albert einstein ; property place of birth ; property country</commands1>
-<operator>IN</operator>
+<operator>=</operator>
 <commands2>match germany</commands2>
 
 Q: Is the Everest higher than 8000 meters?
@@ -735,7 +737,7 @@ A: <commands1>mount everest ; property elevation ; higherThan 8000</commands1>
 
 Q: Is India the most populous country?
 A: <commands1>a country ; property population ; desc ; limit 1</commands1>
-<operator>IN</operator>
+<operator>=</operator>
 <commands2>match India</commands2>`;
   } else if (endpoint_family === 'corporate' || true) {
     prompt = `todo`; //todo
