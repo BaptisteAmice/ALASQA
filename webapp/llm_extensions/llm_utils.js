@@ -1,6 +1,31 @@
 console.log("LLM utility active");
 
-const API = "http://localhost:1234/v1/chat/completions";
+const DefaultALASQAConfig = {
+    api_url: "http://localhost:1234/v1/chat/completions",
+    nl_post_processing: true,
+};
+
+// Initialize sessionStorage if not set (we use sessionStorage to have it updated each time the page is loaded)
+if (!sessionStorage.getItem("ALASQAConfig")) {
+    sessionStorage.setItem("ALASQAConfig", JSON.stringify(DefaultALASQAConfig));
+}
+
+// Getter
+function getALASQAConfig() {
+    try {
+        return JSON.parse(sessionStorage.getItem("ALASQAConfig")) || DefaultALASQAConfig;
+    } catch (e) {
+        sessionStorage.setItem("ALASQAConfig", JSON.stringify(DefaultALASQAConfig));
+        return DefaultALASQAConfig;
+    }
+}
+
+// Setter
+function setALASQAConfig(newConfig) {
+    const current = getALASQAConfig();
+    const updated = { ...current, ...newConfig };
+    sessionStorage.setItem("ALASQAConfig", JSON.stringify(updated));
+}
 
 /**
  * Common prompt template : one system message and one user message
@@ -27,7 +52,7 @@ function usualPrompt(systemPrompt, userPrompt) {
 async function sendPrompt(input, streamOption = true, updateCallback = null, usedTemperature = 0.8, stop_sequences = ["Q:"]) {
     //careful the first parameter can be interpreted as several parameters...
     try {
-        const response = await fetch(API, {
+        const response = await fetch(getALASQAConfig().api_url, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ messages: input, temperature: usedTemperature,  stream : streamOption, stop: stop_sequences })

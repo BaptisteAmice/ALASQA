@@ -187,6 +187,26 @@ class LLMFramework {
         await this.answerQuestionLogic();
         // reset the logic of the suggestions for the qa extension
         window.select_sugg_logic = null;
+
+        // if natural language post-processing is enabled, process the results into NL
+        if (getALASQAConfig().nl_post_processing === true) {        
+            let input_data_dict = { 
+                "question": this.question,
+                "sparql": this.sparql,
+                "results": this.result_text,
+            };
+            
+            let input_prompt = data_input_prompt(input_data_dict, false);
+
+            // Call llm generation
+            let final_nl_ouptput = await this.executeStep(step_generation, "Getting natural language answer", 
+                [this, prompt_translate_res_to_nl(),"prompt_translate_res_to_nl", input_prompt]
+            );
+
+            console.log("output_llm", final_nl_ouptput);
+            // Put the result in the answer field
+            this.sparklis_nl = "- Réponse finale : " + final_nl_ouptput;
+        }
     }
 
     /**
@@ -719,7 +739,8 @@ class LLMFrameworkOneShot extends LLMFramework {
     }
     async answerQuestionLogic() {
         let place = await this.generate_and_execute_commands(this, this.question, true);
-        await this.executeStep(step_get_results, "Get results", [this, this.sparql]);
+        let get_labels = getALASQAConfig().nl_post_processing === true;
+        await this.executeStep(step_get_results, "Get results", [this, this.sparql, get_labels, get_labels]);
     }
 }
 window.LLMFrameworkOneShot = LLMFrameworkOneShot; //to be able to access the class
@@ -817,7 +838,8 @@ class LLMFrameworkText2Sparql extends LLMFramework {
                 //only wait for the results if the query is not empty
                 let results_array = [];
                 if (this.sparql != "" && this.sparql != undefined && this.sparql != null) {
-                    await this.executeStep(step_get_results, "Get results", [this, this.sparql]);
+                    let get_labels = getALASQAConfig().nl_post_processing === true;
+                    await this.executeStep(step_get_results, "Get results", [this, this.sparql, get_labels, get_labels]);
                     try {
                         results_array = JSON.parse(this.result_text);
                     } catch (e) {
@@ -866,7 +888,8 @@ class LLMFrameworkRetry extends LLMFramework {
             //only wait for the results if the query is not empty
             let results_array = [];
             if (this.sparql != "" && this.sparql != undefined && this.sparql != null) {
-                await this.executeStep(step_get_results, "Get results", [this, this.sparql]);
+                let get_labels = getALASQAConfig().nl_post_processing === true;
+                await this.executeStep(step_get_results, "Get results", [this, this.sparql, get_labels, get_labels]);
                 try {
                     results_array = JSON.parse(this.result_text);
                 } catch (e) {
@@ -970,7 +993,8 @@ class LLMFrameworkRetryDelegatesBoolsToLLM extends LLMFramework {
             //only wait for the results if the query is not empty
             let results_array = [];
             if (this.sparql != "" && this.sparql != undefined && this.sparql != null) {
-                await this.executeStep(step_get_results, "Get results", [this, this.sparql]);
+                let get_labels = getALASQAConfig().nl_post_processing === true;
+                await this.executeStep(step_get_results, "Get results", [this, this.sparql, get_labels, get_labels]);
                 try {
                     results_array = JSON.parse(this.result_text);
                 } catch (e) {
@@ -1064,7 +1088,8 @@ class PassCommands extends LLMFramework {
     async answerQuestionLogic() {
         let commands = this.question;
         let place = await this.execute_commands(this, commands, true);
-        await this.executeStep(step_get_results, "Get results", [this, this.sparql]);
+        let get_labels = getALASQAConfig().nl_post_processing === true;
+        await this.executeStep(step_get_results, "Get results", [this, this.sparql, get_labels, get_labels]);
     }
 }
 window.PassCommands = PassCommands; //to be able to access the class
@@ -1172,17 +1197,26 @@ class LLMFrameworkSimpleBooleans extends LLMFramework {
         
         // Commands2 and operator are optional, so we check if they are defined
         if (extracted_commands2 && extracted_commands2 !== "" && operator && operator !== "") {
+            // Get the second place by executing the second commands chain
+            let place2 = await framework.execute_commands(framework, extracted_commands2, outside_sparklis_processing);
+
             // Get SPARQL queries from the places
             let sparql1 = place1.sparql();
-            let place2 = await framework.execute_commands(framework, extracted_commands2, outside_sparklis_processing);
             let sparql2 = place2.sparql();
+
+            if (!sparql1 || !sparql2) {
+                framework.reasoning_text += "<br>One of the SPARQL queries is empty.<br>";
+                console.error("One of the SPARQL queries is empty.");
+                return;
+            }
 
             // Merge the two SPARQL queries
             let merged_sparql = combineSparqlQueries(sparql1, sparql2, operator);
             framework.sparql = merged_sparql;
 
             // Get results for the merged SPARQL query
-            await framework.executeStep(step_get_results, "Get results", [framework, merged_sparql]);
+            let get_labels = getALASQAConfig().nl_post_processing === true;
+            await this.executeStep(step_get_results, "Get results", [framework, merged_sparql, get_labels, get_labels]);
 
             // Update the reasoning text with the merged SPARQL query and results
             framework.reasoning_text += "<br>Merged SPARQL query:<br>" + merged_sparql;
@@ -1303,7 +1337,8 @@ class LLMFrameworkBooleanBySubquestions extends LLMFramework {
                 this.reasoning_text += "<br>Generated final query:<br>" + this.sparql;
 
                 //execute the generated sparql query
-                await this.executeStep(step_get_results, "Get results of created query", [this, extracted_query, false]); 
+                let get_labels = getALASQAConfig().nl_post_processing === true;
+                await this.executeStep(step_get_results, "Get results of created query", [this, extracted_query, get_labels, get_labels]); 
                 result_is_bool = (this.result_text === "true" || this.result_text === "false");
                 if (!result_is_bool) {
                     this.reasoning_text += "<br>Result is not a boolean, trying again the final query generation<br>";
@@ -1424,7 +1459,8 @@ class LLMFrameworkAggregySubquestions extends LLMFramework {
                 this.reasoning_text += "<br>Generated final query:<br>" + this.sparql;
 
                 //execute the generated sparql query
-                await this.executeStep(step_get_results, "Get results of created query", [this, extracted_query, false]); 
+                let get_labels = getALASQAConfig().nl_post_processing === true;
+                await this.executeStep(step_get_results, "Get results of created query", [this, extracted_query, get_labels, get_labels]); 
                 result_is_valid = true; //todo
                 if (!result_is_valid) {
                     this.reasoning_text += "<br>Result is not valid, trying again the final query generation<br>";

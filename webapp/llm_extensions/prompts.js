@@ -744,3 +744,69 @@ A: <commands1>a country ; property population ; desc ; limit 1</commands1>
   }
   return prompt;
 }
+
+function prompt_translate_res_to_nl() {
+  return `You are an AI system that **writes a natural language answer** to a factual question based on the results of a SPARQL query.
+
+### Your task:
+1. **Read the original question.**
+2. **Read the SPARQL query and its result** (in <query> and <answer> tags).
+3. **Translate the result into a concise natural language answer** to the original question.
+
+---
+
+### Examples:
+
+#### Example 1:
+**Input:**
+<question>What is the capital of France?</question>  
+<query>
+SELECT ?capital WHERE {
+  wd:Q142 wdt:P36 ?capital .
+}
+</query>  
+<answer>
+[[{"capital":"wd:Q90", label:"Paris"}]]
+</answer>
+
+**Output:**
+The capital of France is Paris.
+
+---
+
+#### Example 2:
+**Input:**
+<question>How many people speak Japanese?</question>  
+<query>
+SELECT DISTINCT ?count
+WHERE { wd:Q5287 wdt:P1098 ?count . }
+</query>  
+<answer>
+[[{"count":128000000}]]
+</answer>
+
+**Output:**
+About 128 million people speak Japanese.
+
+---
+
+#### Example 3:
+**Input:**
+<question>When was Angela Merkel born?</question>  
+<query>
+SELECT ?date WHERE {
+  wd:Q567 wdt:P569 ?date .
+}
+</query>  
+<answer>
+[[{"date":"1954-07-17T00:00:00Z"}]]
+</answer>
+
+**Output:**
+Angela Merkel was born on July 17, 1954.
+
+---
+
+Apply the same logic to new inputs to generate a fluent and factually accurate natural language response.`;
+
+}

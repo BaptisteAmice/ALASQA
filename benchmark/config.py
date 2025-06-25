@@ -30,6 +30,10 @@ SPARKLIS_FILE = "http://localhost:8000/static/osparklis.html"
 # Location of the LLM API (not used by Sparklis, but just to test if it is reachable when running the benchmark), to update in llm_utils.js if you want to use a different API
 LLM_API = 'http://localhost:1234/v1/'
 LLM_API_MODEL = LLM_API + 'models'
+LLM_API_CHAT_COMPLETIONS = LLM_API + 'chat/completions' # e.g., "http://localhost:1234/v1/chat/completions"
+
+#todo pass to false
+NL_POST_PROCESSING = True # If True, the answers will be post-processed into natural language
 
 # User agent for the simulated browser (to avoid being blocked)
 USER_AGENT = 'ALASQA/0.2 ; baptiste.amice@irisa.fr'
@@ -48,7 +52,7 @@ BENCHMARK_FILE = script_dir + '/Inputs/' + 'qald_9_plus_train_wikidata_patched.j
 
 # Name of the tested benchmark (MINTAKA1K | QALD10 | QALD9_PLUS)
 BENCHMARK_NAME = benchmark_extraction.QALD9_PLUS
-# Filter on the extracted questions of the benchmark (examples: {} to get all questions, {"answers": lambda answers: any("boolean" in answer for answer in answers)} to only get the questions with the tag "aggregation" in a QALD benchmarks, {"answers": lambda answers: any("boolean" in answer for answer in answers)} to only get boolean questions in a QALD benchmark)
+# Filter on the extracted questions of the benchmark (examples: {} to get all questions, {"tags": lambda x: x is not None and "aggregation" in x} to only get the questions with the tag "aggregation" in a QALD benchmarks, {"answers": lambda answers: any("boolean" in answer for answer in answers)} to only get boolean questions in a QALD benchmark)
 BENCHMARK_QUESTIONS_FILTER = {}
 
 # Separating the language in 2 variable enable different approaches (e.g., reasoning in the question language if the 2 are the same, or translating the question in the system language)
