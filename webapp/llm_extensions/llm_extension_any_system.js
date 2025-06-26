@@ -1244,7 +1244,7 @@ class LLMFrameworkBooleanBySubquestions extends LLMFramework {
         question, question_id,
         global_max_try = 2,
         subquestion_creation_max_try = Infinity,
-        final_query_generation_max_try = 5
+        final_query_generation_max_try = 7
     ) {
         super(question, question_id, "count_references");
         this.global_max_try = global_max_try; //max number of tries to generate the subquestions
@@ -1253,9 +1253,11 @@ class LLMFrameworkBooleanBySubquestions extends LLMFramework {
     }
 
     async answerQuestionLogic() {
-        let result_is_bool = false;
+        let result_is_bool = false; // will be set to true if the final query returns a boolean result
+        let hallucinated_uri = false; // will be set to true if a new id is generated in the final query in comparison to the subqueries and their results
+
         let global_try = 1;
-        while (!result_is_bool && global_try <= this.global_max_try) {
+        while ((!result_is_bool || hallucinated_uri) && global_try <= this.global_max_try) {
             this.reasoning_text += "<br>Global try " + global_try + "<br>";
             let extracted_subquestions = [];
             let subquestion_creation_try = 1;
@@ -1321,7 +1323,6 @@ class LLMFrameworkBooleanBySubquestions extends LLMFramework {
             let final_query_generation_try = 1;
             //todo also check that no new id have been introduced
             let existing_uris = extract_uris_from_string_list(subqueries).join(extract_uris_from_string_list(subanswers)); // list of queries and results URIs
-            let hallucinated_uri = false; //will be set to true if a new id is generated in the final query in comparison to the subqueries and their results
 
             while (final_query_generation_try <= this.final_query_generation_max_try && (!result_is_bool || hallucinated_uri)) {
                 this.reasoning_text += "<br>Final query generation try " + final_query_generation_try + "<br>";
@@ -1335,6 +1336,11 @@ class LLMFrameworkBooleanBySubquestions extends LLMFramework {
                 this.sparql = extracted_query;
 
                 this.reasoning_text += "<br>Generated final query:<br>" + this.sparql;
+
+                // Get patched query
+                this.reasoning_text += "<br>Trying to detect and patch any query issues<br>";
+                this.sparql = get_patched_query(this.sparql);
+                this.reasoning_text += "<br>Patched query:<br>" + this.sparql;
 
                 //execute the generated sparql query
                 let get_labels = getALASQAConfig().nl_post_processing === true;
@@ -1353,9 +1359,13 @@ class LLMFrameworkBooleanBySubquestions extends LLMFramework {
 
                 final_query_generation_try++;
             }
-            if (!result_is_bool) {
+            if (!result_is_bool && global_try < this.global_max_try) {
                 this.reasoning_text += "<br>Result is not a boolean and tried to many times to generate the final query. Retrying the whole process<br>";
-            } 
+            } else if (hallucinated_uri && global_try < this.global_max_try) {
+                this.reasoning_text += "<br>Hallucinated URI in the final query and tried to many times to generate the final query. Retrying the whole process<br>";
+            } else if ((!result_is_bool || hallucinated_uri) && global_try >= this.global_max_try) {
+                this.reasoning_text += "<br>Result is not a boolean or hallucinated URI in the final query and reached the maximum number of tries. Giving up.<br>";
+            }
             global_try++;
         }
     }
