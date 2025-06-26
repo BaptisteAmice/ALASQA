@@ -33,7 +33,7 @@ LLM_API_MODEL = LLM_API + 'models'
 LLM_API_CHAT_COMPLETIONS = LLM_API + 'chat/completions' # e.g., "http://localhost:1234/v1/chat/completions"
 
 #todo pass to false
-NL_POST_PROCESSING = True # If True, the answers will be post-processed into natural language
+NL_POST_PROCESSING = False # If True, the answers will be post-processed into natural language
 
 # User agent for the simulated browser (to avoid being blocked)
 USER_AGENT = 'ALASQA/0.2 ; baptiste.amice@irisa.fr'
@@ -62,7 +62,7 @@ LANGUAGE_QUESTIONS = 'en'
 LANGUAGE_SPARKLIS = 'en'
 
 # If True, the browser is hidden during the benchmark evaluation (less heavy, but less readable)
-HIDE_BROWSER_ON_BENCHMARK_EVALUATION = False
+HIDE_BROWSER_ON_BENCHMARK_EVALUATION = True
 
 # Name of the tested system and its strategy
 TESTED_SYSTEM = 'sparklisllm-LLMFrameworkOneShot' # dummy | sparklisllm-[specific_strategy_name]
