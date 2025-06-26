@@ -407,7 +407,6 @@ function get_patched_query(query) {
     // Don't patch inside FILTER, VALUES, etc.
     const forbidden_patterns = /(FILTER|VALUES|BIND|MINUS|OPTIONAL|UNION)[\s\S]*?{[^}]*p:P\d+\s+wd:Q\d+/i;
     if (forbidden_patterns.test(patched_query)) {
-        console.warn("Query contains a forbidden construct; skipping auto-patch.");
         return patched_query;
     }
 

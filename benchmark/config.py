@@ -62,7 +62,7 @@ LANGUAGE_QUESTIONS = 'en'
 LANGUAGE_SPARKLIS = 'en'
 
 # If True, the browser is hidden during the benchmark evaluation (less heavy, but less readable)
-HIDE_BROWSER_ON_BENCHMARK_EVALUATION = True
+HIDE_BROWSER_ON_BENCHMARK_EVALUATION = False
 
 # Name of the tested system and its strategy
 TESTED_SYSTEM = 'sparklisllm-LLMFrameworkOneShot' # dummy | sparklisllm-[specific_strategy_name]

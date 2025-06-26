@@ -1332,19 +1332,17 @@ class LLMFrameworkBooleanBySubquestions extends LLMFramework {
                         input_comparison]
                 ); //todo alternatives prompt
                 let extracted_query_list = await this.executeStep(step_extract_tags, "Extracted query", [this, output_combined, "query"]);
-                let extracted_query = extracted_query_list.at(-1) || "";
-                this.sparql = extracted_query;
-
-                this.reasoning_text += "<br>Generated final query:<br>" + this.sparql;
+                let extracted_query = extracted_query_list.at(-1) || ""; 
+                this.reasoning_text += "<br>Generated final query:<br>" + extracted_query;
 
                 // Get patched query
                 this.reasoning_text += "<br>Trying to detect and patch any query issues<br>";
-                this.sparql = get_patched_query(this.sparql);
+                this.sparql = get_patched_query(extracted_query);
                 this.reasoning_text += "<br>Patched query:<br>" + this.sparql;
 
                 //execute the generated sparql query
                 let get_labels = getALASQAConfig().nl_post_processing === true;
-                await this.executeStep(step_get_results, "Get results of created query", [this, extracted_query, get_labels, get_labels]); 
+                await this.executeStep(step_get_results, "Get results of created query", [this, this.sparql, get_labels, get_labels]); 
                 result_is_bool = (this.result_text === "true" || this.result_text === "false");
                 if (!result_is_bool) {
                     this.reasoning_text += "<br>Result is not a boolean, trying again the final query generation<br>";
