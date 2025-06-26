@@ -111,6 +111,17 @@ def sparklisllm_question(driver, question, endpoint_sparql, system_name, suggest
     if url_extension != '':
         driver.get(driver.current_url + url_extension)
 
+    # Override ALASQAConfig if needed
+    override_alasqa_config_script = f"""
+    // Assuming getALASQAConfig and setALASQAConfig are already defined on the page
+    var temp_config = getALASQAConfig();
+    temp_config.api_url = "{config.LLM_API_CHAT_COMPLETIONS}";
+    temp_config.nl_post_processing = "{config.NL_POST_PROCESSING}";
+    setALASQAConfig(temp_config);
+    console.log("Updated ALASQAConfig");
+    """
+    driver.execute_script(override_alasqa_config_script)
+
     # Set the sparql endpoint
     sparql_endpoint_input = driver.find_element(by=By.ID, value="sparql-endpoint-input")
     sparql_endpoint_input.clear()
