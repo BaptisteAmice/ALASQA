@@ -6,7 +6,9 @@
 A solution is to use a dump locally hosted or to use a proxy endpoint.
 For the latter, it can make some queries fail because the queries are encapsulated in a SERVICE.
 
-- Not allowing the LLM to choose the direction of a property makes focus management more difficult. But LLMs such as Nemo are really bad at predicting the direction of a property.
+- Sometimes local LLM can be out of memory, from this point, the whole benchmark will fail.
+
+- Not allowing the LLM to choose the direction of a property makes focus management more difficult. But LLMs such as Nemo are really bad at predicting the direction of a property. Using JSON to describe commands as a graph/tree (instead of a sequence) could be a solution to experiment with in the future.
 
 - The groupBy commands have 2 alternative either using Sparklis constraints or remodeling the query after the navigation in Sparklis.
 
@@ -35,3 +37,9 @@ For the latter, it can make some queries fail because the queries are encapsulat
     "required": ["reasoning","commands"]
 }
 ```
+
+- in case of ASK queries, Sparklis doesn't return the same results as tools such as YASGUI or Wikidata Query Service. You can for example try comparing the following query in Sparklis console and in YASGUI:
+```js
+await sparklis.evalSparql('ASK WHERE { wd:Q58815001 p:P57 [ ps:P57 wd:Q2745616 ] . }')
+```
+Because of that, ALASQA doesn't return the same results as Sparklis. The workaround is to check if the query is an ASK and then check if the results.rows.length > 0 to determine if the answer is true or false.
