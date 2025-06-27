@@ -1337,7 +1337,7 @@ class LLMFrameworkBooleanBySubquestions extends LLMFramework {
 
                 // Get patched query
                 this.reasoning_text += "<br>Trying to detect and patch any query issues<br>";
-                this.sparql = get_patched_query(extracted_query);
+                this.sparql = get_patched_query(extracted_query, this);
                 this.reasoning_text += "<br>Patched query:<br>" + this.sparql;
 
                 //execute the generated sparql query

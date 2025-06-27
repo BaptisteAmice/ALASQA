@@ -47,15 +47,16 @@ function usualPrompt(systemPrompt, userPrompt) {
  * @param {*} updateCallback - function to call when the LLM sends a response
  * @param {*} usedTemperature - the temperature to use for the LLM
  * @param {Array} stop_sequences - the sequences that will stop the LLM generation
+ * @param {number} max_response_length - the maximum length of the response in tokens (we can base it on GPT limits, e.g. 4096 for GPT-3.5)
  * @returns 
  */
-async function sendPrompt(input, streamOption = true, updateCallback = null, usedTemperature = 0.8, stop_sequences = ["Q:"]) {
+async function sendPrompt(input, streamOption = true, updateCallback = null, usedTemperature = 0.8, stop_sequences = ["Q:"], max_response_length = 4096) {
     //careful the first parameter can be interpreted as several parameters...
     try {
         const response = await fetch(getALASQAConfig().api_url, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ messages: input, temperature: usedTemperature,  stream : streamOption, stop: stop_sequences })
+            body: JSON.stringify({ messages: input, temperature: usedTemperature,  stream : streamOption, stop: stop_sequences, max_tokens: max_response_length })
         });
         console.log("Ongoing LLM generation...")
         let text = "";
@@ -396,37 +397,40 @@ function combineSparqlQueries(query1, query2, operator) {
  * @param {string} query 
  * @returns 
  */
-function get_patched_query(query) {
-    let patched_query = query;
+function get_patched_query(query, framework) {
     // First, strip trailing comments between '#' and '}'
-    patched_query = patched_query.replace(/#[^{}\n]*\}/g, (match) => {
+    query = query.replace(/#[^{}\n]*\}/g, (match) => {
+        framework.reasoning_text += `<br>Removed comment: ${match.trim()}<br>`;
         // keep the closing brace
         return " }";
     });
 
-    // Don't patch inside FILTER, VALUES, etc.
-    const forbidden_patterns = /(FILTER|VALUES|BIND|MINUS|OPTIONAL|UNION)[\s\S]*?{[^}]*p:P\d+\s+wd:Q\d+/i;
-    if (forbidden_patterns.test(patched_query)) {
-        return patched_query;
+    //patch invalid triples for Wikidata queries (using p: prefixes without ps:)
+    if (getEndpointFamily() === "wikidata") {
+        // Don't patch inside FILTER, VALUES, etc.
+        const forbidden_patterns = /(FILTER|VALUES|BIND|MINUS|OPTIONAL|UNION)[\s\S]*?{[^}]*p:P\d+\s+wd:Q\d+/i;
+        if (forbidden_patterns.test(query)) {
+            return query;
+        }
+
+        // Match triples using p: directly with wd: object
+        const triple_regex = /([?\w\d:]+)\s+p:(P\d+)\s+wd:(Q\d+)\s*\.\s*/g;
+
+        let match;
+        const replacements = [];
+
+        while ((match = triple_regex.exec(query)) !== null) {
+            const [fullMatch, subj, prop, obj] = match;
+            const stmtVar = `?stmt_${prop}_${obj}`;
+            const patched = `${subj} p:${prop} ${stmtVar} .\n${stmtVar} ps:${prop} wd:${obj} .`;
+            replacements.push({ fullMatch, patched });
+        }
+
+        for (const { fullMatch, patched } of replacements) {
+            query = query.replace(fullMatch, patched);
+            console.warn(`Patched invalid triple: ${fullMatch.trim()}`);
+        }
     }
 
-    // Match triples using p: directly with wd: object
-    const triple_regex = /([?\w\d:]+)\s+p:(P\d+)\s+wd:(Q\d+)\s*\.\s*/g;
-
-    let match;
-    const replacements = [];
-
-    while ((match = triple_regex.exec(patched_query)) !== null) {
-        const [fullMatch, subj, prop, obj] = match;
-        const stmtVar = `?stmt_${prop}_${obj}`;
-        const patched = `${subj} p:${prop} ${stmtVar} .\n${stmtVar} ps:${prop} wd:${obj} .`;
-        replacements.push({ fullMatch, patched });
-    }
-
-    for (const { fullMatch, patched } of replacements) {
-        patched_query = patched_query.replace(fullMatch, patched);
-        console.warn(`Patched invalid triple: ${fullMatch.trim()}`);
-    }
-
-    return patched_query;
+    return query;
 }
