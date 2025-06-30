@@ -449,114 +449,83 @@ function prompt_get_subquestions() { //todo revoir
 }
 
 function prompt_use_subquestions_for_any() { //todo revoir
-    return `
-    You are an AI system that processes a question by analyzing the responses to its subqueries and generating a new query that directly retrieves the final answer.
-    # **Instructions**
-    1. You will be given:
-      - A main **question**.
-      - Several **subquestions**, along with their **subqueries** and **subanswers**.
-    2. Based on the data, construct a new SPARQL query that directly retrieves the answer.
-    3. Return the new query enclosed in <query> tags.
-    4. Follow these **rules**:
-      - If the answer is already retrieved by a subquery, **return the same query without modification**.
-      - Do **not** replace URIs with labels.
-      - Do **not** put comments in the <query> (even with #)
-    
-    # **Examples**
+  return `
+You are an AI system that answers a question using the answers to related subquestions. Your job is to read the subanswers and write a **valid SPARQL query** that directly gives the final answer.
+
+### Your task:
+1. **Read the original question.**
+2. **Look at the answers to the subquestions** (in <subanswer> tags). Extract numbers, dates, names, or other relevant facts.
+3. **Write a SPARQL query** that gives the final answer directly. Use the facts you found to build this query.
+4. Your output must be inside <query> tags. The query should be **clean, short, and executable** — no comments or extra text.
+
+### SPARQL rules:
+- Use \`wdt:Pxxx\` for direct facts (always prefer this for simple properties).
+- Use \`p:Pxxx/ps:Pxxx\` only if qualifiers or full statements are needed.
+- Do not use \`p:Pxxx\` alone.
+- Use filters like \`FILTER(?x > 100)\` or \`FILTER(YEAR(?date1) = YEAR(?date2))\` when comparing values.
+
+---
+
+## Example 1: Direct Answer Already Obtained
+**Input:**
+<question>How high is the Cologne Cathedral?</question>
+<subquestion1>What is the height of the Cologne Cathedral?</subquestion1>
+<subquery1>SELECT DISTINCT ?P2048_7 WHERE { wd:Q4176 wdt:P2048 ?P2048_7 . } LIMIT 200</subquery1>
+<subanswer1>[[{"number":157,"str":"157"}]]</subanswer1>
+
+**Your output:**
+The result is already given by the subquery, so I can keep it as is.
+<query>SELECT DISTINCT ?P2048_7 WHERE { wd:Q4176 wdt:P2048 ?P2048_7 . } LIMIT 200</query>
+
+---
+
+## Example 2: Yes/No Question with several subquestions
+**Input:**
+<question>Were Angela Merkel and Tony Blair born in the same year?</question>  
+<subquestion1>Which year was Angela Merkel born in?</subquestion1>  
+<subquery1>
+SELECT DISTINCT ?P569_7
+WHERE { wd:Q567 p:P569 [ ps:P569 ?P569_7 ] . }
+LIMIT 200
+</subquery1>  
+<subanswer1>
+[[{"value":"1954-07-17T00:00:00Z"}]]
+</subanswer1>  
+<subquestion2>Which year was Tony Blair born in?</subquestion2>  
+<subquery2>
+SELECT DISTINCT ?P569_7
+WHERE { wd:Q9545 p:P569 [ ps:P569 ?P569_7 ] . }
+LIMIT 200
+</subquery2>  
+<subanswer2>
+[[{"value":"1953-05-06T00:00:00Z"}]]
+</subanswer2>
+
+**Your output:**
+<query>
+ASK WHERE {
+  wd:Q567 wdt:P569 ?date1 .
+  wd:Q9545 wdt:P569 ?date2 .
+  FILTER(YEAR(?date1) = YEAR(?date2))
+}
+</query>
+
+---
   
-    ## Example 1: Direct Answer Already Obtained
-    **Input:**
-    <question>How high is the Cologne Cathedral?</question>
-    <subquestion1>What is the height of the Cologne Cathedral?</subquestion1>
-    <subquery1>SELECT DISTINCT ?P2048_7 WHERE { wd:Q4176 wdt:P2048 ?P2048_7 . } LIMIT 200</subquery1>
-    <subanswer1>[[{"type":"number","number":157,"str":"157","datatype":"http://www.w3.org/2001/XMLSchema#decimal"}]]</subanswer1>
-  
-    **Output:**
-    "The result is already given by the subquery, so I can keep it as is.
-    <query>SELECT DISTINCT ?P2048_7 WHERE { wd:Q4176 wdt:P2048 ?P2048_7 . } LIMIT 200</query>
-    
-    ## Example 2: Yes/No Question with several subquestions
-    **Input:**
-    <question>Were Angela Merkel and Tony Blair born in the same year?</question>
-    <subquestion1>Which year was Angela Merkel born in?</subquestion1>
-    <subquery1>SELECT DISTINCT ?P569_7 WHERE { wd:Q567 p:P569 [ ps:P569 ?P569_7 ] . } LIMIT 200</subquery1>
-    <subanswer1>{
-        "head" : {
-          "vars" : [ "P569_133" ]
-        },
-        "results" : {
-          "bindings" : [ {
-            "P569_133" : {
-              "datatype" : "http://www.w3.org/2001/XMLSchema#dateTime",
-              "type" : "literal",
-              "value" : "1932-01-01T00:00:00Z"
-            }
-          } ]
-        }
-      }
-    </subanswer1>
-    <subquestion2>Which year was Tony Blair born in?</subquestion2>
-    <subquery2>SELECT DISTINCT ?P569_7 WHERE { wd:Q9545 p:P569 [ ps:P569 ?P569_7 ] . } LIMIT 200</subquery2>
-    <subanswer2>{
-        "head" : {
-          "vars" : [ "P569_7" ]
-        },
-        "results" : {
-          "bindings" : [ {
-            "P569_7" : {
-              "datatype" : "http://www.w3.org/2001/XMLSchema#dateTime",
-              "type" : "literal",
-              "value" : "1953-05-06T00:00:00Z"
-            }
-          } ]
-        }
-      }
-    </subanswer2>
-    
-    **Output:**
-    I need to compare the results of the subqueries to return a boolean value.
-    <query>ASK WHERE { wd:Q567 p:P569 [ ps:P569 ?year1 ] . wd:Q9545 p:P569 [ ps:P569 ?year2 ] . FILTER(YEAR(?year1) = YEAR(?year2)) }</query>
-    
-    ## Example 3: Finding the most something
-    **Input:**
-    <question>Who is the oldest cast member of the Netflix show “Queer Eye”?</question>
-    <subquestion1>Who are the actors in Queer Eye and what are their birth dates?</subquestion1>
-    <subquery1>SELECT DISTINCT ?P161_104 ?P569_141 WHERE { wd:Q48817408 p:P161 [ ps:P161 ?P161_104 ] . ?P161_104 p:P569 [ ps:P569 ?P569_141 ] . } LIMIT 200</subquery1>
-   <subanswer1>
-    [
-        [
-            {
-                "type": "uri",
-                "uri": "http://www.wikidata.org/entity/Q29452671",
-                "label": "Jeremiah Brent"
-            },
-            {
-                "type": "typedLiteral",
-                "str": "1984-11-24T00:00:00Z",
-                "datatype": "http://www.w3.org/2001/XMLSchema#dateTime"
-            }
-        ],
-        [
-            {
-                "type": "uri",
-                "uri": "http://www.wikidata.org/entity/Q44870529",
-                "label": "Karamo Brown"
-            },
-            {
-                "type": "typedLiteral",
-                "str": "1980-11-02T00:00:00Z",
-                "datatype": "http://www.w3.org/2001/XMLSchema#dateTime"
-            }
-        ],
-        and more truncated results...
-    ]
-    </subanswer1>
-    
-    **Output:**
-    The subquery give the actors and their birthdate.
-    To have the oldest, i need to order them by age and only keep the first one.
-    I only want to output the actor, not the birthdate.
-    <query>SELECT ?oldestActor WHERE { wd:Q48817408 p:P161 [ ps:P161 ?oldestActor ] . ?oldestActor p:P569 [ ps:P569 ?birthDate ] . } ORDER BY ASC(?birthDate) LIMIT 1</query>
+## Example 3: Finding the most something
+**Input:**
+<question>Who is the oldest cast member of the Netflix show “Queer Eye”?</question>
+<subquestion1>Who are the actors in Queer Eye and what are their birth dates?</subquestion1>
+<subquery1>SELECT DISTINCT ?P161_104 ?P569_141 WHERE { wd:Q48817408 p:P161 [ ps:P161 ?P161_104 ] . ?P161_104 p:P569 [ ps:P569 ?P569_141 ] . } LIMIT 200</subquery1>
+<subanswer1>
+[[{"uri": "http://www.wikidata.org/entity/Q29452671", "label": "Jeremiah Brent"},{"str": "1984-11-24T00:00:00Z"}],[{"uri": "http://www.wikidata.org/entity/Q44870529","label": "Karamo Brown"},{"str": "1980-11-02T00:00:00Z"}],and more truncated results...]
+</subanswer1>
+
+**Your output:**
+The subquery give the actors and their birthdate.
+To have the oldest, i need to order them by age and only keep the first one.
+I only want to output the actor, not the birthdate.
+<query>SELECT ?oldestActor WHERE { wd:Q48817408 p:P161 [ ps:P161 ?oldestActor ] . ?oldestActor p:P569 [ ps:P569 ?birthDate ] . } ORDER BY ASC(?birthDate) LIMIT 1</query>
   `;
 } 
 
@@ -625,7 +594,7 @@ WHERE { wd:Q5287 p:P1098 [ ps:P1098 ?P1098_7 ] . }
 LIMIT 200
 </subquery1>  
 <subanswer1>
-[[{"type":"number","number":128000000}]]
+[[{"number":128000000}]]
 </subanswer1>
 
 **Your output:**
