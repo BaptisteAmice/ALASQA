@@ -9,6 +9,14 @@ wdt:P279 -> subclass of
 
 Inconsistency in the use of subclasses
 
+# Corrected result (by correcting query)
+
+## 117
+
+Is Pamela Anderson a vegan?
+Query asked for "vegetarism" instead of "veganism"
+Q83364 -> Q181138
+
 # Removed non-working in input file and now
 
 ## 4
