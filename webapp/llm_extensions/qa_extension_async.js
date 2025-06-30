@@ -300,9 +300,79 @@ async function process_step(place, step, target_suggestion_ranking = 1) {
 	let constr = { type: "Between", valueFrom: match[1], valueTo: match[2] };
 	let sugg = {type: "IncrConstr", constr: constr, filterType: "OnlyLiterals"};
 	return apply_suggestion(place, "between", sugg)
+
+	} else if ((match = /^>\s*(.+)$/.exec(step))) {
+	LAST_INITIATED_COMMAND = ">";
+
+	//wait for evaluation to be done
+	await waitForEvaluation(place);
+	console.log("Current results: ", place.results());
+	let firstRow = place.results()['rows'][0] || [];
+
+	// Take the last column
+	let lastColumn = firstRow[firstRow.length - 1] || {};
+
+	// Check datatype
+	let datatype = lastColumn.datatype || null;
+
+	console.log("Detected datatype:", datatype);
+
+	// Check if the datatype is a date or time
+	let date_comparison = datatype.toLowerCase().includes("date") || datatype.toLowerCase().includes("time");
+
+	let constr = {};
+	//if we are comparing dates, use after instead of higher-than
+	if (date_comparison) {
+		constr = { type: "After", kwd: match[1] };
+	} else {
+		constr = { type: "HigherThan", value: match[1] };
+		if (!isNumeric(match[1])) {
+			return Promise.reject("higherThan something that is not a number");	
+		}
+	}
+
+	} else if ((match = /^<\s*(.+)$/.exec(step))) {
+	LAST_INITIATED_COMMAND = "<";
+
+	//wait for evaluation to be done
+	await waitForEvaluation(place);
+	console.log("Current results: ", place.results());
+	let firstRow = place.results()['rows'][0] || [];
+
+	// Take the last column
+	let lastColumn = firstRow[firstRow.length - 1] || {};
+
+	// Check datatype
+	let datatype = lastColumn.datatype || null;
+
+	console.log("Detected datatype:", datatype);
+
+	// Check if the datatype is a date or time
+	let date_comparison = datatype.toLowerCase().includes("date") || datatype.toLowerCase().includes("time");
+
+	let constr = {};
+	//if we are comparing dates, use after instead of higher-than
+	if (date_comparison) {
+		constr = { type: "Before", kwd: match[1] };
+	} else {
+		constr = { type: "LowerThan", value: match[1] };
+		if (!isNumeric(match[1])) {
+			return Promise.reject("LowerThan something that is not a number");	
+		}
+	}
+
+	let sugg = {type: "IncrConstr", constr: constr, filterType: "OnlyLiterals"};
+	return apply_suggestion(place, "higher-than", sugg)
 	
 	} else if ((match = /^match\s*(.+)$/.exec(step))) { // Regex or Wikidata search
 	LAST_INITIATED_COMMAND = "match";
+
+	//throw an error if the parameter is shorter than the minimal length (we want to avoid having an error in Sparklis itself)
+	const match_min_length = 3; // minimal length of the match parameter in Sparklis
+	if (match[1].length < match_min_length) {
+		return Promise.reject("match parameter is too short, it should be at least " + match_min_length + " characters long");
+	}
+
 	return new Promise((resolve, reject) => {
 		let input_wikidata = document.getElementById("input-wikidata-mode");
 		if (input_wikidata.checked) {
