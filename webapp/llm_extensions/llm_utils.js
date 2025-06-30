@@ -375,6 +375,8 @@ function combineSparqlQueries(query1, query2, operator) {
   askQuery += `  {\n    ${pattern1}\n  }\n`;
   askQuery += `  {\n    ${pattern2}\n  }\n`;
 
+  //todo le llm genere higherThan, essayer uniformiser ?
+
   if (["=", "!=", "<", ">", "<=", ">="].includes(operator)) {
     askQuery += `  FILTER (${var1} ${operator} ${var2})\n`;
   } else if (operator.toUpperCase() === "IN") {
@@ -382,7 +384,7 @@ function combineSparqlQueries(query1, query2, operator) {
   } else if (operator.toUpperCase() === "NOT IN") {
     askQuery += `  FILTER (${var1} NOT IN (${var2}))\n`;
   } else {
-    throw new Error(`Unsupported operator: ${operator}`);
+    console.error(`Unsupported operator: ${operator}`);
   }
 
   askQuery += `}`;
@@ -398,7 +400,14 @@ function combineSparqlQueries(query1, query2, operator) {
  * @returns 
  */
 function get_patched_query(query, framework) {
-    // First, strip trailing comments between '#' and '}'
+    // Remove comments that go from '#' to '\n'
+    query = query.replace(/#[^\n]*\n/g, (match) => {
+        framework.reasoning_text += `<br>Removed comment from line: ${match.trim()}<br>`;
+        // keep the closing brace
+        return " \n";
+    });
+        
+    // Remove comments that go from '#' to '}'
     query = query.replace(/#[^{}\n]*\}/g, (match) => {
         framework.reasoning_text += `<br>Removed comment: ${match.trim()}<br>`;
         // keep the closing brace
