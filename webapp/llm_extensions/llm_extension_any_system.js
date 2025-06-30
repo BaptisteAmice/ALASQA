@@ -1165,6 +1165,11 @@ window.LLMFrameworks.push(LLMFrameworkDirect.name); // to be able to access the 
 
 
 //todo
+//todo find where the crash causes timeout
+//<operator>higherThan</operator> -> invalid operator, should be >
+//one of the command chains fails, so the result is null
+//<commands2>match []</commands2> -> query less than 3 caracters shouldn't be possible
+//match no -> same
 class LLMFrameworkSimpleBooleans extends LLMFramework {
     constructor(question, question_id) {
         super(question, question_id, "count_references");
@@ -1207,7 +1212,7 @@ class LLMFrameworkSimpleBooleans extends LLMFramework {
             if (!sparql1 || !sparql2) {
                 framework.reasoning_text += "<br>One of the SPARQL queries is empty.<br>";
                 console.error("One of the SPARQL queries is empty.");
-                return;
+                return;  //todo better handling of failure
             }
 
             // Merge the two SPARQL queries
@@ -1223,6 +1228,8 @@ class LLMFrameworkSimpleBooleans extends LLMFramework {
             framework.reasoning_text += "<br>Results:<br>" + framework.result_text;
 
             //todo better mergeand finish
+        } else {
+            framework.reasoning_text += "<br>Only one commands chain was executed.<br>";
         }
     }
 }
@@ -1233,11 +1240,11 @@ window.LLMFrameworks.push(LLMFrameworkSimpleBooleans.name); //to be able to acce
 //todo when command chain fail, the expected result can be false, but we need to get the uri to build the final query
 //todo problem: if a command chain fail, it can end on a valid entity and return true
 //maybe we should do a and between return true and all commands executed ?
-//todo voir si on peut diminuer le nbre de tokens en entrée
 //todo the check of boolean failed, see if the patch worked
 /**
  * LLM Framework that generates subquestions to answer a boolean question.
  * Use several tries to generate the subquestions and the final query.
+ * Limits: a query with the good boolean response isn't necessarily the right one.
  */
 class LLMFrameworkBooleanBySubquestions extends LLMFramework {
     constructor(
@@ -1321,7 +1328,7 @@ class LLMFrameworkBooleanBySubquestions extends LLMFramework {
             let input_comparison = data_input_prompt(input_data_dict, true);
 
             let final_query_generation_try = 1;
-            //todo also check that no new id have been introduced
+            //also check that no new id have been introduced
             let existing_uris = extract_uris_from_string_list(subqueries).join(extract_uris_from_string_list(subanswers)); // list of queries and results URIs
 
             while (final_query_generation_try <= this.final_query_generation_max_try && (!result_is_bool || hallucinated_uri)) {
@@ -1376,7 +1383,7 @@ class LLMFrameworkAggregySubquestions extends LLMFramework {
         question, question_id,
         global_max_try = 2,
         subquestion_creation_max_try = Infinity,
-        final_query_generation_max_try = 5
+        final_query_generation_max_try = 7
     ) {
         super(question, question_id, "count_references");
         this.global_max_try = global_max_try; //max number of tries to generate the subquestions
@@ -1386,8 +1393,10 @@ class LLMFrameworkAggregySubquestions extends LLMFramework {
 
     async answerQuestionLogic() {
         let result_is_valid = false;
+        let hallucinated_uri = false; // will be set to true if a new id is generated in the final query in comparison to the subqueries and their results
+
         let global_try = 1;
-        while (!result_is_valid && global_try <= this.global_max_try) {
+        while ((!result_is_valid || hallucinated_uri) && global_try <= this.global_max_try) {
             this.reasoning_text += "<br>Global try " + global_try + "<br>";
             let extracted_subquestions = [];
             let subquestion_creation_try = 1;
@@ -1451,8 +1460,9 @@ class LLMFrameworkAggregySubquestions extends LLMFramework {
             let input_comparison = data_input_prompt(input_data_dict, true);
 
             let final_query_generation_try = 1;
+            //also check that no new id have been introduced
             let existing_uris = extract_uris_from_string_list(subqueries).join(extract_uris_from_string_list(subanswers)); // list of queries and results URIs
-            let hallucinated_uri = false; //will be set to true if a new id is generated in the final query in comparison to the subqueries and their results
+
             while (final_query_generation_try <= this.final_query_generation_max_try && (!result_is_valid || hallucinated_uri)) {
                 this.reasoning_text += "<br>Final query generation try " + final_query_generation_try + "<br>";
                 console.log("input_comparison",input_comparison);
@@ -1461,31 +1471,38 @@ class LLMFrameworkAggregySubquestions extends LLMFramework {
                         input_comparison] //todo update prompt
                 ); //todo alternatives prompt
                 let extracted_query_list = await this.executeStep(step_extract_tags, "Extracted query", [this, output_combined, "query"]);
-                let extracted_query = extracted_query_list.at(-1) || "";
-                this.sparql = extracted_query;
+                let extracted_query = extracted_query_list.at(-1) || ""; 
+                this.reasoning_text += "<br>Generated final query:<br>" + extracted_query;
 
-                this.reasoning_text += "<br>Generated final query:<br>" + this.sparql;
+                // Get patched query
+                this.reasoning_text += "<br>Trying to detect and patch any query issues<br>";
+                this.sparql = get_patched_query(extracted_query, this);
+                this.reasoning_text += "<br>Patched query:<br>" + this.sparql;
 
                 //execute the generated sparql query
                 let get_labels = getALASQAConfig().nl_post_processing === true;
-                await this.executeStep(step_get_results, "Get results of created query", [this, extracted_query, get_labels, get_labels]); 
-                result_is_valid = true; //todo
+                await this.executeStep(step_get_results, "Get results of created query", [this, this.sparql, get_labels, get_labels]); 
+                result_is_valid = (this.result_text !== null && this.result_text !== undefined && this.result_text !== "");
                 if (!result_is_valid) {
-                    this.reasoning_text += "<br>Result is not valid, trying again the final query generation<br>";
+                    this.reasoning_text += "<br>Result is not a valid, trying again the final query generation<br>";
                 }
+
+                const generated_uris = extract_uris_from_string_list([this.sparql]);
+                let hallucinated_uris_list = generated_uris.filter(uri => !existing_uris.includes(uri));
+                hallucinated_uri = hallucinated_uris_list.length > 0;
+                if (hallucinated_uri) {
+                    this.reasoning_text += `<br>New URI generated (hallucinated) in the final query: ${[...new Set(hallucinated_uris_list)].join(", ")}. This is not allowed, trying again the final query generation<br>`;
+                }
+
                 final_query_generation_try++;
             }
-            if (!result_is_valid) {
-                this.reasoning_text += "<br>Result is not valid and tried to many times to generate the final query. Retrying the whole process<br>";
-            } 
-
-            const generated_uris = extract_uris_from_string_list([this.sparql]);
-            let hallucinated_uris_list = generated_uris.filter(uri => !existing_uris.includes(uri));
-            hallucinated_uri = hallucinated_uris_list.length > 0;
-            if (hallucinated_uri) {
-                this.reasoning_text += `<br>New URI generated (hallucinated) in the final query: ${[...new Set(hallucinated_uris_list)].join(", ")}. This is not allowed, trying again the final query generation<br>`;
+            if (!result_is_valid && global_try < this.global_max_try) {
+                this.reasoning_text += "<br>Result is not a valid and tried to many times to generate the final query. Retrying the whole process<br>";
+            } else if (hallucinated_uri && global_try < this.global_max_try) {
+                this.reasoning_text += "<br>Hallucinated URI in the final query and tried to many times to generate the final query. Retrying the whole process<br>";
+            } else if ((!result_is_valid || hallucinated_uri) && global_try >= this.global_max_try) {
+                this.reasoning_text += "<br>Result is not a valid or hallucinated URI in the final query and reached the maximum number of tries. Giving up.<br>";
             }
-            
             global_try++;
         }
     }
