@@ -488,6 +488,12 @@ function step_change_or_add_limit(framework, query, limit) {
     return updatedQuery;
 }
 
+/**
+ * Function to modify the query to group by and count the results.
+ * @param {*} framework 
+ * @param {*} query 
+ * @returns 
+ */
 function step_group_by_and_count(framework, query) {
     framework.reasoning_text += "<br>Modifying query to group by and count<br>";
 
@@ -579,6 +585,12 @@ function step_change_or_add_offset(framework, query, offset) {
     return updatedQuery;
 }
 
+/**
+ * Function to change the order type in the ORDER BY clause to xsd:date.
+ * @param {*} framework 
+ * @param {*} query 
+ * @returns 
+ */
 function step_change_order_type_to_date(framework, query) {
     framework.reasoning_text += "<br>Changing order type to date<br>";
 
@@ -601,6 +613,12 @@ function step_change_order_type_to_date(framework, query) {
     return updatedQuery;
 }
 
+/**
+ * Function to remove the ordering variable from the SELECT clause.
+ * @param {*} framework 
+ * @param {*} query 
+ * @returns 
+ */
 function step_remove_ordering_var_from_select(framework, query) {
     framework.reasoning_text += "<br>Removing ordering variable from SELECT<br>";
 
@@ -733,7 +751,8 @@ async function step_get_results(framework, sparql, withLabels = false, removeDis
 
 /**
  * Use a single interaction with the LLM to answer the question.
- * Execute in one time a series of commands to answer the question.
+ * Execute in one time a sequence of commands to answer the question.
+ * Referenced as the "One-shot" strategy or base strategy.
  */
 class LLMFrameworkOneShot extends LLMFramework {
     constructor(question, question_id) {
@@ -748,137 +767,22 @@ class LLMFrameworkOneShot extends LLMFramework {
 window.LLMFrameworkOneShot = LLMFrameworkOneShot; //to be able to access the class
 window.LLMFrameworks.push(LLMFrameworkOneShot.name); //to be able to access the class name
 
-class LLMFrameworkText2Sparql extends LLMFramework {
-    constructor(question, question_id) {
-        super(question, question_id, "count_references");
-    }
-    async answerQuestionLogic() {
-        const startTime = performance.now();
-        ////////////////////////// GET QUESTION TYPE
-        let endpoint_is_corporate = getEndpointFamily() == "corporate";
-        let extracted_type = "tocheck";
-        if (!endpoint_is_corporate) { //we won't use llm knowledge if we are in a corporate endpoint
-            //we will test number_bool_tests times that the expected result is a boolean
-            let max_number_bool_tests = 2;
-            let current_number_bool_tests = 0;
-            while (current_number_bool_tests < max_number_bool_tests 
-                && (extracted_type == "tocheck" || extracted_type == "boolean")) {
-                    this.reasoning_text += "<br>Try to get the question type (" + current_number_bool_tests + ")<br>";
-                // Call llm generation
-                let output_llm_type = await this.executeStep(step_generation, "LLM generation", 
-                    [this, prompt_is_boolean_expected(),"prompt_is_boolean_expected", question_user_prompt(this.question)]
-                )
-                // Extract the commands from the LLM output
-                let extracted_type_list = await this.executeStep(step_extract_tags, "Extracted question type",
-                    [this, output_llm_type, "answer"]
-                );
-                // Execute the commands, wait for place evaluation and get the results
-                extracted_type = extracted_type_list.at(-1) || "";
-                current_number_bool_tests++;
-            }
-        }
-        //////////////////////////// IF BOOLEAN QUESTION JUST USE THE LLM
-        if (!endpoint_is_corporate && extracted_type == "boolean") {
-            let output = await this.executeStep(step_generation, "LLM generation", 
-                [this, direct_boolean_answering_prompt(),"direct_boolean_answering_prompt", this.question]
-            );
-            let extracted_bool_list = await this.executeStep(step_extract_tags, "Extracted SPARQL", [this, output, "answer"]);
-            let extracted_bool = extracted_bool_list.at(-1) || "";
-            let bool_query = "";
 
-            //make a query always true or false depending on the answer of the LLM
-            //the response is based on the LLM knowledge anyway, so it won't be persistent
-            if (extracted_bool == "true") {
-                bool_query = "ASK WHERE {}";
-            } else {
-                bool_query = "ASK WHERE { BIND(false AS ?x) FILTER(?x) }";
-            } 
-            this.sparql = bool_query;
-        } else {
-            ////////////////////////// TRY ANSWERING WITH SPARKLIS
-            let got_a_response = false;
-            let elapsedTime = (performance.now() - startTime) / 1000; // time in seconds
-            let i = 1;
-            while (!got_a_response && elapsedTime < (8 * 60)) {
-                console.log("elapsed time", elapsedTime);
-                this.reasoning_text += "<br>Try " + i + "<br>";
-                // Call llm generation
-                let output_llm = await this.executeStep(step_generation, "LLM generation", 
-                    [this, commands_chain_system_prompt_the_most_improved(),"commands_chain_system_prompt_the_most_improved", this.question]
-                );
-                // Extract the commands from the LLM output
-                let extracted_commands_list = await this.executeStep(step_extract_tags, "Extracted commands",
-                    [this, output_llm, "commands"]
-                );
-                // Execute the commands, wait for place evaluation and get the results
-                let extracted_commands = extracted_commands_list.at(-1) || "";
-                await this.executeStep(step_execute_commands, "Commands execution", [this, extracted_commands]);
-                
-                //get the current sparql query from the place
-                let place = sparklis.currentPlace();
-                this.sparql = place.sparql();
-
-                //if an action for group by is defined modify the query (done before step_remove_ordering_var_from_select)
-                if (this.group_by_action) {
-                    this.sparql = await this.executeStep(step_group_by_and_count, "Group by and count", [this, this.sparql]);
-                }
-                //if the sparql query limit number is set, change the limit clause in the query
-                if (this.sparql_query_limit_number) {
-                    //execute step
-                    this.sparql = await this.executeStep(step_change_or_add_limit, "Add/change limit", [this, this.sparql, this.sparql_query_limit_number]);
-                    //remove the ordering variable from the select clause
-                    this.sparql = await this.executeStep(step_remove_ordering_var_from_select, "Remove ordering variable from select", [this, this.sparql]);
-                }
-                if (this.sparql_query_offset_number) {
-                    this.sparql = await this.executeStep(step_change_or_add_offset, "Add/change offset", [this, this.sparql, this.sparql_query_offset_number]);
-                }
-                if (this.order_date) {
-                    this.sparql = await this.executeStep(step_change_order_type_to_date, "Change order type to date", [this, this.sparql]);
-                }
-                console.log("sparql after modification", this.sparql);
-
-                //only wait for the results if the query is not empty
-                let results_array = [];
-                if (this.sparql != "" && this.sparql != undefined && this.sparql != null) {
-                    let get_labels = getALASQAConfig().nl_post_processing === true;
-                    await this.executeStep(step_get_results, "Get results", [this, this.sparql, get_labels, get_labels]);
-                    try {
-                        results_array = JSON.parse(this.result_text);
-                    } catch (e) {
-                        results_array = [];
-                    }
-                }
-
-                //reset the variables to avoid side effects for the next queries
-                this.resetQueryAlterationsVariables();
-
-                //got a response if the query is not empty and has a response
-                got_a_response = (this.sparql != "" && this.sparql != undefined && this.sparql != null)
-                                && (this.result_text != "" && this.result_text != undefined && this.result_text != null
-                                && results_array.length > 0);
-                elapsedTime = (performance.now() - startTime) / 1000; 
-                console.log("result text a", this.result_text);
-                i++;
-            }
-
-            ////////////////////////// LAST TRY TO SAVE THE RESPONSE
-            if (!got_a_response) {
-
-            }
-        }      
-    }
-}
-window.LLMFrameworkText2Sparql = LLMFrameworkText2Sparql; //to be able to access the class
-window.LLMFrameworks.push(LLMFrameworkText2Sparql.name); //to be able to access the class name
-
+/**
+ * In comparison to the OneShot strategy, this strategy can retry the LLM generation several times.
+ * It needs to generate n queries with the same results to validate a query and return it.
+ * This is useful to avoid the LLM generating queries that are not stable and that can change from one generation to another.
+ * This strategy is referenced as the "Retry" strategy.
+ */
 class LLMFrameworkRetry extends LLMFramework {
-    constructor(question, question_id) {
+    constructor(question, question_id,
+        number_of_same_response_expected = 3) {
         super(question, question_id, "count_references");
+        this.number_of_same_response_expected = number_of_same_response_expected;
     }
     async answerQuestionLogic() {
         ////////////////////////// TRY ANSWERING WITH SPARKLIS
         let i = 1;
-        let number_of_same_response_expected = 3;
         let got_number_of_same_response_expected = false;
         let valid_responses_queries = [];
         let valid_responses_results = [];
@@ -913,7 +817,7 @@ class LLMFrameworkRetry extends LLMFramework {
                 valid_responses_queries.push(this.sparql);
                 valid_responses_results.push(this.result_text);
 
-                if (valid_responses_queries.length >= number_of_same_response_expected) {
+                if (valid_responses_queries.length >= this.number_of_same_response_expected) {
                     //test if we have number_of_same_response_expected times the same query in valid_responses_queries
                     //if it's the case, put it as the sparql query of the framework
                     let query_count = valid_responses_queries.reduce((acc, query) => {
@@ -921,7 +825,7 @@ class LLMFrameworkRetry extends LLMFramework {
                         return acc;
                     }
                     , {});
-                    let query_found = Object.keys(query_count).find(key => query_count[key] >= number_of_same_response_expected);
+                    let query_found = Object.keys(query_count).find(key => query_count[key] >= this.number_of_same_response_expected);
                     if (query_found) {
                         this.sparql = query_found;
                         got_number_of_same_response_expected = true;
@@ -934,7 +838,7 @@ class LLMFrameworkRetry extends LLMFramework {
                             return acc;
                         }
                         , {});
-                        let result_found = Object.keys(result_count).find(key => result_count[key] >= number_of_same_response_expected);
+                        let result_found = Object.keys(result_count).find(key => result_count[key] >= this.number_of_same_response_expected);
                         if (result_found) {
                             // get the query that corresponds to the result
                             let query_found = valid_responses_queries[valid_responses_results.indexOf(result_found)];
@@ -950,134 +854,6 @@ class LLMFrameworkRetry extends LLMFramework {
 }
 window.LLMFrameworkRetry = LLMFrameworkRetry; //to be able to access the class
 window.LLMFrameworks.push(LLMFrameworkRetry.name); //to be able to access the class name
-
-
-class LLMFrameworkRetryDelegatesBoolsToLLM extends LLMFramework {
-    //get the highest score on benchmarks, but the reasoning behind boolean question isn't based on the KG
-    constructor(question, question_id) {
-        super(question, question_id, "count_references");
-    }
-    async answerQuestionLogic() {
-        ////////////////////////// GET QUESTION TYPE
-        let endpoint_is_corporate = getEndpointFamily() == "corporate";
-        let expected_response_type = "tocheck";
-
-        //we will test number_bool_tests times that the expected result is a boolean
-        const max_number_bool_tests = 2;
-        let current_number_bool_tests = 0;
-        while (current_number_bool_tests < max_number_bool_tests 
-            && (expected_response_type == "tocheck" || expected_response_type == "boolean")) {
-                this.reasoning_text += "<br>Try to get the question type (" + current_number_bool_tests + ")<br>";
-            // Call llm generation
-            let output_llm_type = await this.executeStep(step_generation, "LLM generation", 
-                [this, prompt_is_boolean_expected(),"prompt_is_boolean_expected", question_user_prompt(this.question)]
-            )
-            // Extract the commands from the LLM output
-            let expected_response_type_list = await this.executeStep(step_extract_tags, "Extracted question type",
-                [this, output_llm_type, "answer"]
-            );
-            // Execute the commands, wait for place evaluation and get the results
-            expected_response_type = expected_response_type_list.at(-1) || "";
-            current_number_bool_tests++;
-        }
-
-
-        ////////////////////////// TRY ANSWERING WITH SPARKLIS
-        let i = 1;
-        let number_of_same_response_expected = 3;
-        let got_number_of_same_response_expected = false;
-        let valid_responses_queries = [];
-        let valid_responses_results = [];
-        while (!got_number_of_same_response_expected) {
-            this.reasoning_text += "<br>Try " + i + "<br>";
-            let place = await this.generate_and_execute_commands(this, this.question, true);
-            console.log("sparql after modification", this.sparql);
-            //only wait for the results if the query is not empty
-            let results_array = [];
-            if (this.sparql != "" && this.sparql != undefined && this.sparql != null) {
-                let get_labels = getALASQAConfig().nl_post_processing === true;
-                await this.executeStep(step_get_results, "Get results", [this, this.sparql, get_labels, get_labels]);
-                try {
-                    results_array = JSON.parse(this.result_text);
-                } catch (e) {
-                    results_array = [];
-                }
-            }
-
-            //reset the variables to avoid side effects for the next queries
-            this.resetQueryAlterationsVariables();
-
-            //got a response if the query is not empty and has a response
-            let got_a_response = (this.sparql != "" && this.sparql != undefined && this.sparql != null)
-                            && (this.result_text != "" && this.result_text != undefined && this.result_text != null
-                            && results_array.length > 0);
-            console.log("result text", this.result_text);
-
-            if (got_a_response) {
-                //add to valid_responses
-                valid_responses_queries.push(this.sparql);
-                valid_responses_results.push(this.result_text);
-
-                if (valid_responses_queries.length >= number_of_same_response_expected) {
-                    //test if we have number_of_same_response_expected times the same query in valid_responses_queries
-                    //if it's the case, put it as the sparql query of the framework
-                    let query_count = valid_responses_queries.reduce((acc, query) => {
-                        acc[query] = (acc[query] || 0) + 1;
-                        return acc;
-                    }
-                    , {});
-                    let query_found = Object.keys(query_count).find(key => query_count[key] >= number_of_same_response_expected);
-                    if (query_found) {
-                        this.sparql = query_found;
-                        got_number_of_same_response_expected = true;
-                    }
-
-                    //if we don't have the same number of query, we can also check the results (and keep the query with the same id as one of the results)
-                    if (!got_number_of_same_response_expected) {
-                        let result_count = valid_responses_results.reduce((acc, result) => {
-                            acc[result] = (acc[result] || 0) + 1;
-                            return acc;
-                        }
-                        , {});
-                        let result_found = Object.keys(result_count).find(key => result_count[key] >= number_of_same_response_expected);
-                        if (result_found) {
-                            // get the query that corresponds to the result
-                            let query_found = valid_responses_queries[valid_responses_results.indexOf(result_found)];
-                            this.sparql = query_found;
-                            got_number_of_same_response_expected = true;
-                        }
-                    }
-                }
-            }
-            i++;
-        }
-
-        let sparklis_response_is_boolean = false;
-
-        //if the expected type is a boolean, and the response from sparklis isn't a boolean, we will directly use the LLM to answer the question
-        if (expected_response_type == "boolean" && !sparklis_response_is_boolean) {
-            let number_of_same_boolean_response_needed = 2;
-
-             let output_bool = await this.executeStep(step_generation, "LLM generation", 
-                [this, direct_boolean_answering_prompt(),"direct_boolean_answering_prompt", this.question]
-            );
-            let extracted_bool_list = await this.executeStep(step_extract_tags, "Extracted SPARQL", [this, output_bool, "answer"]);
-            let extracted_bool = extracted_bool_list.at(-1) || "";
-            let bool_query = "";
-
-            //make a query always true or false depending on the answer of the LLM
-            //the response is based on the LLM knowledge anyway, so it won't be persistent
-            if (extracted_bool == "true") {
-                bool_query = "ASK WHERE {}";
-            } else {
-                bool_query = "ASK WHERE { BIND(false AS ?x) FILTER(?x) }";
-            } 
-            this.sparql = bool_query;
-        }      
-    }
-}
-window.LLMFrameworkRetryDelegatesBoolsToLLM = LLMFrameworkRetryDelegatesBoolsToLLM; //to be able to access the class
-window.LLMFrameworks.push(LLMFrameworkRetryDelegatesBoolsToLLM.name); //to be able to access the class name
 
 /**
  * Doesn't call the LLM but just pass the commands to the command extension.
@@ -1224,6 +1000,8 @@ class LLMFrameworkSimpleBooleans extends LLMFramework {
                     console.error("One of the SPARQL queries is empty.");
                     return;  //todo better handling of failure
                 }
+
+                //todo check if the operator is valid //else retry
 
                 // Merge the two SPARQL queries
                 let merged_sparql = combineSparqlQueries(sparql1, sparql2, operator);
@@ -1528,3 +1306,262 @@ class LLMFrameworkAggregySubquestions extends LLMFramework {
 }
 window.LLMFrameworkAggregySubquestions = LLMFrameworkAggregySubquestions; //to be able to access the class
 window.LLMFrameworks.push(LLMFrameworkAggregySubquestions.name); //to be able to access the class name in the
+
+
+//////////////////// LEGACY STRATEGIES //////////////////////
+
+/**
+ * This strategy use the LLM to directly respond to boolean question and then give a fixed SPARQL query.
+ * Please now prefere the strategy LLMFrameworkRetry.
+ */
+class LLMFrameworkRetryDelegatesBoolsToLLMLegacy extends LLMFramework {
+    //get the highest score on benchmarks, but the reasoning behind boolean question isn't based on the KG
+    constructor(question, question_id) {
+        super(question, question_id, "count_references");
+    }
+    async answerQuestionLogic() {
+        ////////////////////////// GET QUESTION TYPE
+        let expected_response_type = "tocheck";
+
+        //we will test number_bool_tests times that the expected result is a boolean
+        const max_number_bool_tests = 2;
+        let current_number_bool_tests = 0;
+        while (current_number_bool_tests < max_number_bool_tests 
+            && (expected_response_type == "tocheck" || expected_response_type == "boolean")) {
+                this.reasoning_text += "<br>Try to get the question type (" + current_number_bool_tests + ")<br>";
+            // Call llm generation
+            let output_llm_type = await this.executeStep(step_generation, "LLM generation", 
+                [this, prompt_is_boolean_expected(),"prompt_is_boolean_expected", question_user_prompt(this.question)]
+            )
+            // Extract the commands from the LLM output
+            let expected_response_type_list = await this.executeStep(step_extract_tags, "Extracted question type",
+                [this, output_llm_type, "answer"]
+            );
+            // Execute the commands, wait for place evaluation and get the results
+            expected_response_type = expected_response_type_list.at(-1) || "";
+            current_number_bool_tests++;
+        }
+
+
+        ////////////////////////// TRY ANSWERING WITH SPARKLIS
+        let i = 1;
+        let number_of_same_response_expected = 3;
+        let got_number_of_same_response_expected = false;
+        let valid_responses_queries = [];
+        let valid_responses_results = [];
+        while (!got_number_of_same_response_expected) {
+            this.reasoning_text += "<br>Try " + i + "<br>";
+            let place = await this.generate_and_execute_commands(this, this.question, true);
+            console.log("sparql after modification", this.sparql);
+            //only wait for the results if the query is not empty
+            let results_array = [];
+            if (this.sparql != "" && this.sparql != undefined && this.sparql != null) {
+                let get_labels = getALASQAConfig().nl_post_processing === true;
+                await this.executeStep(step_get_results, "Get results", [this, this.sparql, get_labels, get_labels]);
+                try {
+                    results_array = JSON.parse(this.result_text);
+                } catch (e) {
+                    results_array = [];
+                }
+            }
+
+            //reset the variables to avoid side effects for the next queries
+            this.resetQueryAlterationsVariables();
+
+            //got a response if the query is not empty and has a response
+            let got_a_response = (this.sparql != "" && this.sparql != undefined && this.sparql != null)
+                            && (this.result_text != "" && this.result_text != undefined && this.result_text != null
+                            && results_array.length > 0);
+            console.log("result text", this.result_text);
+
+            if (got_a_response) {
+                //add to valid_responses
+                valid_responses_queries.push(this.sparql);
+                valid_responses_results.push(this.result_text);
+
+                if (valid_responses_queries.length >= number_of_same_response_expected) {
+                    //test if we have number_of_same_response_expected times the same query in valid_responses_queries
+                    //if it's the case, put it as the sparql query of the framework
+                    let query_count = valid_responses_queries.reduce((acc, query) => {
+                        acc[query] = (acc[query] || 0) + 1;
+                        return acc;
+                    }
+                    , {});
+                    let query_found = Object.keys(query_count).find(key => query_count[key] >= number_of_same_response_expected);
+                    if (query_found) {
+                        this.sparql = query_found;
+                        got_number_of_same_response_expected = true;
+                    }
+
+                    //if we don't have the same number of query, we can also check the results (and keep the query with the same id as one of the results)
+                    if (!got_number_of_same_response_expected) {
+                        let result_count = valid_responses_results.reduce((acc, result) => {
+                            acc[result] = (acc[result] || 0) + 1;
+                            return acc;
+                        }
+                        , {});
+                        let result_found = Object.keys(result_count).find(key => result_count[key] >= number_of_same_response_expected);
+                        if (result_found) {
+                            // get the query that corresponds to the result
+                            let query_found = valid_responses_queries[valid_responses_results.indexOf(result_found)];
+                            this.sparql = query_found;
+                            got_number_of_same_response_expected = true;
+                        }
+                    }
+                }
+            }
+            i++;
+        }
+
+        let sparklis_response_is_boolean = false;
+
+        //if the expected type is a boolean, and the response from sparklis isn't a boolean, we will directly use the LLM to answer the question
+        if (expected_response_type == "boolean" && !sparklis_response_is_boolean) {
+
+             let output_bool = await this.executeStep(step_generation, "LLM generation", 
+                [this, direct_boolean_answering_prompt(),"direct_boolean_answering_prompt", this.question]
+            );
+            let extracted_bool_list = await this.executeStep(step_extract_tags, "Extracted SPARQL", [this, output_bool, "answer"]);
+            let extracted_bool = extracted_bool_list.at(-1) || "";
+            let bool_query = "";
+
+            //make a query always true or false depending on the answer of the LLM
+            //the response is based on the LLM knowledge anyway, so it won't be persistent
+            if (extracted_bool == "true") {
+                bool_query = "ASK WHERE {}";
+            } else {
+                bool_query = "ASK WHERE { BIND(false AS ?x) FILTER(?x) }";
+            } 
+            this.sparql = bool_query;
+        }      
+    }
+}
+//not added to the LLMFrameworks list, as it is not used anymore
+
+/**
+ * This strategy was used for our participation to the TEXT2SPARQL'25 challenge.
+ * This is strategy is derivated from LLMFrameworkRetryDelegatesBoolsToLLM, is limited in time and check the used knowledge graph.
+ */
+class LLMFrameworkText2SparqlLegacy extends LLMFramework {
+    constructor(question, question_id,
+        max_number_bool_tests = 2, max_time_for_retry = 8*60) {
+        super(question, question_id, "count_references");
+        this.max_number_bool_tests = max_number_bool_tests; // Number of times to test if the expected result is a boolean
+        this.max_time_for_retry = max_time_for_retry; // Maximum time in seconds to retry the question
+    }
+    async answerQuestionLogic() {
+        const startTime = performance.now();
+        ////////////////////////// GET QUESTION TYPE
+        let endpoint_is_corporate = getEndpointFamily() == "corporate";
+        let extracted_type = "tocheck";
+        if (!endpoint_is_corporate) { //we won't use llm knowledge if we are in a corporate endpoint
+            //we will test number_bool_tests times that the expected result is a boolean
+            let current_number_bool_tests = 1;
+            while (current_number_bool_tests <= this.max_number_bool_tests 
+                && (extracted_type == "tocheck" || extracted_type == "boolean")) {
+                    this.reasoning_text += "<br>Try to get the question type (" + current_number_bool_tests + ")<br>";
+                // Call llm generation
+                let output_llm_type = await this.executeStep(step_generation, "LLM generation", 
+                    [this, prompt_is_boolean_expected(),"prompt_is_boolean_expected", question_user_prompt(this.question)]
+                );
+                // Extract the commands from the LLM output
+                let extracted_type_list = await this.executeStep(step_extract_tags, "Extracted question type",
+                    [this, output_llm_type, "answer"]
+                );
+                // Execute the commands, wait for place evaluation and get the results
+                extracted_type = extracted_type_list.at(-1) || "";
+                current_number_bool_tests++;
+            }
+        }
+        //////////////////////////// IF BOOLEAN QUESTION JUST USE THE LLM
+        if (!endpoint_is_corporate && extracted_type == "boolean") {
+            let output = await this.executeStep(step_generation, "LLM generation", 
+                [this, direct_boolean_answering_prompt(),"direct_boolean_answering_prompt", this.question]
+            );
+            let extracted_bool_list = await this.executeStep(step_extract_tags, "Extracted SPARQL", [this, output, "answer"]);
+            let extracted_bool = extracted_bool_list.at(-1) || "";
+            let bool_query = "";
+
+            //make a query always true or false depending on the answer of the LLM
+            //the response is based on the LLM knowledge anyway, so it won't be persistent
+            if (extracted_bool == "true") {
+                bool_query = "ASK WHERE {}";
+            } else {
+                bool_query = "ASK WHERE { BIND(false AS ?x) FILTER(?x) }";
+            } 
+            this.sparql = bool_query;
+        } else {
+            ////////////////////////// TRY ANSWERING WITH SPARKLIS
+            let got_a_response = false;
+            let elapsedTime = (performance.now() - startTime) / 1000; // time in seconds
+            let i = 1;
+            while (!got_a_response && elapsedTime < (this.max_time_for_retry)) {
+                console.log("elapsed time", elapsedTime);
+                this.reasoning_text += "<br>Try " + i + "<br>";
+                // Call llm generation
+                let output_llm = await this.executeStep(step_generation, "LLM generation", 
+                    [this, commands_chain_system_prompt_the_most_improved(),"commands_chain_system_prompt_the_most_improved", this.question]
+                );
+                // Extract the commands from the LLM output
+                let extracted_commands_list = await this.executeStep(step_extract_tags, "Extracted commands",
+                    [this, output_llm, "commands"]
+                );
+                // Execute the commands, wait for place evaluation and get the results
+                let extracted_commands = extracted_commands_list.at(-1) || "";
+                await this.executeStep(step_execute_commands, "Commands execution", [this, extracted_commands]);
+                
+                //get the current sparql query from the place
+                let place = sparklis.currentPlace();
+                this.sparql = place.sparql();
+
+                //if an action for group by is defined modify the query (done before step_remove_ordering_var_from_select)
+                if (this.group_by_action) {
+                    this.sparql = await this.executeStep(step_group_by_and_count, "Group by and count", [this, this.sparql]);
+                }
+                //if the sparql query limit number is set, change the limit clause in the query
+                if (this.sparql_query_limit_number) {
+                    //execute step
+                    this.sparql = await this.executeStep(step_change_or_add_limit, "Add/change limit", [this, this.sparql, this.sparql_query_limit_number]);
+                    //remove the ordering variable from the select clause
+                    this.sparql = await this.executeStep(step_remove_ordering_var_from_select, "Remove ordering variable from select", [this, this.sparql]);
+                }
+                if (this.sparql_query_offset_number) {
+                    this.sparql = await this.executeStep(step_change_or_add_offset, "Add/change offset", [this, this.sparql, this.sparql_query_offset_number]);
+                }
+                if (this.order_date) {
+                    this.sparql = await this.executeStep(step_change_order_type_to_date, "Change order type to date", [this, this.sparql]);
+                }
+                console.log("sparql after modification", this.sparql);
+
+                //only wait for the results if the query is not empty
+                let results_array = [];
+                if (this.sparql != "" && this.sparql != undefined && this.sparql != null) {
+                    let get_labels = getALASQAConfig().nl_post_processing === true;
+                    await this.executeStep(step_get_results, "Get results", [this, this.sparql, get_labels, get_labels]);
+                    try {
+                        results_array = JSON.parse(this.result_text);
+                    } catch (e) {
+                        results_array = [];
+                    }
+                }
+
+                //reset the variables to avoid side effects for the next queries
+                this.resetQueryAlterationsVariables();
+
+                //got a response if the query is not empty and has a response
+                got_a_response = (this.sparql != "" && this.sparql != undefined && this.sparql != null)
+                                && (this.result_text != "" && this.result_text != undefined && this.result_text != null
+                                && results_array.length > 0);
+                elapsedTime = (performance.now() - startTime) / 1000; 
+                console.log("result text a", this.result_text);
+                i++;
+            }
+
+            ////////////////////////// LAST TRY TO SAVE THE RESPONSE
+            if (!got_a_response) {
+
+            }
+        }      
+    }
+}
+//not added to the LLMFrameworks list, as it is not used anymore
