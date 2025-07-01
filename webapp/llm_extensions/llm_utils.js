@@ -335,61 +335,76 @@ function extract_uris_from_string_list(queries) {
  * @param {string} query1 - First SPARQL SELECT query
  * @param {string} query2 - Second SPARQL SELECT query
  * @param {string} operator - Comparison operator ('=', '!=', '<', '>', 'IN', 'NOT IN', etc.)
+ * @param {string} query_form - SELECT or ASK (ASK for a boolean result, select for returning the winner)
  * @returns {string} - Combined SPARQL ASK query
  */
-function combineSparqlQueries(query1, query2, operator) {
-  // Extract first variable from SELECT clause
-  const extractSelectVar = (query) => {
+function combineSparqlQueries(query1, query2, operator, query_form = "ASK") {
+    let final_query = "";
+    // Extract first variable from SELECT clause
+    const extractSelectVar = (query) => {
     const selectMatch = query.match(/SELECT\s+(?:DISTINCT\s+)?([\s\S]+?)WHERE/i);
     if (!selectMatch) throw new Error("Could not find SELECT clause.");
-    const vars = selectMatch[1].match(/\?[a-zA-Z_][\w]*/g);
-    if (!vars || vars.length === 0) throw new Error("No variable found in SELECT.");
-    return vars[0]; // Use first variable
-  };
+        const vars = selectMatch[1].match(/\?[a-zA-Z_][\w]*/g);
+        if (!vars || vars.length === 0) throw new Error("No variable found in SELECT.");
+        return vars[0]; // Use first variable
+    };
 
-  // Extract WHERE pattern (contents inside {...})
-  const extractPattern = (query) => {
+    // Extract WHERE pattern (contents inside {...})
+    const extractPattern = (query) => {
     const whereMatch = query.match(/WHERE\s*{([\s\S]+?)}\s*(LIMIT|ORDER|$)/i);
     if (!whereMatch) throw new Error("Could not extract WHERE clause.");
-    return whereMatch[1].trim();
-  };
+        return whereMatch[1].trim();
+    };
 
-  const var1 = extractSelectVar(query1);
-  let var2 = extractSelectVar(query2);
-  let pattern2 = extractPattern(query2);
+    const var1 = extractSelectVar(query1);
+    let var2 = extractSelectVar(query2);
+    let pattern2 = extractPattern(query2);
 
-  // If variable names collide, rename var2 and replace in pattern2
-  if (var1 === var2) {
-    const newVar2 = var2 + "_2";
-    // Replace var2 occurrences with newVar2 in pattern2, with word boundary to avoid partial matches
-    const regexVar2 = new RegExp(`\\${var2}\\b`, "g");
-    pattern2 = pattern2.replace(regexVar2, newVar2);
-    var2 = newVar2;
-  }
+    // If variable names collide, rename var2 and replace in pattern2
+    if (var1 === var2) {
+        const newVar2 = var2 + "_2";
+        // Replace var2 occurrences with newVar2 in pattern2, with word boundary to avoid partial matches
+        const regexVar2 = new RegExp(`\\${var2}\\b`, "g");
+        pattern2 = pattern2.replace(regexVar2, newVar2);
+        var2 = newVar2;
+    }
 
-  const pattern1 = extractPattern(query1);
+    const pattern1 = extractPattern(query1);
 
-  // Compose ASK query with FILTER
-  let askQuery = `ASK {\n`;
-  askQuery += `  {\n    ${pattern1}\n `;
-  askQuery += `   ${pattern2}\n  }\n`;
+    // Compose ASK query with FILTER
+    if (query_form.toUpperCase() === "ASK") {
+        let askQuery = `ASK {\n`;
+        askQuery += `  {\n    ${pattern1}\n `;
+        askQuery += `   ${pattern2}\n  }\n`;
 
+        //todo le llm genere higherThan, essayer uniformiser ?
 
-  //todo le llm genere higherThan, essayer uniformiser ?
+        if (["=", "!=", "<", ">", "<=", ">="].includes(operator)) {
+            askQuery += `  FILTER (${var1} ${operator} ${var2})\n`;
+        } else if (operator.toUpperCase() === "IN") {
+            askQuery += `  FILTER (${var1} IN (${var2}))\n`;
+        } else if (operator.toUpperCase() === "NOT IN") {
+            askQuery += `  FILTER (${var1} NOT IN (${var2}))\n`;
+        } else {
+            console.error(`Unsupported operator: ${operator}`);
+        }
 
-  if (["=", "!=", "<", ">", "<=", ">="].includes(operator)) {
-    askQuery += `  FILTER (${var1} ${operator} ${var2})\n`;
-  } else if (operator.toUpperCase() === "IN") {
-    askQuery += `  FILTER (${var1} IN (${var2}))\n`;
-  } else if (operator.toUpperCase() === "NOT IN") {
-    askQuery += `  FILTER (${var1} NOT IN (${var2}))\n`;
-  } else {
-    console.error(`Unsupported operator: ${operator}`);
-  }
+        askQuery += `}`;
+        final_query = askQuery;
+    } else {    
+        // Compose SELECT query with BIND IF
+        let selectQuery = `SELECT ?Winner WHERE {\n`;
+        selectQuery += `  ${pattern1}\n`;
+        selectQuery += `  ${pattern2}\n`;
 
-  askQuery += `}`;
+        // Add the BIND IF for winner
+        selectQuery += `  BIND(IF(${var1} ${operator} ${var2}, wd:Q128160, wd:Q191721) AS ?Winner)\n`;
 
-  return askQuery;
+        selectQuery += `}`;
+        final_query = selectQuery;
+    }
+
+    return final_query;
 }
 
 
