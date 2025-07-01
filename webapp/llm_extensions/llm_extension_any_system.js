@@ -279,6 +279,8 @@ class LLMFramework {
                 this.sparql = await this.executeStep(step_change_order_type_to_date, "Change order type to date", [this, this.sparql]);
             }
         }
+        //todo remove prefixes that aren't needed -> to simplify query for the llm
+
         return place;
 
     }
@@ -1171,65 +1173,82 @@ window.LLMFrameworks.push(LLMFrameworkDirect.name); // to be able to access the 
 //<commands2>match []</commands2> -> query less than 3 caracters shouldn't be possible
 //match no -> same
 class LLMFrameworkSimpleBooleans extends LLMFramework {
-    constructor(question, question_id) {
+    constructor(question, question_id,
+                global_max_try = Infinity,
+    ) {
         super(question, question_id, "count_references");
+        this.global_max_try = global_max_try; //max number of tries
     }
     async answerQuestionLogic() {
         let framework = this;
-        // Call llm generation
-        let output_llm = await framework.executeStep(step_generation, "LLM generation", 
-            [framework, prompt_get_subquestions_for_boolean_algo_ver(),"prompt_get_subquestions_for_boolean_algo_ver", framework.question]
-        );
-        // Extract the commands from the LLM output
-        let extracted_commands1 = (await framework.executeStep(step_extract_tags, "Extracted commands 1",
-            [framework, output_llm, "commands1"]
-        )).at(-1) || "";
-        let extracted_commands2 = (await framework.executeStep(step_extract_tags, "Extracted commands 2",
-            [framework, output_llm, "commands2"]
-        )).at(-1) || "";
-        let operator = (await framework.executeStep(step_extract_tags, "Extracted operator",
-            [framework, output_llm, "operator"]
-        )).at(-1) || "";
+        let global_try = 1;
+        let result_is_bool = false; // will be set to true if the final query returns a boolean result
 
-        if (!extracted_commands1 || extracted_commands1 === "") {
-            framework.reasoning_text += "<br>No commands extracted from the LLM output for commands1.<br>";
-            console.error("No commands extracted from the LLM output for commands1.");
-            return;
-        }
-        // Execute the commands, wait for place evaluation and get the results
-        let outside_sparklis_processing = false;
-        let place1 = await framework.execute_commands(framework, extracted_commands1, outside_sparklis_processing);
-        
-        // Commands2 and operator are optional, so we check if they are defined
-        if (extracted_commands2 && extracted_commands2 !== "" && operator && operator !== "") {
-            // Get the second place by executing the second commands chain
-            let place2 = await framework.execute_commands(framework, extracted_commands2, outside_sparklis_processing);
+        while (global_try <= this.global_max_try && !result_is_bool) {
+            this.reasoning_text += "<br>Global try " + global_try + "<br>";
+            // Call llm generation
+            let output_llm = await framework.executeStep(step_generation, "LLM generation", 
+                [framework, prompt_get_subquestions_for_boolean_algo_ver(),"prompt_get_subquestions_for_boolean_algo_ver", framework.question]
+            );
+            // Extract the commands from the LLM output
+            let extracted_commands1 = (await framework.executeStep(step_extract_tags, "Extracted commands 1",
+                [framework, output_llm, "commands1"]
+            )).at(-1) || "";
+            let extracted_commands2 = (await framework.executeStep(step_extract_tags, "Extracted commands 2",
+                [framework, output_llm, "commands2"]
+            )).at(-1) || "";
+            let operator = (await framework.executeStep(step_extract_tags, "Extracted operator",
+                [framework, output_llm, "operator"]
+            )).at(-1) || "";
 
-            // Get SPARQL queries from the places
-            let sparql1 = place1.sparql();
-            let sparql2 = place2.sparql();
+            if (!extracted_commands1 || extracted_commands1 === "") {
+                framework.reasoning_text += "<br>No commands extracted from the LLM output for commands1.<br>";
+                console.error("No commands extracted from the LLM output for commands1.");
+                return;
+            }
+            // Execute the commands, wait for place evaluation and get the results
+            let outside_sparklis_processing = false;
+            let place1 = await framework.execute_commands(framework, extracted_commands1, outside_sparklis_processing);
+            
+            // Commands2 and operator are optional, so we check if they are defined
+            if (extracted_commands2 && extracted_commands2 !== "" && operator && operator !== "") {
+                // Get the second place by executing the second commands chain
+                let place2 = await framework.execute_commands(framework, extracted_commands2, outside_sparklis_processing);
 
-            if (!sparql1 || !sparql2) {
-                framework.reasoning_text += "<br>One of the SPARQL queries is empty.<br>";
-                console.error("One of the SPARQL queries is empty.");
-                return;  //todo better handling of failure
+                // Get SPARQL queries from the places
+                let sparql1 = place1.sparql();
+                let sparql2 = place2.sparql();
+
+                if (!sparql1 || !sparql2) {
+                    framework.reasoning_text += "<br>One of the SPARQL queries is empty.<br>";
+                    console.error("One of the SPARQL queries is empty.");
+                    return;  //todo better handling of failure
+                }
+
+                // Merge the two SPARQL queries
+                let merged_sparql = combineSparqlQueries(sparql1, sparql2, operator);
+                framework.sparql = merged_sparql;
+
+                // Get results for the merged SPARQL query
+                let get_labels = getALASQAConfig().nl_post_processing === true;
+                await this.executeStep(step_get_results, "Get results", [framework, merged_sparql, get_labels, get_labels]);
+
+                // Update the reasoning text with the merged SPARQL query and results
+                framework.reasoning_text += "<br>Merged SPARQL query:<br>" + merged_sparql;
+                framework.reasoning_text += "<br>Results:<br>" + framework.result_text;
+
+                //todo better mergeand finish
+            } else {
+                framework.reasoning_text += "<br>Only one commands chain was executed.<br>";
             }
 
-            // Merge the two SPARQL queries
-            let merged_sparql = combineSparqlQueries(sparql1, sparql2, operator);
-            framework.sparql = merged_sparql;
-
-            // Get results for the merged SPARQL query
-            let get_labels = getALASQAConfig().nl_post_processing === true;
-            await this.executeStep(step_get_results, "Get results", [framework, merged_sparql, get_labels, get_labels]);
-
-            // Update the reasoning text with the merged SPARQL query and results
-            framework.reasoning_text += "<br>Merged SPARQL query:<br>" + merged_sparql;
-            framework.reasoning_text += "<br>Results:<br>" + framework.result_text;
-
-            //todo better mergeand finish
-        } else {
-            framework.reasoning_text += "<br>Only one commands chain was executed.<br>";
+            result_is_bool = (framework.result_text === "true" || framework.result_text === "false");
+            if (!result_is_bool) {
+                framework.reasoning_text += "<br>Result is not a boolean, trying again...<br>";
+            } else {
+                framework.reasoning_text += "<br>Result is a boolean: " + framework.result_text + "<br>";
+            }
+            global_try++;
         }
     }
 }
