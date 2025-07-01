@@ -256,7 +256,6 @@ function truncateResults(results_text, res_number_to_keep, max_number_of_char = 
  */
 async function getQueryResults(sparqlQuery, withLabels) {
     let results = await sparklis.evalSparql(sparqlQuery);
-    //todo set with labels to true
 
     // If the query is an ASK query, replace the results with a boolean value (like other query services would do) //todo check it's always true and not just for wikidata
     if (results && results.rows && isAskQuery(sparqlQuery)) { //the query also needs to not return an error
@@ -372,8 +371,9 @@ function combineSparqlQueries(query1, query2, operator) {
 
   // Compose ASK query with FILTER
   let askQuery = `ASK {\n`;
-  askQuery += `  {\n    ${pattern1}\n  }\n`;
-  askQuery += `  {\n    ${pattern2}\n  }\n`;
+  askQuery += `  {\n    ${pattern1}\n `;
+  askQuery += `   ${pattern2}\n  }\n`;
+
 
   //todo le llm genere higherThan, essayer uniformiser ?
 
