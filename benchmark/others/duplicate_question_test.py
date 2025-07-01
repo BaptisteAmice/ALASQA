@@ -1,5 +1,7 @@
-import logging
-
+"""
+Find questions that are present in both benchmarks and print the duplicates.  
+Useful for checking whether the question sets of two benchmarks are disjoint.
+"""
 import sys
 import os
 
@@ -10,16 +12,7 @@ sys.path.insert(0, parent_dir)
 
 # Now you can import modules from the parent directory (not the cleanest way, but works for this case)
 import benchmark_extraction
-
-
-def extract_benchmark(benchmark_file: str, benchmark_name: str, 
-                      language: str = 'en', question_filter: dict = {}) -> list:
-    """
-    Extract benchmark data.
-    """
-    logging.info('Benchmark extraction Start')
-    extractor = benchmark_extraction.extractorFactory(benchmark_name)
-    return extractor.extractData(benchmark_file, language, question_filter)
+from system_evaluation import extract_benchmark
 
 
 if __name__ == "__main__":
