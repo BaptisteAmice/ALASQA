@@ -91,7 +91,7 @@ async function process_question(qa) {
 			break;
 		case "best_at_individual_cmd":
 		default:
-    		final_place = await process_steps(qa, place, steps);
+    		final_place = await process_steps(qa, place, steps); //dfs(number_of_top_sugg_considered = 1) should do the same thing (keeping in case of unexpected issues)
 	}
 	qa.disabled = false; // re-enable the input field
 

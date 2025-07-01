@@ -377,7 +377,14 @@ function combineSparqlQueries(query1, query2, operator, query_form = "ASK") {
         askQuery += `  {\n    ${pattern1}\n `;
         askQuery += `   ${pattern2}\n  }\n`;
 
-        //todo le llm genere higherThan, essayer uniformiser ?
+        //the llm is sometimes confused between the commands language and the available operators between the 2 commands sequences.
+        //we can convert the operator to a SPARQL operator to save the query in such cases
+        operator = operator;
+        if (["higherthan", "after"].includes(operator.toLowerCase())) {
+            operator = ">";
+        } else if (["lowerthan", "before"].includes(operator.toLowerCase())) {
+            operator = "<";
+        }
 
         if (["=", "!=", "<", ">", "<=", ">="].includes(operator)) {
             askQuery += `  FILTER (${var1} ${operator} ${var2})\n`;
