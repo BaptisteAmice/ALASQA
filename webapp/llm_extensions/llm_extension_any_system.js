@@ -960,8 +960,15 @@ class LLMFrameworkSimpleBooleans extends LLMFramework {
         let global_try = 1;
         let result_is_bool = false; // will be set to true if the final query returns a boolean result
 
-        while (global_try <= this.global_max_try && !result_is_bool) {
-            this.reasoning_text += "<br>Global try " + global_try + "<br>";
+        while (global_try <= framework.global_max_try && !result_is_bool) {
+            framework.reasoning_text += "<br>Global try " + global_try + "<br>";
+
+            // Reset variables to avoid side effects for the next queries
+            sparklis.home(); // we want to reset sparklis between different queries
+            framework.resetQueryAlterationsVariables(); //reset the variables to avoid side effects for the next queries
+            framework.sparql = ""; // Reset the SPARQL query
+            framework.result_text = ""; // Reset the result text
+
             // Call llm generation
             let output_llm = await framework.executeStep(step_generation, "LLM generation", 
                 [framework, prompt_get_subquestions_for_boolean_algo_ver(),"prompt_get_subquestions_for_boolean_algo_ver", framework.question]
@@ -980,7 +987,9 @@ class LLMFrameworkSimpleBooleans extends LLMFramework {
             if (!extracted_commands1 || extracted_commands1 === "") {
                 framework.reasoning_text += "<br>No commands extracted from the LLM output for commands1.<br>";
                 console.error("No commands extracted from the LLM output for commands1.");
-                return;
+                //skip this iteration
+                global_try++;
+                continue;
             }
             // Execute the commands, wait for place evaluation and get the results
             let outside_sparklis_processing = false;
@@ -998,7 +1007,9 @@ class LLMFrameworkSimpleBooleans extends LLMFramework {
                 if (!sparql1 || !sparql2) {
                     framework.reasoning_text += "<br>One of the SPARQL queries is empty.<br>";
                     console.error("One of the SPARQL queries is empty.");
-                    return;  //todo better handling of failure
+                    //skip this iteration
+                    global_try++;
+                    continue;
                 }
 
                 //todo check if the operator is valid //else retry
@@ -1094,8 +1105,12 @@ class LLMFrameworkBooleanBySubquestions extends LLMFramework {
                 let subquery_is_valid = false;
                 while (!subquery_is_valid) {
                     this.reasoning_text += "<br>Answering subquestion " + current_subquestion + ": try " + subquestion_try + "<br>"; 
+                    // Reset variables to avoid side effects for the next queries
                     sparklis.home(); // we want to reset sparklis between different queries
                     this.resetQueryAlterationsVariables(); //reset the variables to avoid side effects for the next queries
+                    this.sparql = ""; // Reset the SPARQL query
+                    this.result_text = ""; // Reset the result text
+
                     place = await this.generate_and_execute_commands(this, subquestion, true);
                     console.log("sparql after modification", this.sparql);
                     subquery_is_valid = this.sparql != "" && this.sparql != undefined && this.sparql != null;
@@ -1130,6 +1145,11 @@ class LLMFrameworkBooleanBySubquestions extends LLMFramework {
 
             while (final_query_generation_try <= this.final_query_generation_max_try && (!result_is_bool || hallucinated_uri)) {
                 this.reasoning_text += "<br>Final query generation try " + final_query_generation_try + "<br>";
+
+                // Reset variables to avoid side effects for the next queries
+                this.sparql = ""; // Reset the SPARQL query
+                this.result_text = ""; // Reset the result text
+
                 console.log("input_comparison",input_comparison);
                 let output_combined = await this.executeStep(step_generation, "LLM generation", 
                     [this, prompt_use_subquestions_for_boolean(),"prompt_use_subquestions_for_boolean",
@@ -1226,8 +1246,12 @@ class LLMFrameworkAggregySubquestions extends LLMFramework {
                 let subquery_is_valid = false;
                 while (!subquery_is_valid) {
                     this.reasoning_text += "<br>Answering subquestion " + current_subquestion + ": try " + subquestion_try + "<br>"; 
+                    // Reset variables to avoid side effects for the next queries
                     sparklis.home(); // we want to reset sparklis between different queries
                     this.resetQueryAlterationsVariables(); //reset the variables to avoid side effects for the next queries
+                    this.sparql = ""; // Reset the SPARQL query
+                    this.result_text = ""; // Reset the result text
+
                     place = await this.generate_and_execute_commands(this, subquestion, true);
                     console.log("sparql after modification", this.sparql);
                     subquery_is_valid = this.sparql != "" && this.sparql != undefined && this.sparql != null;
@@ -1262,6 +1286,11 @@ class LLMFrameworkAggregySubquestions extends LLMFramework {
 
             while (final_query_generation_try <= this.final_query_generation_max_try && (!result_is_valid || hallucinated_uri)) {
                 this.reasoning_text += "<br>Final query generation try " + final_query_generation_try + "<br>";
+
+                // Reset variables to avoid side effects for the next queries
+                this.sparql = ""; // Reset the SPARQL query
+                this.result_text = ""; // Reset the result text
+
                 console.log("input_comparison",input_comparison);
                 let output_combined = await this.executeStep(step_generation, "LLM generation", 
                     [this, prompt_use_subquestions_for_any(),"prompt_use_subquestions_for_any",
