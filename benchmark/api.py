@@ -43,7 +43,7 @@ def get_answer(question: str, dataset: str) -> dict:
     suggestion_commands_tactic = 'best_at_individual_cmd'
     driver = interactions.get_new_driver(is_headless=True)
     result, nl_query, error, steps_status, reasoning, _ = interactions.simulated_user(
-        config.SPARKLIS_FILE,
+        config.SPARKLIS_LINK,
         lambda drv: interactions.sparklisllm_question(drv, question, dataset, system_name, suggestion_commands_tactic),
         driver=driver
     )

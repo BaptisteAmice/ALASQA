@@ -62,7 +62,7 @@ class Sparklisllm(TestSystem):
 
     def create_query_body(self, question: str, endpoint: str) -> tuple[str, str, str, str]:
         response, nl_query, error, steps_status, reasoning, driver = interactions.simulated_user(
-            config.SPARKLIS_FILE,
+            config.SPARKLIS_LINK,
             lambda driver: interactions.sparklisllm_question(driver, question, endpoint, self.system_name, self.suggestion_commands_tactic),
             driver=Sparklisllm.used_driver,
         )

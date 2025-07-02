@@ -100,11 +100,6 @@ def sparklisllm_question(driver, question, endpoint_sparql, system_name, suggest
     url_extension = ''
     no_caching = True
     no_logging = True
-
-    # sometimes we get the error "The proxy SPARQL endpoint is not responsive" while no proxy is set
-    # trying to avoid this error by explicitely setting the proxy to false
-    url_extension += '&proxy=false' # todo check if the error still happen
-
     if no_caching:
         # Caching SPARQL query results (uncheck for frequently changing data)
         url_extension += '&caching=false'
@@ -126,13 +121,6 @@ def sparklisllm_question(driver, question, endpoint_sparql, system_name, suggest
     console.log("Updated ALASQAConfig");
     """
     driver.execute_script(override_alasqa_config_script)
-
-    # Set the sparql endpoint
-    sparql_endpoint_input = driver.find_element(by=By.ID, value="sparql-endpoint-input")
-    sparql_endpoint_input.clear()
-    sparql_endpoint_input.send_keys(endpoint_sparql)
-    sparql_endpoint_button = driver.find_element(by=By.ID, value="sparql-endpoint-button")
-    sparql_endpoint_button.click()
 
     #deploy llm menu
     llm_menu_button = driver.find_element(by=By.ID, value="chatbot-menu-button")

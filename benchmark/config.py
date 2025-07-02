@@ -73,3 +73,6 @@ SUGGESTION_COMMANDS_TACTIC = 'best_at_individual_cmd' # best_at_individual_cmd |
 # SPARQL endpoint, only used in scripts and not by the API
 #SPARQL_ENDPOINT = 'https://dbpedia.org/sparql'
 SPARQL_ENDPOINT = 'https://query.wikidata.org/sparql'
+
+# We need to specify the endpoint in the url and not just set it later, else the proxy of the default config will be loaded and sometimes cause issues
+SPARKLIS_LINK = SPARKLIS_FILE + "?title=custom&endpoint=" + SPARQL_ENDPOINT
