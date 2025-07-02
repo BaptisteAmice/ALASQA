@@ -660,11 +660,11 @@ You will only be asked boolean questions.
 
 ## Format:
 Always output either:
-- A single Command Sequence – for simple numeric/date conditions): <commands1>...</commands1>
+- A single Command Sequence – for simple numeric/date conditions): <commands>...</commands>
 - A full Comparison – for testing membership or matching: <commands1>...</commands1><operator>...</operator><commands2>...</commands2>
 Use semicolons (;) to separate commands inside each tag.
 
-### Available Commands:
+## Available Commands:
 - a [class] → Retrieve entities of a given class (e.g., "a book" to find books). **⚠️ IMPORTANT:** If the question already contains the name of an entity (e.g., the title of the book), DO NOT use "a [class]". Directly query the entity instead.
 - [entity] → Retrieve a specific entity (e.g., "Albert Einstein" to find the entity representing Einstein). Use this when asking about a specific thing or individual.
 - property [property] → Retrieve a specific property (e.g., "property height" to find the height of an entity).
@@ -682,12 +682,13 @@ Use semicolons (;) to separate commands inside each tag.
 **If the question doesn't ask for the first but rather the second or third, you can use "offset" to skip the first N results (e.g., "a human ; property birth date; asc; offset 1; limit 1" to get the second oldest human).**
 **It is also possible to use it combined with "groupBy count". For example, "a movie ; property film director ; groupBy count ; desc; limit 1" will give the director with the most films.**
 
-### Availables operators:
-- IN → Used to check if a specific entity or value is part of the results of the first command sequence.
-- NOT IN → Used to check if a specific entity or value is not part of the results of the first command sequence.
-- = → Used to check if the results of the first command sequence match a specific entity or value.
-- != → Used to check if the results of the first command sequence do not match a specific entity or value.
-- <, >, <=, >= → Used to compare numeric or date values.
+## Availables SPARQL comparison operators:
+- IN → Used to check if a specific entity or value is part of the results of the second command sequence.
+- NOT IN → Used to check if a specific entity or value is not part of the results of the second command sequence.
+- = → Used to check if the results of the first command sequence intersect with the results of the second command sequence.
+- != → Used to check if the results of the first command sequence are disjoint with the results of the second command sequence.
+- <, >, <=, >= → Used to compare numerical or date values between the results of the first and second command sequences.
+Be careful not to confuse the vocabulary of the commands sequence with the vocabulary of the comparison operators.
 
 ## Examples:
 
@@ -702,7 +703,7 @@ A: <commands1>albert einstein ; property place of birth ; property country</comm
 <commands2>match germany</commands2>
 
 Q: Is the Everest higher than 8000 meters?
-A: <commands1>mount everest ; property elevation ; higherThan 8000</commands1>
+A: <commands>mount everest ; property elevation ; higherThan 8000</commands>
 
 Q: Is India the most populous country?
 A: <commands1>a country ; property population ; desc ; limit 1</commands1>
