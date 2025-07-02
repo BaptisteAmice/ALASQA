@@ -7,6 +7,7 @@ import logging
 import datetime
 import time
 import os
+import re
 from SPARQLWrapper import SPARQLWrapper, JSON
 from SPARQLWrapper.SPARQLExceptions import QueryBadFormed
 import requests
@@ -402,6 +403,22 @@ def is_file_available(file_url: str) -> bool:
             return False
     else:
         return os.path.exists(file_url)
+    
+
+
+def is_valid_user_agent(user_agent: str) -> bool:
+    """
+    Checks if the provided User-Agent string is valid.
+    """
+    if not isinstance(user_agent, str):
+        return False
+    if not user_agent.strip():
+        return False
+    # User-Agent pattern: product/version ; email
+    pattern = r'^[\w\-\.]+\/[\d\.]+ *; *[^\s@]+@[^\s@]+\.[^\s@]+$'
+    if not re.match(pattern, user_agent):
+        return False
+    return True
 
 if __name__ == "__main__":
     # Test that the files are available (local or remote)
@@ -412,6 +429,9 @@ if __name__ == "__main__":
     logging.info("Sparklis file: " + config.SPARKLIS_FILE)
     if not is_file_available(config.SPARKLIS_FILE):
         logging.error(f"Sparklis file '{config.SPARKLIS_FILE}' is not available.")
+        exit(1)
+    if not is_valid_user_agent(config.USER_AGENT):
+        logging.error(f"Invalid User-Agent: '{config.USER_AGENT}'. It should follow the format 'Product/Version ; email'.")
         exit(1)
 
     logging.info("SPARQL endpoint: " + config.SPARQL_ENDPOINT)
