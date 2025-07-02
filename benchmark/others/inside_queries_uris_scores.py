@@ -12,24 +12,29 @@ import re
 
 def extract_final_parts(query):
     """
-    Extract final parts of full URIs, including prefixes like wd:Q928726.
+    Extract final parts of full URIs, excluding namespace declarations.
     """
     final_parts = set()
 
-    # 1) Match <...> URIs
-    full_uri_pattern = re.compile(r'<([^>]+)>')
+    # 1) Match <...> URIs that are NOT in PREFIX declarations
+    full_uri_pattern = re.compile(r'PREFIX\s+\w+:\s*<([^>]+)>|<([^>]+)>')
+
     for match in full_uri_pattern.finditer(query):
-        uri = match.group(1)
-        last_delim = max(uri.rfind('/'), uri.rfind('#'), uri.rfind(':'))
-        if last_delim != -1:
-            final_parts.add(uri[last_delim + 1:])
+        prefix_uri = match.group(1)
+        normal_uri = match.group(2)
+
+        # Only keep normal URIs in triples, not prefixes
+        if normal_uri:
+            uri = normal_uri
+            last_delim = max(uri.rfind('/'), uri.rfind('#'), uri.rfind(':'))
+            if last_delim != -1 and last_delim + 1 < len(uri):
+                final_parts.add(uri[last_delim + 1:])
 
     # 2) Match prefixed forms like wd:Q928726
     prefix_uri_pattern = re.compile(r'(\w+):([A-Za-z0-9_]+)')
     for match in prefix_uri_pattern.finditer(query):
         prefix, local = match.groups()
-        # Ignore prefixes like SELECT, WHERE, etc.
-        if prefix not in {"SELECT", "WHERE", "LIMIT", "ORDER", "FILTER"}:
+        if prefix not in {"PREFIX", "SELECT", "WHERE", "LIMIT", "ORDER", "FILTER", "ASK"}:
             final_parts.add(local)
 
     return final_parts
