@@ -417,7 +417,7 @@ async function step_extract_tags(framework, llm_output, tag) {
  * @returns 
  */
 async function step_execute_commands(framework, commands) {
-    framework.reasoning_text += "<br>" + framework.getCurrentStep()["Name"] + " - commands: " + commands + "<br>";
+    framework.reasoning_text += "<br>" + framework.getCurrentStep()["Name"] + ": (" + commands + ")<br>";
     //to avoid any problem, we want to reset the sparklis place (else sometimes it isn't reset if a query failed to finish)
     sparklis.home();
 
