@@ -686,9 +686,10 @@ function step_remove_ordering_var_from_select(framework, query) {
 
 /**
  * Function to query the results of the SPARQL query and parse them.
- * @param {*} framework 
- * @param {*} sparql 
- * @param {*} withLabels 
+ * @param {*} framework - the LLM framework instance
+ * @param {*} sparql  - the SPARQL query to execute
+ * @param {*} withLabels - whether to include labels in the results. If true and the KG is a wikidata endpoint, querying the graph will be needed to find the uris
+ * @param {*} removeDispensableData - whether to remove dispensable data from the results (like type information and shortening URIs)
  * @returns 
  */
 async function step_get_results(framework, sparql, withLabels = false, removeDispensableData = false) {
@@ -1076,9 +1077,9 @@ window.LLMFrameworks.push(LLMFrameworkSimpleBooleans.name); //to be able to acce
 class LLMFrameworkBooleanBySubquestions extends LLMFramework {
     constructor(
         question, question_id,
-        global_max_try = 2,
-        subquestion_creation_max_try = Infinity,
-        final_query_generation_max_try = 7
+        global_max_try = Infinity,
+        subquestion_creation_max_try = 10,
+        final_query_generation_max_try = 5
     ) {
         super(question, question_id, "count_references");
         this.global_max_try = global_max_try; //max number of tries to generate the subquestions
