@@ -952,16 +952,24 @@ window.LLMFrameworks.push(LLMFrameworkDirect.name); // to be able to access the 
 class LLMFrameworkSimpleBooleans extends LLMFramework {
     constructor(question, question_id,
                 global_max_try = Infinity,
+                number_of_same_response_expected = 3
     ) {
         super(question, question_id, "count_references");
         this.global_max_try = global_max_try; //max number of tries
+        this.number_of_same_response_expected = number_of_same_response_expected;
     }
     async answerQuestionLogic() {
         let framework = this;
         let global_try = 1;
-        let result_is_bool = false; // will be set to true if the final query returns a boolean result
+        let get_labels = getALASQAConfig().nl_post_processing === true;
 
-        while (global_try <= framework.global_max_try && !result_is_bool) {
+        let valid_responses_queries = []; // will contain the valid responses queries
+        let valid_responses_results = []; // will contain the valid responses results
+        let got_enough_valid_responses = false; // will be set to true if we have enough valid responses
+
+        while (!got_enough_valid_responses && global_try <= framework.global_max_try) {
+            let result_is_bool = false; // will be set to true if the final query returns a boolean result
+
             framework.reasoning_text += "<br>Global try " + global_try + "<br>";
 
             // Reset variables to avoid side effects for the next queries
@@ -1046,7 +1054,6 @@ class LLMFrameworkSimpleBooleans extends LLMFramework {
             }
 
             // Get results for the merged SPARQL query
-            let get_labels = getALASQAConfig().nl_post_processing === true;
             await this.executeStep(step_get_results, "Get results", [framework, framework.sparql, get_labels, get_labels]);
             framework.reasoning_text += "<br>Results:<br>" + framework.result_text;
     
@@ -1057,7 +1064,29 @@ class LLMFrameworkSimpleBooleans extends LLMFramework {
             } else {
                 framework.reasoning_text += "<br>Result is a boolean: " + framework.result_text + "<br>";
             }
+
+            // If the result is a boolean, we can add the query to the valid responses
+            if (result_is_bool) {
+                valid_responses_queries.push(framework.sparql);
+                valid_responses_results.push(framework.result_text);
+                framework.reasoning_text += "<br>Seemingly valid response found:<br>" + framework.sparql + "<br>Result: " + framework.result_text + "<br>";
+                // Check if we have enough valid responses
+                got_enough_valid_responses = valid_responses_queries.length >= framework.number_of_same_response_expected;
+                if (got_enough_valid_responses) {
+                    framework.reasoning_text += "<br>Enough valid responses found (" + framework.number_of_same_response_expected + ").<br>";
+                }
+            }
             global_try++;
+        }
+        //if we got to the max number of try, put the most returned result as the final query
+        if (!got_enough_valid_responses && valid_responses_queries.length > 0) {
+            let result = valid_responses_results.sort((a,b) => //get the most frequent result
+                valid_responses_results.filter(v => v === b).length - valid_responses_results.filter(v => v === a).length
+            )[0];
+            let idx = valid_responses_results.indexOf(result); //get the first index of the most frequent result
+            framework.sparql = valid_responses_queries[idx]; // get the query corresponding to the most frequent result
+            await this.executeStep(step_get_results, "Get results", [framework, framework.sparql, get_labels, get_labels]);
+            framework.reasoning_text += `<br>Max tries reached, picked most frequent result: ${result}<br>`;
         }
     }
 }
@@ -1079,20 +1108,27 @@ class LLMFrameworkBooleanBySubquestions extends LLMFramework {
         question, question_id,
         global_max_try = Infinity,
         subquestion_creation_max_try = 10,
-        final_query_generation_max_try = 5
+        final_query_generation_max_try = 5,
+        number_of_same_response_expected = 3
     ) {
         super(question, question_id, "count_references");
         this.global_max_try = global_max_try; //max number of tries to generate the subquestions
         this.subquestion_creation_max_try = subquestion_creation_max_try; //max number of tries
         this.final_query_generation_max_try = final_query_generation_max_try; //max number of tries to generate the final query
+        this.number_of_same_response_expected = number_of_same_response_expected;
     }
 
     async answerQuestionLogic() {
-        let result_is_bool = false; // will be set to true if the final query returns a boolean result
-        let hallucinated_uri = false; // will be set to true if a new id is generated in the final query in comparison to the subqueries and their results
+        let valid_responses_queries = []; // will contain the valid responses queries
+        let valid_responses_results = []; // will contain the valid responses results
+        let got_enough_valid_responses = false; // will be set to true if we have enough valid responses
 
+        let get_labels = getALASQAConfig().nl_post_processing === true;
         let global_try = 1;
-        while ((!result_is_bool || hallucinated_uri) && global_try <= this.global_max_try) {
+        while (!got_enough_valid_responses && global_try <= this.global_max_try) {
+            let result_is_bool = false; // will be set to true if the final query returns a boolean result
+            let hallucinated_uri = false; // will be set to true if a new id is generated in the final query in comparison to the subqueries and their results
+
             this.reasoning_text += "<br>Global try " + global_try + "<br>";
             let extracted_subquestions = [];
             let subquestion_creation_try = 1;
@@ -1185,7 +1221,6 @@ class LLMFrameworkBooleanBySubquestions extends LLMFramework {
                 this.reasoning_text += "<br>Patched query:<br>" + this.sparql;
 
                 //execute the generated sparql query
-                let get_labels = getALASQAConfig().nl_post_processing === true;
                 await this.executeStep(step_get_results, "Get results of created query", [this, this.sparql, get_labels, get_labels]); 
                 result_is_bool = (this.result_text === "true" || this.result_text === "false");
                 if (!result_is_bool) {
@@ -1208,7 +1243,31 @@ class LLMFrameworkBooleanBySubquestions extends LLMFramework {
             } else if ((!result_is_bool || hallucinated_uri) && global_try >= this.global_max_try) {
                 this.reasoning_text += "<br>Result is not a boolean or hallucinated URI in the final query and reached the maximum number of tries. Giving up.<br>";
             }
+
+            // if the result is a boolean, we can add it to the valid responses
+            // and check if we have enough valid responses
+            if (result_is_bool && !hallucinated_uri) {
+                //add the valid responses
+                valid_responses_queries.push(this.sparql);
+                valid_responses_results.push(this.result_text);
+                this.reasoning_text += "<br>Got a seemingly valid response: " + this.result_text + "<br>";
+                got_enough_valid_responses = valid_responses_queries.length >= this.number_of_same_response_expected;
+                if (got_enough_valid_responses) {
+                    this.reasoning_text += "<br>Got enough valid responses, stopping the process.<br>";
+                }
+            }
             global_try++;
+        }
+
+        //if we got to the max numbe rof try, put the most returned result as the final query
+        if (!got_enough_valid_responses && valid_responses_queries.length > 0) {
+            let result = valid_responses_results.sort((a,b) => //get the most frequent result
+                valid_responses_results.filter(v => v === b).length - valid_responses_results.filter(v => v === a).length
+            )[0];
+            let idx = valid_responses_results.indexOf(result); //get the first index of the most frequent result
+            this.sparql = valid_responses_queries[idx]; // get the query corresponding to the most frequent result
+            await this.executeStep(step_get_results, "Get results", [this, this.sparql, get_labels, get_labels]);
+            this.reasoning_text += `<br>Max tries reached, picked most frequent result: ${result}<br>`;
         }
     }
 }
@@ -1218,22 +1277,28 @@ window.LLMFrameworks.push(LLMFrameworkBooleanBySubquestions.name); //to be able 
 class LLMFrameworkAggregySubquestions extends LLMFramework {
     constructor(
         question, question_id,
-        global_max_try = 2,
+        global_max_try = Infinity,
         subquestion_creation_max_try = Infinity,
-        final_query_generation_max_try = 7
+        final_query_generation_max_try = 5,
+        number_of_same_response_expected = 3
     ) {
         super(question, question_id, "count_references");
         this.global_max_try = global_max_try; //max number of tries to generate the subquestions
         this.subquestion_creation_max_try = subquestion_creation_max_try; //max number of tries
         this.final_query_generation_max_try = final_query_generation_max_try; //max number of tries to generate the final query
+        this.number_of_same_response_expected = number_of_same_response_expected;
     }
 
     async answerQuestionLogic() {
-        let result_is_valid = false;
-        let hallucinated_uri = false; // will be set to true if a new id is generated in the final query in comparison to the subqueries and their results
+        let valid_responses_queries = [];
+        let valid_responses_results = [];
+        let got_enough_valid_responses = false; // will be set to true if we got enough valid responses
 
+        let get_labels = getALASQAConfig().nl_post_processing === true;
         let global_try = 1;
-        while ((!result_is_valid || hallucinated_uri) && global_try <= this.global_max_try) {
+        while (!got_enough_valid_responses && global_try <= this.global_max_try) {
+            let result_is_valid = false; // will be set to true if the final query returns a valid result
+            let hallucinated_uri = false; // will be set to true if a new id is generated in the final query in comparison to the subqueries and their results
             this.reasoning_text += "<br>Global try " + global_try + "<br>";
             let extracted_subquestions = [];
             let subquestion_creation_try = 1;
@@ -1326,7 +1391,6 @@ class LLMFrameworkAggregySubquestions extends LLMFramework {
                 this.reasoning_text += "<br>Patched query:<br>" + this.sparql;
 
                 //execute the generated sparql query
-                let get_labels = getALASQAConfig().nl_post_processing === true;
                 await this.executeStep(step_get_results, "Get results of created query", [this, this.sparql, get_labels, get_labels]); 
                 result_is_valid = (this.result_text !== null && this.result_text !== undefined && this.result_text !== "");
                 if (!result_is_valid) {
@@ -1349,7 +1413,29 @@ class LLMFrameworkAggregySubquestions extends LLMFramework {
             } else if ((!result_is_valid || hallucinated_uri) && global_try >= this.global_max_try) {
                 this.reasoning_text += "<br>Result is not a valid or hallucinated URI in the final query and reached the maximum number of tries. Giving up.<br>";
             }
+             
+            //if the result is valid and no hallucinated uri, we can add the query and result to the valid responses
+            if (result_is_valid && !hallucinated_uri) {
+                valid_responses_queries.push(this.sparql);
+                valid_responses_results.push(this.result_text);
+                this.reasoning_text += "<br>Seemingly valid response found:<br>" + this.sparql + "<br>" + this.result_text;
+                got_enough_valid_responses = valid_responses_queries.length >= this.number_of_same_response_expected;
+                if (got_enough_valid_responses) {
+                    this.reasoning_text += "<br>Got enough valid responses, stopping the process.<br>";
+                }
+            }
             global_try++;
+        }
+
+        //if we got to the max numbe rof try, put the most returned result as the final query
+        if (!got_enough_valid_responses && valid_responses_queries.length > 0) {
+            let result = valid_responses_results.sort((a,b) => //get the most frequent result
+                valid_responses_results.filter(v => v === b).length - valid_responses_results.filter(v => v === a).length
+            )[0];
+            let idx = valid_responses_results.indexOf(result); //get the first index of the most frequent result
+            this.sparql = valid_responses_queries[idx]; // get the query corresponding to the most frequent result
+            await this.executeStep(step_get_results, "Get results", [this, this.sparql, get_labels, get_labels]);
+            this.reasoning_text += `<br>Max tries reached, picked most frequent result: ${result}<br>`;
         }
     }
 }
