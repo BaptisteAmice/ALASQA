@@ -760,6 +760,7 @@ class LLMFrameworkOneShot extends LLMFramework {
         super(question, question_id, "count_references");
     }
     async answerQuestionLogic() {
+        disableProxyIfenabled(); // sometimes the proxy will activate itself and prevent from accessing the endpoint, so we desactivate it if it's the case
         let place = await this.generate_and_execute_commands(this, this.question, true);
         let get_labels = getALASQAConfig().nl_post_processing === true;
         await this.executeStep(step_get_results, "Get results", [this, this.sparql, get_labels, get_labels]);
@@ -788,6 +789,7 @@ class LLMFrameworkRetry extends LLMFramework {
         let valid_responses_queries = [];
         let valid_responses_results = [];
         while (!got_number_of_same_response_expected) {
+            disableProxyIfenabled(); // sometimes the proxy will activate itself and prevent from accessing the endpoint, so we desactivate it if it's the case
             this.reasoning_text += "<br>Try " + i + "<br>";
             let place = await this.generate_and_execute_commands(this, this.question, true);
             console.log("sparql after modification", this.sparql);
@@ -968,6 +970,7 @@ class LLMFrameworkSimpleBooleans extends LLMFramework {
         let got_enough_valid_responses = false; // will be set to true if we have enough valid responses
 
         while (!got_enough_valid_responses && global_try <= framework.global_max_try) {
+            disableProxyIfenabled(); // sometimes the proxy will activate itself and prevent from accessing the endpoint, so we desactivate it if it's the case
             let result_is_bool = false; // will be set to true if the final query returns a boolean result
 
             framework.reasoning_text += "<br>Global try " + global_try + "<br>";
@@ -1134,6 +1137,7 @@ class LLMFrameworkBooleanBySubquestions extends LLMFramework {
             let subquestion_creation_try = 1;
             while ((!extracted_subquestions || extracted_subquestions.length == 0)
                 && subquestion_creation_try <= this.subquestion_creation_max_try) {
+                disableProxyIfenabled(); // sometimes the proxy will activate itself and prevent from accessing the endpoint, so we desactivate it if it's the case
                 this.reasoning_text += "<br>Subquestions creation, try" + subquestion_creation_try + "<br>";
 
                 // Get a list of necessary subquestions to reach the answer
@@ -1297,6 +1301,7 @@ class LLMFrameworkAggregySubquestions extends LLMFramework {
         let get_labels = getALASQAConfig().nl_post_processing === true;
         let global_try = 1;
         while (!got_enough_valid_responses && global_try <= this.global_max_try) {
+            disableProxyIfenabled(); // sometimes the proxy will activate itself and prevent from accessing the endpoint, so we desactivate it if it's the case
             let result_is_valid = false; // will be set to true if the final query returns a valid result
             let hallucinated_uri = false; // will be set to true if a new id is generated in the final query in comparison to the subqueries and their results
             this.reasoning_text += "<br>Global try " + global_try + "<br>";

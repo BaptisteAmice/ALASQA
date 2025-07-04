@@ -401,3 +401,20 @@ function enableInputs() {
     let inputs = document.querySelectorAll(".disabled-during-request");
     inputs.forEach(input => input.disabled = false);
 }
+
+/**
+ * The proxy sometimes enables itself during benchmark evaluation while answering certain questions.
+ * To prevent this, we will try to disable it at several points during the question answering process.
+ */
+function disableProxyIfenabled() {
+    let url = new URL(window.location.href);
+    if (url.searchParams.get("proxy") === "true") {
+        let input_proxy = document.getElementById("input-proxy");
+        if (input_proxy.checked) {
+            input_proxy.click(); // triggers native click event, changes .checked, fires 'change'
+            let button_close = document.getElementById("config-endpoint-close");
+            button_close.click()
+            console.warn("The proxy was active and has been desactivated.");
+        }
+    }
+}
