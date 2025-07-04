@@ -333,7 +333,7 @@ function extract_uris_from_string_list(queries) {
  * If the SELECT variables have the same name, rename the second variable to avoid collision.
  *
  * @param {string} query1 - First SPARQL SELECT query
- * @param {string} query2 - Second SPARQL SELECT query
+ * @param {string} query2 - Second SPARQL SELECT query 
  * @param {string} operator - Comparison operator ('=', '!=', '<', '>', 'IN', 'NOT IN', etc.)
  * @param {string} query_form - SELECT or ASK (ASK for a boolean result, select for returning the winner)
  * @returns {string} - Combined SPARQL ASK query
@@ -342,23 +342,38 @@ function combineSparqlQueries(query1, query2, operator, query_form = "ASK") {
     let final_query = "";
     // Extract first variable from SELECT clause
     const extractSelectVar = (query) => {
-    const selectMatch = query.match(/SELECT\s+(?:DISTINCT\s+)?([\s\S]+?)WHERE/i);
-    if (!selectMatch) throw new Error("Could not find SELECT clause.");
+        const selectMatch = query.match(/SELECT\s+(?:DISTINCT\s+)?([\s\S]+?)WHERE/i);
+        if (!selectMatch) {
+            console.error("Could not find SELECT clause.");
+            return "";
+        }
         const vars = selectMatch[1].match(/\?[a-zA-Z_][\w]*/g);
-        if (!vars || vars.length === 0) throw new Error("No variable found in SELECT.");
+        if (!vars || vars.length === 0) {
+            console.error("No variable found in SELECT.");
+            return "";
+        }
         return vars[0]; // Use first variable
     };
 
     // Extract WHERE pattern (contents inside {...})
     const extractPattern = (query) => {
-    const whereMatch = query.match(/WHERE\s*{([\s\S]+?)}\s*(LIMIT|ORDER|$)/i);
-    if (!whereMatch) throw new Error("Could not extract WHERE clause.");
+        const whereMatch = query.match(/WHERE\s*{([\s\S]+?)}\s*(LIMIT|ORDER|$)/i);
+        if (!whereMatch) {
+            console.error("Could not extract WHERE clause.");
+            return "";
+        }
         return whereMatch[1].trim();
     };
 
     const var1 = extractSelectVar(query1);
     let var2 = extractSelectVar(query2);
+    const pattern1 = extractPattern(query1);
     let pattern2 = extractPattern(query2);
+
+    if (var1 === "" || var2 === "" || pattern1 === "" || pattern2 === "") {
+        console.error("Missing at least one variable or pattern.");
+        return "";
+    }
 
     // If variable names collide, rename var2 and replace in pattern2
     if (var1 === var2) {
@@ -369,46 +384,61 @@ function combineSparqlQueries(query1, query2, operator, query_form = "ASK") {
         var2 = newVar2;
     }
 
-    const pattern1 = extractPattern(query1);
 
-    // Compose ASK query with FILTER
-    if (query_form.toUpperCase() === "ASK") {
-        let askQuery = `ASK {\n`;
-        askQuery += `  {\n    ${pattern1}\n `;
-        askQuery += `   ${pattern2}\n  }\n`;
 
-        //the llm is sometimes confused between the commands language and the available operators between the 2 commands sequences.
-        //we can convert the operator to a SPARQL operator to save the query in such cases
-        operator = operator;
-        if (["higherthan", "after"].includes(operator.toLowerCase())) {
-            operator = ">";
-        } else if (["lowerthan", "before"].includes(operator.toLowerCase())) {
-            operator = "<";
-        }
 
-        if (["=", "!=", "<", ">", "<=", ">="].includes(operator)) {
-            askQuery += `  FILTER (${var1} ${operator} ${var2})\n`;
-        } else if (operator.toUpperCase() === "IN") {
-            askQuery += `  FILTER (${var1} IN (${var2}))\n`;
-        } else if (operator.toUpperCase() === "NOT IN") {
-            askQuery += `  FILTER (${var1} NOT IN (${var2}))\n`;
+    //handle is null
+    if (["EXISTS", "NOT EXISTS"].includes(operator.toUpperCase())) {
+        const filterType = operator.toUpperCase() === "EXISTS" ? "EXISTS" : "NOT EXISTS";
+        if (query_form.toUpperCase() === "ASK") {
+            final_query = `ASK {\n  FILTER ${filterType} { ${pattern1} }\n}`;
         } else {
-            console.error(`Unsupported operator: ${operator}`);
+            // Nothing to do if it's not a ask
+            final_query = query1;
         }
+    } else { // Normal case: binary operator
+        // Compose ASK query with FILTER
+        if (query_form.toUpperCase() === "ASK") {
+            let askQuery = `ASK {\n`;
+            askQuery += `  {\n    ${pattern1}\n `;
+            askQuery += `   ${pattern2}\n  }\n`;
 
-        askQuery += `}`;
-        final_query = askQuery;
-    } else {    
-        // Compose SELECT query with BIND IF
-        let selectQuery = `SELECT ?Winner WHERE {\n`;
-        selectQuery += `  ${pattern1}\n`;
-        selectQuery += `  ${pattern2}\n`;
+            //the llm is sometimes confused between the commands language and the available operators between the 2 commands sequences.
+            //we can convert the operator to a SPARQL operator to save the query in such cases
+            operator = operator;
+            if (["higherthan", "after"].includes(operator.toLowerCase())) {
+                operator = ">";
+            } else if (["lowerthan", "before"].includes(operator.toLowerCase())) {
+                operator = "<";
+            }
 
-        // Add the BIND IF for winner
-        selectQuery += `  BIND(IF(${var1} ${operator} ${var2}, wd:Q128160, wd:Q191721) AS ?Winner)\n`;
+            if (["=", "!=", "<", ">", "<=", ">="].includes(operator)) {
+                askQuery += `  FILTER (${var1} ${operator} ${var2})\n`;
+            } else if (operator.toUpperCase() === "IN") {
+                askQuery += `  FILTER (${var1} IN (${var2}))\n`;
+            } else if (operator.toUpperCase() === "NOT IN") {
+                askQuery += `  FILTER (${var1} NOT IN (${var2}))\n`;
+            } else {
+                console.error(`Unsupported operator: ${operator}`);
+            }
 
-        selectQuery += `}`;
-        final_query = selectQuery;
+            askQuery += `}`;
+            final_query = askQuery;
+        } else {    
+            // Compose SELECT query with BIND IF
+            let selectQuery = `SELECT ?Winner WHERE {\n`;
+            selectQuery += `  ${pattern1}\n`;
+            selectQuery += `  ${pattern2}\n`;
+
+            let then_value = var1; //todo we won't always want the value itself -> to improve
+            let else_value = var2;
+
+            // Use supplied values
+            selectQuery += `  BIND(IF(${var1} ${operator} ${var2}, ${then_value}, ${else_value}) AS ?Winner)\n`;
+
+            selectQuery += `}`;
+            final_query = selectQuery;
+        }
     }
 
     return final_query;

@@ -1010,6 +1010,14 @@ class LLMFrameworkSimpleBooleans extends LLMFramework {
                 }
                 // SPARQL query will be set in framework.sparql
                 await framework.execute_commands(framework, extracted_commands_solo, true);
+
+                // A solo command chain can also have some operators to alter the query
+                if (operator && ["EXISTS", "NOT EXISTS"].includes(operator.toUpperCase())) {
+                    // Use the operator
+                    let merged_sparql = combineSparqlQueries(sparql1, sparql1, operator);
+                    framework.sparql = merged_sparql;
+                    framework.reasoning_text += "<br>Modified SPARQL query:<br>" + merged_sparql;
+                }
                  
             } else if (extracted_commands1 && extracted_commands1 !== ""
                         && extracted_commands2 && extracted_commands2 !== "" 
