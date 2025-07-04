@@ -1,7 +1,5 @@
 # todo
-## 166
-egypt biggest city is its capital city?
-false, but don't understand why another city is returned for the most populous city
+
 
 75 bizarre
 
@@ -47,6 +45,12 @@ now only returns GMT boardgames
 ## 76
 returned the list of museums instead of their count
 now returns the count of museums in Paris
+
+## 166
+egypt biggest city is its capital city?
+The old query returned false instead of true because it only ordered entities of type city but didn’t include subclasses of city.
+Ironically, Cairo is typed as the class largest city, which is a subclass of city that implies it has the most population.
+We fixed this by including subclasses in the ordering, but it would also have been possible to just check the largest city property.
 
 ## 262
 returned a list of thinhs bordering iran instead of the count
