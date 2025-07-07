@@ -166,6 +166,7 @@ class LLMFramework {
      */
     async executeStep(func, name, params) {
         this.insertNewStepStatus(name, STATUS_ONGOING)
+        disableProxyIfenabled(); // sometimes the proxy will activate itself and prevent from accessing the endpoint, so we desactivate it if it's the case
         const result  = await func(...params); // Execute the function with given parameters
         //change to done if not failed
         if (this.getCurrentStepStatus() == STATUS_ONGOING) {
@@ -782,81 +783,93 @@ class LLMFrameworkRetry extends LLMFramework {
         super(question, question_id, "count_references");
         this.number_of_same_response_expected = number_of_same_response_expected;
     }
+
     async answerQuestionLogic() {
-        ////////////////////////// TRY ANSWERING WITH SPARKLIS
-        let i = 1;
-        let got_number_of_same_response_expected = false;
-        let valid_responses_queries = [];
-        let valid_responses_results = [];
-        while (!got_number_of_same_response_expected) {
-            disableProxyIfenabled(); // sometimes the proxy will activate itself and prevent from accessing the endpoint, so we desactivate it if it's the case
-            this.reasoning_text += "<br>Try " + i + "<br>";
-            let place = await this.generate_and_execute_commands(this, this.question, true);
-            console.log("sparql after modification", this.sparql);
-
-            //only wait for the results if the query is not empty
-            let results_array = [];
-            if (this.sparql != "" && this.sparql != undefined && this.sparql != null) {
-                let get_labels = getALASQAConfig().nl_post_processing === true;
-                await this.executeStep(step_get_results, "Get results", [this, this.sparql, get_labels, get_labels]);
-                try {
-                    results_array = JSON.parse(this.result_text);
-                } catch (e) {
-                    results_array = [];
-                }
-            }
-
-            //reset the variables to avoid side effects for the next queries
-            this.resetQueryAlterationsVariables();
-
-            //got a response if the query is not empty and has a response
-            let got_a_response = (this.sparql != "" && this.sparql != undefined && this.sparql != null)
-                            && (this.result_text != "" && this.result_text != undefined && this.result_text != null
-                            && results_array.length > 0);
-            console.log("result text", this.result_text);
-
-            if (got_a_response) {
-                //add to valid_responses
-                valid_responses_queries.push(this.sparql);
-                valid_responses_results.push(this.result_text);
-
-                if (valid_responses_queries.length >= this.number_of_same_response_expected) {
-                    //test if we have number_of_same_response_expected times the same query in valid_responses_queries
-                    //if it's the case, put it as the sparql query of the framework
-                    let query_count = valid_responses_queries.reduce((acc, query) => {
-                        acc[query] = (acc[query] || 0) + 1;
-                        return acc;
-                    }
-                    , {});
-                    let query_found = Object.keys(query_count).find(key => query_count[key] >= this.number_of_same_response_expected);
-                    if (query_found) {
-                        this.sparql = query_found;
-                        got_number_of_same_response_expected = true;
-                    }
-
-                    //if we don't have the same number of query, we can also check the results (and keep the query with the same id as one of the results)
-                    if (!got_number_of_same_response_expected) {
-                        let result_count = valid_responses_results.reduce((acc, result) => {
-                            acc[result] = (acc[result] || 0) + 1;
-                            return acc;
-                        }
-                        , {});
-                        let result_found = Object.keys(result_count).find(key => result_count[key] >= this.number_of_same_response_expected);
-                        if (result_found) {
-                            // get the query that corresponds to the result
-                            let query_found = valid_responses_queries[valid_responses_results.indexOf(result_found)];
-                            this.sparql = query_found;
-                            got_number_of_same_response_expected = true;
-                        }
-                    }
-                }
-            }
-            i++;
-        }   
+        await logic_retry(this, this.number_of_same_response_expected);
     }
+    
 }
 window.LLMFrameworkRetry = LLMFrameworkRetry; //to be able to access the class
 window.LLMFrameworks.push(LLMFrameworkRetry.name); //to be able to access the class name
+
+/**
+ * Logic to retry the LLM generation several times until we get the same response n times.
+ * This is useful to avoid the LLM generating queries that are not stable and that can change
+ * @param {*} framework 
+ * @param {int} number_of_same_response_expected 
+ */
+async function logic_retry(framework, number_of_same_response_expected) {
+    ////////////////////////// TRY ANSWERING WITH SPARKLIS
+    let i = 1;
+    let got_number_of_same_response_expected = false;
+    let valid_responses_queries = [];
+    let valid_responses_results = [];
+    while (!got_number_of_same_response_expected) {
+        disableProxyIfenabled(); // sometimes the proxy will activate itself and prevent from accessing the endpoint, so we desactivate it if it's the case
+        framework.reasoning_text += "<br>Try " + i + "<br>";
+        let place = await framework.generate_and_execute_commands(framework, framework.question, true);
+        console.log("sparql after modification", framework.sparql);
+
+        //only wait for the results if the query is not empty
+        let results_array = [];
+        if (framework.sparql != "" && framework.sparql != undefined && framework.sparql != null) {
+            let get_labels = getALASQAConfig().nl_post_processing === true;
+            await framework.executeStep(step_get_results, "Get results", [framework, framework.sparql, get_labels, get_labels]);
+            try {
+                results_array = JSON.parse(framework.result_text);
+            } catch (e) {
+                results_array = [];
+            }
+        }
+
+        //reset the variables to avoid side effects for the next queries
+        framework.resetQueryAlterationsVariables();
+
+        //got a response if the query is not empty and has a response
+        let got_a_response = (framework.sparql != "" && framework.sparql != undefined && framework.sparql != null)
+                        && (framework.result_text != "" && framework.result_text != undefined && framework.result_text != null
+                        && results_array.length > 0);
+        console.log("result text", framework.result_text);
+
+        if (got_a_response) {
+            //add to valid_responses
+            valid_responses_queries.push(framework.sparql);
+            valid_responses_results.push(framework.result_text);
+
+            if (valid_responses_queries.length >= number_of_same_response_expected) {
+                //test if we have number_of_same_response_expected times the same query in valid_responses_queries
+                //if it's the case, put it as the sparql query of the framework
+                let query_count = valid_responses_queries.reduce((acc, query) => {
+                    acc[query] = (acc[query] || 0) + 1;
+                    return acc;
+                }
+                , {});
+                let query_found = Object.keys(query_count).find(key => query_count[key] >= number_of_same_response_expected);
+                if (query_found) {
+                    framework.sparql = query_found;
+                    got_number_of_same_response_expected = true;
+                }
+
+                //if we don't have the same number of query, we can also check the results (and keep the query with the same id as one of the results)
+                if (!got_number_of_same_response_expected) {
+                    let result_count = valid_responses_results.reduce((acc, result) => {
+                        acc[result] = (acc[result] || 0) + 1;
+                        return acc;
+                    }
+                    , {});
+                    let result_found = Object.keys(result_count).find(key => result_count[key] >= number_of_same_response_expected);
+                    if (result_found) {
+                        // get the query that corresponds to the result
+                        let query_found = valid_responses_queries[valid_responses_results.indexOf(result_found)];
+                        framework.sparql = query_found;
+                        got_number_of_same_response_expected = true;
+                    }
+                }
+            }
+        }
+        i++;
+    }   
+}
 
 /**
  * Doesn't call the LLM but just pass the commands to the command extension.
@@ -945,13 +958,16 @@ window.LLMFrameworks.push(LLMFrameworkDirect.name); // to be able to access the 
 //////////////////// EXPERIMENTAL STRATEGIES //////////////////////
 
 
+//todo omni strategy
+
+
 //todo
 //todo find where the crash causes timeout
 //<operator>higherThan</operator> -> invalid operator, should be >
 //one of the command chains fails, so the result is null
 //<commands2>match []</commands2> -> query less than 3 caracters shouldn't be possible
 //match no -> same
-class LLMFrameworkSimpleBooleans extends LLMFramework {
+class LLMFrameworkBooleanByMergeByPatterns extends LLMFramework {
     constructor(question, question_id,
                 global_max_try = Infinity,
                 number_of_same_response_expected = 3
@@ -960,149 +976,171 @@ class LLMFrameworkSimpleBooleans extends LLMFramework {
         this.global_max_try = global_max_try; //max number of tries
         this.number_of_same_response_expected = number_of_same_response_expected;
     }
+
     async answerQuestionLogic() {
-        let framework = this;
-        let global_try = 1;
-        let get_labels = getALASQAConfig().nl_post_processing === true;
+        await logic_boolean_by_subquestion_merge_by_patterns(
+            this, 
+            this.global_max_try, 
+            this.number_of_same_response_expected
+        );
 
-        let valid_responses_queries = []; // will contain the valid responses queries
-        let valid_responses_results = []; // will contain the valid responses results
-        let got_enough_valid_responses = false; // will be set to true if we have enough valid responses
+    }
+ 
+}
+window.LLMFrameworkBooleanByMergeByPatterns = LLMFrameworkBooleanByMergeByPatterns; //to be able to access the class
+window.LLMFrameworks.push(LLMFrameworkBooleanByMergeByPatterns.name); //to be able to access the class name in the
 
-        while (!got_enough_valid_responses && global_try <= framework.global_max_try) {
-            disableProxyIfenabled(); // sometimes the proxy will activate itself and prevent from accessing the endpoint, so we desactivate it if it's the case
-            let result_is_bool = false; // will be set to true if the final query returns a boolean result
+/**
+ * Answer a boolean question by having either one command sequence 
+ * or two command sequence and an operator, 
+ * then using pattern matching to merge the resulting queries based on the operator.
+ * @param {*} framework 
+ * @param {int} global_max_try 
+ * @param {int} number_of_same_response_expected 
+ */
+async function logic_boolean_by_subquestion_merge_by_patterns(
+        framework, 
+        global_max_try,
+        number_of_same_response_expected
+    ) {
+    let global_try = 1;
+    let get_labels = getALASQAConfig().nl_post_processing === true;
 
-            framework.reasoning_text += "<br>Global try " + global_try + "<br>";
+    let valid_responses_queries = []; // will contain the valid responses queries
+    let valid_responses_results = []; // will contain the valid responses results
+    let got_enough_valid_responses = false; // will be set to true if we have enough valid responses
 
-            // Reset variables to avoid side effects for the next queries
+    while (!got_enough_valid_responses && global_try <= global_max_try) {
+        disableProxyIfenabled(); // sometimes the proxy will activate itself and prevent from accessing the endpoint, so we desactivate it if it's the case
+        let result_is_bool = false; // will be set to true if the final query returns a boolean result
+
+        framework.reasoning_text += "<br>Global try " + global_try + "<br>";
+
+        // Reset variables to avoid side effects for the next queries
+        sparklis.home(); // we want to reset sparklis between different queries
+        framework.resetQueryAlterationsVariables(); //reset the variables to avoid side effects for the next queries
+        framework.sparql = ""; // Reset the SPARQL query
+        framework.result_text = ""; // Reset the result text
+
+        // Call llm generation
+        let output_llm = await framework.executeStep(step_generation, "LLM generation", 
+            [framework, prompt_get_subquestions_for_boolean_algo_ver(),"prompt_get_subquestions_for_boolean_algo_ver", framework.question]
+        );
+        // Extract the commands from the LLM output
+        let extracted_commands_solo = (await framework.executeStep(step_extract_tags, "Extracted commands (solo)",
+            [framework, output_llm, "commands"]
+        )).at(-1) || "";
+        let extracted_commands1 = (await framework.executeStep(step_extract_tags, "Extracted commands 1",
+            [framework, output_llm, "commands1"]
+        )).at(-1) || "";
+        let extracted_commands2 = (await framework.executeStep(step_extract_tags, "Extracted commands 2",
+            [framework, output_llm, "commands2"]
+        )).at(-1) || "";
+        let operator = (await framework.executeStep(step_extract_tags, "Extracted operator",
+            [framework, output_llm, "operator"]
+        )).at(-1) || "";
+
+        if (extracted_commands_solo && extracted_commands_solo !== "") { //Only one sequence of commands
+            // We want only one commands chain, so we check if there are other commands or an operator
+            if (extracted_commands1 !== "" || extracted_commands_solo !== "" || operator !== "") {
+                framework.reasoning_text += "<br>Got solo commands, but also another commands chain or operator. Retrying generation...<br>";
+                console.error("Got solo commands, but also another commands chain or operator. Retrying generation...");
+                // Skip this iteration and retry generation
+                global_try++;
+                continue;
+            }
+            // SPARQL query will be set in framework.sparql
+            await framework.execute_commands(framework, extracted_commands_solo, true);
+
+            // A solo command chain can also have some operators to alter the query
+            if (operator && ["EXISTS", "NOT EXISTS"].includes(operator.toUpperCase())) {
+                // Use the operator
+                let merged_sparql = combineSparqlQueries(sparql1, sparql1, operator);
+                framework.sparql = merged_sparql;
+                framework.reasoning_text += "<br>Modified SPARQL query:<br>" + merged_sparql;
+            }
+                
+        } else if (extracted_commands1 && extracted_commands1 !== ""
+                    && extracted_commands2 && extracted_commands2 !== "" 
+                    && operator && operator !== "") { // Two commands chains with an operator
+
+            //todo check if the operator is valid //else retry
+
+            let place1 = await framework.execute_commands(framework, extracted_commands1, true);
+            // Get SPARQL query from the first place
+            let sparql1 = framework.sparql; // Get the SPARQL query from the framework (because of outside sparklis treatments)
+
+            // Reset the variables to avoid side effects for the next queries
             sparklis.home(); // we want to reset sparklis between different queries
-            framework.resetQueryAlterationsVariables(); //reset the variables to avoid side effects for the next queries
+            framework.resetQueryAlterationsVariables(); //reset the variables to avoid side effects for the next
             framework.sparql = ""; // Reset the SPARQL query
             framework.result_text = ""; // Reset the result text
 
-            // Call llm generation
-            let output_llm = await framework.executeStep(step_generation, "LLM generation", 
-                [framework, prompt_get_subquestions_for_boolean_algo_ver(),"prompt_get_subquestions_for_boolean_algo_ver", framework.question]
-            );
-            // Extract the commands from the LLM output
-            let extracted_commands_solo = (await framework.executeStep(step_extract_tags, "Extracted commands (solo)",
-                [framework, output_llm, "commands"]
-            )).at(-1) || "";
-            let extracted_commands1 = (await framework.executeStep(step_extract_tags, "Extracted commands 1",
-                [framework, output_llm, "commands1"]
-            )).at(-1) || "";
-            let extracted_commands2 = (await framework.executeStep(step_extract_tags, "Extracted commands 2",
-                [framework, output_llm, "commands2"]
-            )).at(-1) || "";
-            let operator = (await framework.executeStep(step_extract_tags, "Extracted operator",
-                [framework, output_llm, "operator"]
-            )).at(-1) || "";
+            let place2 = await framework.execute_commands(framework, extracted_commands2, true);
+            // Get SPARQL query from the second place
+            let sparql2 = framework.sparql; // Get the SPARQL query from the framework (because of outside sparklis treatments)
 
-            if (extracted_commands_solo && extracted_commands_solo !== "") { //Only one sequence of commands
-                // We want only one commands chain, so we check if there are other commands or an operator
-                if (extracted_commands1 !== "" || extracted_commands_solo !== "" || operator !== "") {
-                    framework.reasoning_text += "<br>Got solo commands, but also another commands chain or operator. Retrying generation...<br>";
-                    console.error("Got solo commands, but also another commands chain or operator. Retrying generation...");
-                    // Skip this iteration and retry generation
-                    global_try++;
-                    continue;
-                }
-                // SPARQL query will be set in framework.sparql
-                await framework.execute_commands(framework, extracted_commands_solo, true);
-
-                // A solo command chain can also have some operators to alter the query
-                if (operator && ["EXISTS", "NOT EXISTS"].includes(operator.toUpperCase())) {
-                    // Use the operator
-                    let merged_sparql = combineSparqlQueries(sparql1, sparql1, operator);
-                    framework.sparql = merged_sparql;
-                    framework.reasoning_text += "<br>Modified SPARQL query:<br>" + merged_sparql;
-                }
-                 
-            } else if (extracted_commands1 && extracted_commands1 !== ""
-                        && extracted_commands2 && extracted_commands2 !== "" 
-                        && operator && operator !== "") { // Two commands chains with an operator
-
-                //todo check if the operator is valid //else retry
-
-                let place1 = await framework.execute_commands(framework, extracted_commands1, true);
-                // Get SPARQL query from the first place
-                let sparql1 = framework.sparql; // Get the SPARQL query from the framework (because of outside sparklis treatments)
-
-                // Reset the variables to avoid side effects for the next queries
-                sparklis.home(); // we want to reset sparklis between different queries
-                framework.resetQueryAlterationsVariables(); //reset the variables to avoid side effects for the next
-                framework.sparql = ""; // Reset the SPARQL query
-                framework.result_text = ""; // Reset the result text
-
-                let place2 = await framework.execute_commands(framework, extracted_commands2, true);
-                // Get SPARQL query from the second place
-                let sparql2 = framework.sparql; // Get the SPARQL query from the framework (because of outside sparklis treatments)
-
-                if (!sparql1 || !sparql2 || sparql1 === "" || sparql2 === "") {
-                    framework.reasoning_text += "<br>One of the SPARQL queries is empty.<br>";
-                    console.error("One of the SPARQL queries is empty.");
-                    //skip this iteration
-                    global_try++;
-                    continue;
-                }
-
-                // Reset the variables to avoid side effects for the next queries
-                framework.sparql = ""; // Reset the SPARQL query
-                framework.result_text = ""; // Reset the result text
-
-                // Merge the two SPARQL queries
-                let merged_sparql = combineSparqlQueries(sparql1, sparql2, operator);
-                framework.sparql = merged_sparql;
-                framework.reasoning_text += "<br>Merged SPARQL query:<br>" + merged_sparql;
-            } else {
-                //If we don't have any commands or only one commands chain, we can't continue
-                framework.reasoning_text += "<br>No valid commands extracted from the LLM output.<br>";
-                console.error("No valid commands extracted from the LLM output.");
+            if (!sparql1 || !sparql2 || sparql1 === "" || sparql2 === "") {
+                framework.reasoning_text += "<br>One of the SPARQL queries is empty.<br>";
+                console.error("One of the SPARQL queries is empty.");
                 //skip this iteration
                 global_try++;
                 continue;
             }
 
-            // Get results for the merged SPARQL query
-            await this.executeStep(step_get_results, "Get results", [framework, framework.sparql, get_labels, get_labels]);
-            framework.reasoning_text += "<br>Results:<br>" + framework.result_text;
-    
-            // Check if the result is a boolean
-            result_is_bool = (framework.result_text === "true" || framework.result_text === "false");
-            if (!result_is_bool) {
-                framework.reasoning_text += "<br>Result is not a boolean, trying again...<br>";
-            } else {
-                framework.reasoning_text += "<br>Result is a boolean: " + framework.result_text + "<br>";
-            }
+            // Reset the variables to avoid side effects for the next queries
+            framework.sparql = ""; // Reset the SPARQL query
+            framework.result_text = ""; // Reset the result text
 
-            // If the result is a boolean, we can add the query to the valid responses
-            if (result_is_bool) {
-                valid_responses_queries.push(framework.sparql);
-                valid_responses_results.push(framework.result_text);
-                framework.reasoning_text += "<br>Seemingly valid response found:<br>" + framework.sparql + "<br>Result: " + framework.result_text + "<br>";
-                // Check if we have enough valid responses
-                got_enough_valid_responses = valid_responses_queries.length >= framework.number_of_same_response_expected;
-                if (got_enough_valid_responses) {
-                    framework.reasoning_text += "<br>Enough valid responses found (" + framework.number_of_same_response_expected + ").<br>";
-                }
-            }
+            // Merge the two SPARQL queries
+            let merged_sparql = combineSparqlQueries(sparql1, sparql2, operator);
+            framework.sparql = merged_sparql;
+            framework.reasoning_text += "<br>Merged SPARQL query:<br>" + merged_sparql;
+        } else {
+            //If we don't have any commands or only one commands chain, we can't continue
+            framework.reasoning_text += "<br>No valid commands extracted from the LLM output.<br>";
+            console.error("No valid commands extracted from the LLM output.");
+            //skip this iteration
             global_try++;
+            continue;
         }
-        //if we got to the max number of try, put the most returned result as the final query
-        if (!got_enough_valid_responses && valid_responses_queries.length > 0) {
-            let result = valid_responses_results.sort((a,b) => //get the most frequent result
-                valid_responses_results.filter(v => v === b).length - valid_responses_results.filter(v => v === a).length
-            )[0];
-            let idx = valid_responses_results.indexOf(result); //get the first index of the most frequent result
-            framework.sparql = valid_responses_queries[idx]; // get the query corresponding to the most frequent result
-            await this.executeStep(step_get_results, "Get results", [framework, framework.sparql, get_labels, get_labels]);
-            framework.reasoning_text += `<br>Max tries reached, picked most frequent result: ${result}<br>`;
+
+        // Get results for the merged SPARQL query
+        await framework.executeStep(step_get_results, "Get results", [framework, framework.sparql, get_labels, get_labels]);
+        framework.reasoning_text += "<br>Results:<br>" + framework.result_text;
+
+        // Check if the result is a boolean
+        result_is_bool = (framework.result_text === "true" || framework.result_text === "false");
+        if (!result_is_bool) {
+            framework.reasoning_text += "<br>Result is not a boolean, trying again...<br>";
+        } else {
+            framework.reasoning_text += "<br>Result is a boolean: " + framework.result_text + "<br>";
         }
+
+        // If the result is a boolean, we can add the query to the valid responses
+        if (result_is_bool) {
+            valid_responses_queries.push(framework.sparql);
+            valid_responses_results.push(framework.result_text);
+            framework.reasoning_text += "<br>Seemingly valid response found:<br>" + framework.sparql + "<br>Result: " + framework.result_text + "<br>";
+            // Check if we have enough valid responses
+            got_enough_valid_responses = valid_responses_queries.length >= number_of_same_response_expected;
+            if (got_enough_valid_responses) {
+                framework.reasoning_text += "<br>Enough valid responses found (" + number_of_same_response_expected + ").<br>";
+            }
+        }
+        global_try++;
+    }
+    //if we got to the max number of try, put the most returned result as the final query
+    if (!got_enough_valid_responses && valid_responses_queries.length > 0) {
+        let result = valid_responses_results.sort((a,b) => //get the most frequent result
+            valid_responses_results.filter(v => v === b).length - valid_responses_results.filter(v => v === a).length
+        )[0];
+        let idx = valid_responses_results.indexOf(result); //get the first index of the most frequent result
+        framework.sparql = valid_responses_queries[idx]; // get the query corresponding to the most frequent result
+        await framework.executeStep(step_get_results, "Get results", [framework, framework.sparql, get_labels, get_labels]);
+        framework.reasoning_text += `<br>Max tries reached, picked most frequent result: ${result}<br>`;
     }
 }
-window.LLMFrameworkSimpleBooleans = LLMFrameworkSimpleBooleans; //to be able to access the class
-window.LLMFrameworks.push(LLMFrameworkSimpleBooleans.name); //to be able to access the class name in the
 
 
 //todo when command chain fail, the expected result can be false, but we need to get the uri to build the final query
@@ -1114,7 +1152,7 @@ window.LLMFrameworks.push(LLMFrameworkSimpleBooleans.name); //to be able to acce
  * Use several tries to generate the subquestions and the final query.
  * Limits: a query with the good boolean response isn't necessarily the right one.
  */
-class LLMFrameworkBooleanBySubquestions extends LLMFramework {
+class LLMFrameworkBooleanBySubquestionsMergeByLLM extends LLMFramework {
     constructor(
         question, question_id,
         global_max_try = Infinity,
@@ -1130,163 +1168,189 @@ class LLMFrameworkBooleanBySubquestions extends LLMFramework {
     }
 
     async answerQuestionLogic() {
-        let valid_responses_queries = []; // will contain the valid responses queries
-        let valid_responses_results = []; // will contain the valid responses results
-        let got_enough_valid_responses = false; // will be set to true if we have enough valid responses
-
-        let get_labels = getALASQAConfig().nl_post_processing === true;
-        let global_try = 1;
-        while (!got_enough_valid_responses && global_try <= this.global_max_try) {
-            let result_is_bool = false; // will be set to true if the final query returns a boolean result
-            let hallucinated_uri = false; // will be set to true if a new id is generated in the final query in comparison to the subqueries and their results
-
-            this.reasoning_text += "<br>Global try " + global_try + "<br>";
-            let extracted_subquestions = [];
-            let subquestion_creation_try = 1;
-            while ((!extracted_subquestions || extracted_subquestions.length == 0)
-                && subquestion_creation_try <= this.subquestion_creation_max_try) {
-                disableProxyIfenabled(); // sometimes the proxy will activate itself and prevent from accessing the endpoint, so we desactivate it if it's the case
-                this.reasoning_text += "<br>Subquestions creation, try" + subquestion_creation_try + "<br>";
-
-                // Get a list of necessary subquestions to reach the answer
-                this.reasoning_text += "<br>Generating subquestions<br>";
-                //Generation of the subquestions by the LLM
-                let outputed_subquestions = await this.executeStep(step_generation, "LLM generation 1", 
-                    [this, prompt_get_subquestions_for_boolean(),"prompt_get_subquestions_for_boolean", this.question]
-                );
-                
-                // Extract the subquestions from the LLM output
-                this.reasoning_text += "<br>Extracting subquestions<br>";
-                extracted_subquestions = await this.executeStep(step_extract_tags, "Extract subquestions", [this, outputed_subquestions, "subquestion"]);
-
-                subquestion_creation_try++;
-            }
-
-            //solve the subquestions
-            this.reasoning_text += "<br>Answering the subquestions<br>";
-            let subqueries = [];
-            let subanswers = [];
-            let place = null;
-            let current_subquestion = 1;
-            for (let subquestion of extracted_subquestions) {
-                let subquestion_try = 1;
-                let subquery_is_valid = false;
-                while (!subquery_is_valid) {
-                    this.reasoning_text += "<br>Answering subquestion " + current_subquestion + ": try " + subquestion_try + "<br>"; 
-                    // Reset variables to avoid side effects for the next queries
-                    sparklis.home(); // we want to reset sparklis between different queries
-                    this.resetQueryAlterationsVariables(); //reset the variables to avoid side effects for the next queries
-                    this.sparql = ""; // Reset the SPARQL query
-                    this.result_text = ""; // Reset the result text
-
-                    place = await this.generate_and_execute_commands(this, subquestion, true);
-                    console.log("sparql after modification", this.sparql);
-                    subquery_is_valid = this.sparql != "" && this.sparql != undefined && this.sparql != null;
-                    subquestion_try++;
-                }
-                await this.executeStep(step_get_results, "Get results", [this, this.sparql, true, true]);
-                subqueries.push(this.sparql);
-                this.result_text = truncateResults(this.result_text, 20, 4000); //truncate results to avoid surpassing the token limit
-                subanswers.push(this.result_text);
-                this.reasoning_text += "<br>Subquestion query:<br>" + this.sparql;
-                this.reasoning_text += "<br>Subquestion result (truncated):<br>" + this.result_text;
-                current_subquestion++;
-            }
-            //and then combine the results to generate a query answering the original question
-            sparklis.home(); // we want to reset sparklis between different queries
-            this.resetQueryAlterationsVariables(); //reset the variables to avoid side effects for the next queries
-            this.reasoning_text += "<br>Combining the results of the subquestions<br>";
-
-            //make the input data for the comparison prompt
-            let input_data_dict = { "question": this.question};
-            for (let i = 0; i < subanswers.length; i++) {
-                input_data_dict["subquery" + (i+1).toString()] = subqueries[i];
-            }
-            for (let i = 0; i < subanswers.length; i++) {
-                input_data_dict["subanswer" + (i+1).toString()] = subanswers[i];
-            }
-            let input_comparison = data_input_prompt(input_data_dict, true);
-
-            let final_query_generation_try = 1;
-            //also check that no new id have been introduced
-            let existing_uris = extract_uris_from_string_list(subqueries).join(extract_uris_from_string_list(subanswers)); // list of queries and results URIs
-
-            while (final_query_generation_try <= this.final_query_generation_max_try && (!result_is_bool || hallucinated_uri)) {
-                this.reasoning_text += "<br>Final query generation try " + final_query_generation_try + "<br>";
-
-                // Reset variables to avoid side effects for the next queries
-                this.sparql = ""; // Reset the SPARQL query
-                this.result_text = ""; // Reset the result text
-
-                console.log("input_comparison",input_comparison);
-                let output_combined = await this.executeStep(step_generation, "LLM generation", 
-                    [this, prompt_use_subquestions_for_boolean(),"prompt_use_subquestions_for_boolean",
-                        input_comparison]
-                ); //todo alternatives prompt
-                let extracted_query_list = await this.executeStep(step_extract_tags, "Extracted query", [this, output_combined, "query"]);
-                let extracted_query = extracted_query_list.at(-1) || ""; 
-                this.reasoning_text += "<br>Generated final query:<br>" + extracted_query;
-
-                // Get patched query
-                this.reasoning_text += "<br>Trying to detect and patch any query issues<br>";
-                this.sparql = get_patched_query(extracted_query, this);
-                this.reasoning_text += "<br>Patched query:<br>" + this.sparql;
-
-                //execute the generated sparql query
-                await this.executeStep(step_get_results, "Get results of created query", [this, this.sparql, get_labels, get_labels]); 
-                result_is_bool = (this.result_text === "true" || this.result_text === "false");
-                if (!result_is_bool) {
-                    this.reasoning_text += "<br>Result is not a boolean, trying again the final query generation<br>";
-                }
-
-                const generated_uris = extract_uris_from_string_list([this.sparql]);
-                let hallucinated_uris_list = generated_uris.filter(uri => !existing_uris.includes(uri));
-                hallucinated_uri = hallucinated_uris_list.length > 0;
-                if (hallucinated_uri) {
-                    this.reasoning_text += `<br>New URI generated (hallucinated) in the final query: ${[...new Set(hallucinated_uris_list)].join(", ")}. This is not allowed, trying again the final query generation<br>`;
-                }
-
-                final_query_generation_try++;
-            }
-            if (!result_is_bool && global_try < this.global_max_try) {
-                this.reasoning_text += "<br>Result is not a boolean and tried to many times to generate the final query. Retrying the whole process<br>";
-            } else if (hallucinated_uri && global_try < this.global_max_try) {
-                this.reasoning_text += "<br>Hallucinated URI in the final query and tried to many times to generate the final query. Retrying the whole process<br>";
-            } else if ((!result_is_bool || hallucinated_uri) && global_try >= this.global_max_try) {
-                this.reasoning_text += "<br>Result is not a boolean or hallucinated URI in the final query and reached the maximum number of tries. Giving up.<br>";
-            }
-
-            // if the result is a boolean, we can add it to the valid responses
-            // and check if we have enough valid responses
-            if (result_is_bool && !hallucinated_uri) {
-                //add the valid responses
-                valid_responses_queries.push(this.sparql);
-                valid_responses_results.push(this.result_text);
-                this.reasoning_text += "<br>Got a seemingly valid response: " + this.result_text + "<br>";
-                got_enough_valid_responses = valid_responses_queries.length >= this.number_of_same_response_expected;
-                if (got_enough_valid_responses) {
-                    this.reasoning_text += "<br>Got enough valid responses, stopping the process.<br>";
-                }
-            }
-            global_try++;
-        }
-
-        //if we got to the max numbe rof try, put the most returned result as the final query
-        if (!got_enough_valid_responses && valid_responses_queries.length > 0) {
-            let result = valid_responses_results.sort((a,b) => //get the most frequent result
-                valid_responses_results.filter(v => v === b).length - valid_responses_results.filter(v => v === a).length
-            )[0];
-            let idx = valid_responses_results.indexOf(result); //get the first index of the most frequent result
-            this.sparql = valid_responses_queries[idx]; // get the query corresponding to the most frequent result
-            await this.executeStep(step_get_results, "Get results", [this, this.sparql, get_labels, get_labels]);
-            this.reasoning_text += `<br>Max tries reached, picked most frequent result: ${result}<br>`;
-        }
+        await logic_boolean_by_subquestion_merge_by_llm(
+            this,
+            this.global_max_try,
+            this.subquestion_creation_max_try,
+            this.final_query_generation_max_try,
+            this.number_of_same_response_expected
+        );
     }
 }
-window.LLMFrameworkBooleanBySubquestions = LLMFrameworkBooleanBySubquestions; //to be able to access the class
-window.LLMFrameworks.push(LLMFrameworkBooleanBySubquestions.name); //to be able to access the class name in the
+window.LLMFrameworkBooleanBySubquestionsMergeByLLM = LLMFrameworkBooleanBySubquestionsMergeByLLM; //to be able to access the class
+window.LLMFrameworks.push(LLMFrameworkBooleanBySubquestionsMergeByLLM.name); //to be able to access the class name in the
 
-class LLMFrameworkAggregySubquestions extends LLMFramework {
+/**
+ * Answer a boolean question by generating n subquestions, 
+ * answering the n subquestions, 
+ * then calling the LLM to merge their queries and their results into a final query.
+ * @param {*} framework 
+ * @param {int} global_max_try 
+ * @param {int} subquestion_creation_max_try 
+ * @param {int} final_query_generation_max_try 
+ * @param {int} number_of_same_response_expected 
+ */
+async function logic_boolean_by_subquestion_merge_by_llm(framework,
+        global_max_try,
+        subquestion_creation_max_try,
+        final_query_generation_max_try,
+        number_of_same_response_expected
+    ) {
+    let valid_responses_queries = []; // will contain the valid responses queries
+    let valid_responses_results = []; // will contain the valid responses results
+    let got_enough_valid_responses = false; // will be set to true if we have enough valid responses
+
+    let get_labels = getALASQAConfig().nl_post_processing === true;
+    let global_try = 1;
+    while (!got_enough_valid_responses && global_try <= global_max_try) {
+        let result_is_bool = false; // will be set to true if the final query returns a boolean result
+        let hallucinated_uri = false; // will be set to true if a new id is generated in the final query in comparison to the subqueries and their results
+
+        framework.reasoning_text += "<br>Global try " + global_try + "<br>";
+        let extracted_subquestions = [];
+        let subquestion_creation_try = 1;
+        while ((!extracted_subquestions || extracted_subquestions.length == 0)
+            && subquestion_creation_try <= subquestion_creation_max_try) {
+            disableProxyIfenabled(); // sometimes the proxy will activate itself and prevent from accessing the endpoint, so we desactivate it if it's the case
+            framework.reasoning_text += "<br>Subquestions creation, try" + subquestion_creation_try + "<br>";
+
+            // Get a list of necessary subquestions to reach the answer
+            framework.reasoning_text += "<br>Generating subquestions<br>";
+            //Generation of the subquestions by the LLM
+            let outputed_subquestions = await framework.executeStep(step_generation, "LLM generation 1", 
+                [framework, prompt_get_subquestions_for_boolean(),"prompt_get_subquestions_for_boolean", framework.question]
+            );
+            
+            // Extract the subquestions from the LLM output
+            framework.reasoning_text += "<br>Extracting subquestions<br>";
+            extracted_subquestions = await framework.executeStep(step_extract_tags, "Extract subquestions", [framework, outputed_subquestions, "subquestion"]);
+
+            subquestion_creation_try++;
+        }
+
+        //solve the subquestions
+        framework.reasoning_text += "<br>Answering the subquestions<br>";
+        let subqueries = [];
+        let subanswers = [];
+        let place = null;
+        let current_subquestion = 1;
+        for (let subquestion of extracted_subquestions) {
+            let subquestion_try = 1;
+            let subquery_is_valid = false;
+            while (!subquery_is_valid) {
+                framework.reasoning_text += "<br>Answering subquestion " + current_subquestion + ": try " + subquestion_try + "<br>"; 
+                // Reset variables to avoid side effects for the next queries
+                sparklis.home(); // we want to reset sparklis between different queries
+                framework.resetQueryAlterationsVariables(); //reset the variables to avoid side effects for the next queries
+                framework.sparql = ""; // Reset the SPARQL query
+                framework.result_text = ""; // Reset the result text
+
+                place = await framework.generate_and_execute_commands(framework, subquestion, true);
+                console.log("sparql after modification", framework.sparql);
+                subquery_is_valid = framework.sparql != "" && framework.sparql != undefined && framework.sparql != null;
+                subquestion_try++;
+            }
+            await framework.executeStep(step_get_results, "Get results", [framework, framework.sparql, true, true]);
+            subqueries.push(framework.sparql);
+            framework.result_text = truncateResults(framework.result_text, 20, 4000); //truncate results to avoid surpassing the token limit
+            subanswers.push(framework.result_text);
+            framework.reasoning_text += "<br>Subquestion query:<br>" + framework.sparql;
+            framework.reasoning_text += "<br>Subquestion result (truncated):<br>" + framework.result_text;
+            current_subquestion++;
+        }
+        //and then combine the results to generate a query answering the original question
+        sparklis.home(); // we want to reset sparklis between different queries
+        framework.resetQueryAlterationsVariables(); //reset the variables to avoid side effects for the next queries
+        framework.reasoning_text += "<br>Combining the results of the subquestions<br>";
+
+        //make the input data for the comparison prompt
+        let input_data_dict = { "question": framework.question};
+        for (let i = 0; i < subanswers.length; i++) {
+            input_data_dict["subquery" + (i+1).toString()] = subqueries[i];
+        }
+        for (let i = 0; i < subanswers.length; i++) {
+            input_data_dict["subanswer" + (i+1).toString()] = subanswers[i];
+        }
+        let input_comparison = data_input_prompt(input_data_dict, true);
+
+        let final_query_generation_try = 1;
+        //also check that no new id have been introduced
+        let existing_uris = extract_uris_from_string_list(subqueries).join(extract_uris_from_string_list(subanswers)); // list of queries and results URIs
+
+        while (final_query_generation_try <= final_query_generation_max_try && (!result_is_bool || hallucinated_uri)) {
+            framework.reasoning_text += "<br>Final query generation try " + final_query_generation_try + "<br>";
+
+            // Reset variables to avoid side effects for the next queries
+            framework.sparql = ""; // Reset the SPARQL query
+            framework.result_text = ""; // Reset the result text
+
+            console.log("input_comparison",input_comparison);
+            let output_combined = await framework.executeStep(step_generation, "LLM generation", 
+                [framework, prompt_use_subquestions_for_boolean(),"prompt_use_subquestions_for_boolean",
+                    input_comparison]
+            ); //todo alternatives prompt
+            let extracted_query_list = await framework.executeStep(step_extract_tags, "Extracted query", [framework, output_combined, "query"]);
+            let extracted_query = extracted_query_list.at(-1) || ""; 
+            framework.reasoning_text += "<br>Generated final query:<br>" + extracted_query;
+
+            // Get patched query
+            framework.reasoning_text += "<br>Trying to detect and patch any query issues<br>";
+            framework.sparql = get_patched_query(extracted_query, framework);
+            framework.reasoning_text += "<br>Patched query:<br>" + framework.sparql;
+
+            //execute the generated sparql query
+            await framework.executeStep(step_get_results, "Get results of created query", [framework, framework.sparql, get_labels, get_labels]); 
+            result_is_bool = (framework.result_text === "true" || framework.result_text === "false");
+            if (!result_is_bool) {
+                framework.reasoning_text += "<br>Result is not a boolean, trying again the final query generation<br>";
+            }
+
+            const generated_uris = extract_uris_from_string_list([framework.sparql]);
+            let hallucinated_uris_list = generated_uris.filter(uri => !existing_uris.includes(uri));
+            hallucinated_uri = hallucinated_uris_list.length > 0;
+            if (hallucinated_uri) {
+                framework.reasoning_text += `<br>New URI generated (hallucinated) in the final query: ${[...new Set(hallucinated_uris_list)].join(", ")}. framework is not allowed, trying again the final query generation<br>`;
+            }
+
+            final_query_generation_try++;
+        }
+        if (!result_is_bool && global_try < global_max_try) {
+            framework.reasoning_text += "<br>Result is not a boolean and tried to many times to generate the final query. Retrying the whole process<br>";
+        } else if (hallucinated_uri && global_try < global_max_try) {
+            framework.reasoning_text += "<br>Hallucinated URI in the final query and tried to many times to generate the final query. Retrying the whole process<br>";
+        } else if ((!result_is_bool || hallucinated_uri) && global_try >= global_max_try) {
+            framework.reasoning_text += "<br>Result is not a boolean or hallucinated URI in the final query and reached the maximum number of tries. Giving up.<br>";
+        }
+
+        // if the result is a boolean, we can add it to the valid responses
+        // and check if we have enough valid responses
+        if (result_is_bool && !hallucinated_uri) {
+            //add the valid responses
+            valid_responses_queries.push(framework.sparql);
+            valid_responses_results.push(framework.result_text);
+            framework.reasoning_text += "<br>Got a seemingly valid response: " + framework.result_text + "<br>";
+            got_enough_valid_responses = valid_responses_queries.length >= number_of_same_response_expected;
+            if (got_enough_valid_responses) {
+                framework.reasoning_text += "<br>Got enough valid responses, stopping the process.<br>";
+            }
+        }
+        global_try++;
+    }
+
+    //if we got to the max numbe rof try, put the most returned result as the final query
+    if (!got_enough_valid_responses && valid_responses_queries.length > 0) {
+        let result = valid_responses_results.sort((a,b) => //get the most frequent result
+            valid_responses_results.filter(v => v === b).length - valid_responses_results.filter(v => v === a).length
+        )[0];
+        let idx = valid_responses_results.indexOf(result); //get the first index of the most frequent result
+        framework.sparql = valid_responses_queries[idx]; // get the query corresponding to the most frequent result
+        await framework.executeStep(step_get_results, "Get results", [framework, framework.sparql, get_labels, get_labels]);
+        framework.reasoning_text += `<br>Max tries reached, picked most frequent result: ${result}<br>`;
+    }
+}
+
+
+class LLMFrameworkComparisonBySubquestions extends LLMFramework {
     constructor(
         question, question_id,
         global_max_try = Infinity,
@@ -1302,159 +1366,188 @@ class LLMFrameworkAggregySubquestions extends LLMFramework {
     }
 
     async answerQuestionLogic() {
-        let valid_responses_queries = [];
-        let valid_responses_results = [];
-        let got_enough_valid_responses = false; // will be set to true if we got enough valid responses
+        await logic_any_by_subquestions_merge_llm(
+            this,
+            this.global_max_try,
+            this.subquestion_creation_max_try,
+            this.final_query_generation_max_try,
+            this.number_of_same_response_expected
+        );
+    }
 
-        let get_labels = getALASQAConfig().nl_post_processing === true;
-        let global_try = 1;
-        while (!got_enough_valid_responses && global_try <= this.global_max_try) {
-            disableProxyIfenabled(); // sometimes the proxy will activate itself and prevent from accessing the endpoint, so we desactivate it if it's the case
-            let result_is_valid = false; // will be set to true if the final query returns a valid result
-            let hallucinated_uri = false; // will be set to true if a new id is generated in the final query in comparison to the subqueries and their results
-            this.reasoning_text += "<br>Global try " + global_try + "<br>";
-            let extracted_subquestions = [];
-            let subquestion_creation_try = 1;
-            while ((!extracted_subquestions || extracted_subquestions.length == 0)
-                && subquestion_creation_try <= this.subquestion_creation_max_try) {
-                this.reasoning_text += "<br>Subquestions creation, try" + subquestion_creation_try + "<br>";
 
-                // Get a list of necessary subquestions to reach the answer
-                this.reasoning_text += "<br>Generating subquestions<br>";
-                //Generation of the subquestions by the LLM
-                let outputed_subquestions = await this.executeStep(step_generation, "LLM generation 1", 
-                    [this, prompt_get_subquestions(),"prompt_get_subquestions", this.question]
-                ); //todo update prompt
-                
-                // Extract the subquestions from the LLM output
-                this.reasoning_text += "<br>Extracting subquestions<br>";
-                extracted_subquestions = await this.executeStep(step_extract_tags, "Extract subquestions", [this, outputed_subquestions, "subquestion"]);
+}
+window.LLMFrameworkComparisonBySubquestions = LLMFrameworkComparisonBySubquestions; //to be able to access the class
+window.LLMFrameworks.push(LLMFrameworkComparisonBySubquestions.name); //to be able to access the class name in the
 
-                subquestion_creation_try++;
-            }
 
-            //solve the subquestions
-            this.reasoning_text += "<br>Answering the subquestions<br>";
-            let subqueries = [];
-            let subanswers = [];
-            let place = null;
-            let current_subquestion = 1;
-            for (let subquestion of extracted_subquestions) {
-                let subquestion_try = 1;
-                let subquery_is_valid = false;
-                while (!subquery_is_valid) {
-                    this.reasoning_text += "<br>Answering subquestion " + current_subquestion + ": try " + subquestion_try + "<br>"; 
-                    // Reset variables to avoid side effects for the next queries
-                    sparklis.home(); // we want to reset sparklis between different queries
-                    this.resetQueryAlterationsVariables(); //reset the variables to avoid side effects for the next queries
-                    this.sparql = ""; // Reset the SPARQL query
-                    this.result_text = ""; // Reset the result text
+/**
+ * Answer a question by generating n subquestions,
+ * answering the n subquestions,
+ * then calling the LLM to merge their queries and their results into a final query.
+ * This is a more generic version of the boolean question answering by subquestions.
+ * @param {*} framework 
+ * @param {int} global_max_try 
+ * @param {int} subquestion_creation_max_try 
+ * @param {int} final_query_generation_max_try 
+ * @param {int} number_of_same_response_expected 
+ */
+async function logic_any_by_subquestions_merge_llm(
+        framework,
+        global_max_try,
+        subquestion_creation_max_try,
+        final_query_generation_max_try,
+        number_of_same_response_expected
+    ){
+    let valid_responses_queries = [];
+    let valid_responses_results = [];
+    let got_enough_valid_responses = false; // will be set to true if we got enough valid responses
 
-                    place = await this.generate_and_execute_commands(this, subquestion, true);
-                    console.log("sparql after modification", this.sparql);
-                    subquery_is_valid = this.sparql != "" && this.sparql != undefined && this.sparql != null;
-                    subquestion_try++;
-                }
-                await this.executeStep(step_get_results, "Get results", [this, this.sparql, true, true]);
-                subqueries.push(this.sparql);
-                this.result_text = truncateResults(this.result_text, 20, 4000); //truncate results to avoid surpassing the token limit
-                subanswers.push(this.result_text);
-                this.reasoning_text += "<br>Subquestion query:<br>" + this.sparql;
-                this.reasoning_text += "<br>Subquestion result (truncated):<br>" + this.result_text;
-                current_subquestion++;
-            }
-            //and then combine the results to generate a query answering the original question
-            sparklis.home(); // we want to reset sparklis between different queries
-            this.resetQueryAlterationsVariables(); //reset the variables to avoid side effects for the next queries
-            this.reasoning_text += "<br>Combining the results of the subquestions<br>";
+    let get_labels = getALASQAConfig().nl_post_processing === true;
+    let global_try = 1;
+    while (!got_enough_valid_responses && global_try <= global_max_try) {
+        disableProxyIfenabled(); // sometimes the proxy will activate itself and prevent from accessing the endpoint, so we desactivate it if it's the case
+        let result_is_valid = false; // will be set to true if the final query returns a valid result
+        let hallucinated_uri = false; // will be set to true if a new id is generated in the final query in comparison to the subqueries and their results
+        framework.reasoning_text += "<br>Global try " + global_try + "<br>";
+        let extracted_subquestions = [];
+        let subquestion_creation_try = 1;
+        while ((!extracted_subquestions || extracted_subquestions.length == 0)
+            && subquestion_creation_try <= subquestion_creation_max_try) {
+            framework.reasoning_text += "<br>Subquestions creation, try" + subquestion_creation_try + "<br>";
 
-            //make the input data for the comparison prompt
-            let input_data_dict = { "question": this.question};
-            for (let i = 0; i < subanswers.length; i++) {
-                input_data_dict["subquery" + (i+1).toString()] = subqueries[i];
-            }
-            for (let i = 0; i < subanswers.length; i++) {
-                input_data_dict["subanswer" + (i+1).toString()] = subanswers[i];
-            }
-            let input_comparison = data_input_prompt(input_data_dict, true);
+            // Get a list of necessary subquestions to reach the answer
+            framework.reasoning_text += "<br>Generating subquestions<br>";
+            //Generation of the subquestions by the LLM
+            let outputed_subquestions = await framework.executeStep(step_generation, "LLM generation 1", 
+                [framework, prompt_get_subquestions(),"prompt_get_subquestions", framework.question]
+            ); //todo update prompt
+            
+            // Extract the subquestions from the LLM output
+            framework.reasoning_text += "<br>Extracting subquestions<br>";
+            extracted_subquestions = await framework.executeStep(step_extract_tags, "Extract subquestions", [framework, outputed_subquestions, "subquestion"]);
 
-            let final_query_generation_try = 1;
-            //also check that no new id have been introduced
-            let existing_uris = extract_uris_from_string_list(subqueries).join(extract_uris_from_string_list(subanswers)); // list of queries and results URIs
+            subquestion_creation_try++;
+        }
 
-            while (final_query_generation_try <= this.final_query_generation_max_try && (!result_is_valid || hallucinated_uri)) {
-                this.reasoning_text += "<br>Final query generation try " + final_query_generation_try + "<br>";
-
+        //solve the subquestions
+        framework.reasoning_text += "<br>Answering the subquestions<br>";
+        let subqueries = [];
+        let subanswers = [];
+        let place = null;
+        let current_subquestion = 1;
+        for (let subquestion of extracted_subquestions) {
+            let subquestion_try = 1;
+            let subquery_is_valid = false;
+            while (!subquery_is_valid) {
+                framework.reasoning_text += "<br>Answering subquestion " + current_subquestion + ": try " + subquestion_try + "<br>"; 
                 // Reset variables to avoid side effects for the next queries
-                this.sparql = ""; // Reset the SPARQL query
-                this.result_text = ""; // Reset the result text
+                sparklis.home(); // we want to reset sparklis between different queries
+                framework.resetQueryAlterationsVariables(); //reset the variables to avoid side effects for the next queries
+                framework.sparql = ""; // Reset the SPARQL query
+                framework.result_text = ""; // Reset the result text
 
-                console.log("input_comparison",input_comparison);
-                let output_combined = await this.executeStep(step_generation, "LLM generation", 
-                    [this, prompt_use_subquestions_for_any(),"prompt_use_subquestions_for_any",
-                        input_comparison] //todo update prompt
-                ); //todo alternatives prompt
-                let extracted_query_list = await this.executeStep(step_extract_tags, "Extracted query", [this, output_combined, "query"]);
-                let extracted_query = extracted_query_list.at(-1) || ""; 
-                this.reasoning_text += "<br>Generated final query:<br>" + extracted_query;
-
-                // Get patched query
-                this.reasoning_text += "<br>Trying to detect and patch any query issues<br>";
-                this.sparql = get_patched_query(extracted_query, this);
-                this.reasoning_text += "<br>Patched query:<br>" + this.sparql;
-
-                //execute the generated sparql query
-                await this.executeStep(step_get_results, "Get results of created query", [this, this.sparql, get_labels, get_labels]); 
-                result_is_valid = (this.result_text !== null && this.result_text !== undefined && this.result_text !== "");
-                if (!result_is_valid) {
-                    this.reasoning_text += "<br>Result is not a valid, trying again the final query generation<br>";
-                }
-
-                const generated_uris = extract_uris_from_string_list([this.sparql]);
-                let hallucinated_uris_list = generated_uris.filter(uri => !existing_uris.includes(uri));
-                hallucinated_uri = hallucinated_uris_list.length > 0;
-                if (hallucinated_uri) {
-                    this.reasoning_text += `<br>New URI generated (hallucinated) in the final query: ${[...new Set(hallucinated_uris_list)].join(", ")}. This is not allowed, trying again the final query generation<br>`;
-                }
-
-                final_query_generation_try++;
+                place = await framework.generate_and_execute_commands(framework, subquestion, true);
+                console.log("sparql after modification", framework.sparql);
+                subquery_is_valid = framework.sparql != "" && framework.sparql != undefined && framework.sparql != null;
+                subquestion_try++;
             }
-            if (!result_is_valid && global_try < this.global_max_try) {
-                this.reasoning_text += "<br>Result is not a valid and tried to many times to generate the final query. Retrying the whole process<br>";
-            } else if (hallucinated_uri && global_try < this.global_max_try) {
-                this.reasoning_text += "<br>Hallucinated URI in the final query and tried to many times to generate the final query. Retrying the whole process<br>";
-            } else if ((!result_is_valid || hallucinated_uri) && global_try >= this.global_max_try) {
-                this.reasoning_text += "<br>Result is not a valid or hallucinated URI in the final query and reached the maximum number of tries. Giving up.<br>";
-            }
-             
-            //if the result is valid and no hallucinated uri, we can add the query and result to the valid responses
-            if (result_is_valid && !hallucinated_uri) {
-                valid_responses_queries.push(this.sparql);
-                valid_responses_results.push(this.result_text);
-                this.reasoning_text += "<br>Seemingly valid response found:<br>" + this.sparql + "<br>" + this.result_text;
-                got_enough_valid_responses = valid_responses_queries.length >= this.number_of_same_response_expected;
-                if (got_enough_valid_responses) {
-                    this.reasoning_text += "<br>Got enough valid responses, stopping the process.<br>";
-                }
-            }
-            global_try++;
+            await framework.executeStep(step_get_results, "Get results", [framework, framework.sparql, true, true]);
+            subqueries.push(framework.sparql);
+            framework.result_text = truncateResults(framework.result_text, 20, 4000); //truncate results to avoid surpassing the token limit
+            subanswers.push(framework.result_text);
+            framework.reasoning_text += "<br>Subquestion query:<br>" + framework.sparql;
+            framework.reasoning_text += "<br>Subquestion result (truncated):<br>" + framework.result_text;
+            current_subquestion++;
         }
+        //and then combine the results to generate a query answering the original question
+        sparklis.home(); // we want to reset sparklis between different queries
+        framework.resetQueryAlterationsVariables(); //reset the variables to avoid side effects for the next queries
+        framework.reasoning_text += "<br>Combining the results of the subquestions<br>";
 
-        //if we got to the max numbe rof try, put the most returned result as the final query
-        if (!got_enough_valid_responses && valid_responses_queries.length > 0) {
-            let result = valid_responses_results.sort((a,b) => //get the most frequent result
-                valid_responses_results.filter(v => v === b).length - valid_responses_results.filter(v => v === a).length
-            )[0];
-            let idx = valid_responses_results.indexOf(result); //get the first index of the most frequent result
-            this.sparql = valid_responses_queries[idx]; // get the query corresponding to the most frequent result
-            await this.executeStep(step_get_results, "Get results", [this, this.sparql, get_labels, get_labels]);
-            this.reasoning_text += `<br>Max tries reached, picked most frequent result: ${result}<br>`;
+        //make the input data for the comparison prompt
+        let input_data_dict = { "question": framework.question};
+        for (let i = 0; i < subanswers.length; i++) {
+            input_data_dict["subquery" + (i+1).toString()] = subqueries[i];
         }
+        for (let i = 0; i < subanswers.length; i++) {
+            input_data_dict["subanswer" + (i+1).toString()] = subanswers[i];
+        }
+        let input_comparison = data_input_prompt(input_data_dict, true);
+
+        let final_query_generation_try = 1;
+        //also check that no new id have been introduced
+        let existing_uris = extract_uris_from_string_list(subqueries).join(extract_uris_from_string_list(subanswers)); // list of queries and results URIs
+
+        while (final_query_generation_try <= final_query_generation_max_try && (!result_is_valid || hallucinated_uri)) {
+            framework.reasoning_text += "<br>Final query generation try " + final_query_generation_try + "<br>";
+
+            // Reset variables to avoid side effects for the next queries
+            framework.sparql = ""; // Reset the SPARQL query
+            framework.result_text = ""; // Reset the result text
+
+            console.log("input_comparison",input_comparison);
+            let output_combined = await framework.executeStep(step_generation, "LLM generation", 
+                [framework, prompt_use_subquestions_for_any(),"prompt_use_subquestions_for_any",
+                    input_comparison] //todo update prompt
+            ); //todo alternatives prompt
+            let extracted_query_list = await framework.executeStep(step_extract_tags, "Extracted query", [framework, output_combined, "query"]);
+            let extracted_query = extracted_query_list.at(-1) || ""; 
+            framework.reasoning_text += "<br>Generated final query:<br>" + extracted_query;
+
+            // Get patched query
+            framework.reasoning_text += "<br>Trying to detect and patch any query issues<br>";
+            framework.sparql = get_patched_query(extracted_query, framework);
+            framework.reasoning_text += "<br>Patched query:<br>" + framework.sparql;
+
+            //execute the generated sparql query
+            await framework.executeStep(step_get_results, "Get results of created query", [framework, framework.sparql, get_labels, get_labels]); 
+            result_is_valid = (framework.result_text !== null && framework.result_text !== undefined && framework.result_text !== "");
+            if (!result_is_valid) {
+                framework.reasoning_text += "<br>Result is not a valid, trying again the final query generation<br>";
+            }
+
+            const generated_uris = extract_uris_from_string_list([framework.sparql]);
+            let hallucinated_uris_list = generated_uris.filter(uri => !existing_uris.includes(uri));
+            hallucinated_uri = hallucinated_uris_list.length > 0;
+            if (hallucinated_uri) {
+                framework.reasoning_text += `<br>New URI generated (hallucinated) in the final query: ${[...new Set(hallucinated_uris_list)].join(", ")}. framework is not allowed, trying again the final query generation<br>`;
+            }
+
+            final_query_generation_try++;
+        }
+        if (!result_is_valid && global_try < global_max_try) {
+            framework.reasoning_text += "<br>Result is not a valid and tried to many times to generate the final query. Retrying the whole process<br>";
+        } else if (hallucinated_uri && global_try < global_max_try) {
+            framework.reasoning_text += "<br>Hallucinated URI in the final query and tried to many times to generate the final query. Retrying the whole process<br>";
+        } else if ((!result_is_valid || hallucinated_uri) && global_try >= global_max_try) {
+            framework.reasoning_text += "<br>Result is not a valid or hallucinated URI in the final query and reached the maximum number of tries. Giving up.<br>";
+        }
+            
+        //if the result is valid and no hallucinated uri, we can add the query and result to the valid responses
+        if (result_is_valid && !hallucinated_uri) {
+            valid_responses_queries.push(framework.sparql);
+            valid_responses_results.push(framework.result_text);
+            framework.reasoning_text += "<br>Seemingly valid response found:<br>" + framework.sparql + "<br>" + framework.result_text;
+            got_enough_valid_responses = valid_responses_queries.length >= number_of_same_response_expected;
+            if (got_enough_valid_responses) {
+                framework.reasoning_text += "<br>Got enough valid responses, stopping the process.<br>";
+            }
+        }
+        global_try++;
+    }
+
+    //if we got to the max numbe rof try, put the most returned result as the final query
+    if (!got_enough_valid_responses && valid_responses_queries.length > 0) {
+        let result = valid_responses_results.sort((a,b) => //get the most frequent result
+            valid_responses_results.filter(v => v === b).length - valid_responses_results.filter(v => v === a).length
+        )[0];
+        let idx = valid_responses_results.indexOf(result); //get the first index of the most frequent result
+        framework.sparql = valid_responses_queries[idx]; // get the query corresponding to the most frequent result
+        await framework.executeStep(step_get_results, "Get results", [framework, framework.sparql, get_labels, get_labels]);
+        framework.reasoning_text += `<br>Max tries reached, picked most frequent result: ${result}<br>`;
     }
 }
-window.LLMFrameworkAggregySubquestions = LLMFrameworkAggregySubquestions; //to be able to access the class
-window.LLMFrameworks.push(LLMFrameworkAggregySubquestions.name); //to be able to access the class name in the
-
 
 //////////////////// LEGACY STRATEGIES //////////////////////
 
