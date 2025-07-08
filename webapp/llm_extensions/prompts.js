@@ -70,37 +70,37 @@ function commands_chain_system_prompt_v2() {
   - a fictional human → fictional people
 
   ## Examples:
-  Q: At which school went Yayoi Kusama?
+  Q: At which school went Alfons Zielonko?
   A: 
-  - The question asks for the school where Yayoi Kusama studied.
-  - We first retrieve the entity "Yayoi Kusama".
+  - The question asks for the school where Alfons Zielonko studied.
+  - We first retrieve the entity "Alfons Zielonko".
   - Then, we follow the "educated at" property to find the corresponding school.
-   <commands>Yayoi Kusama; forwardProperty educated at</commands>
+   <commands>Alfons Zielonko; forwardProperty educated at</commands>
 
-  Q: What is the boiling point of water?
+  Q: What is the boiling point of mercury?
   A: 
-  - The question asks for the boiling point of water.
-  - We first retrieve the entity "water".
+  - The question asks for the boiling point of mercury.
+  - We first retrieve the entity "mercury".
   - Then, we follow the "boiling point" property to get the value.
-  <commands>water; forwardProperty boiling point</commands>
+  <commands>mercury; forwardProperty boiling point</commands>
 
-  Q: Movies by Tim Burton after 1980?
+  Q: Movies by Steven Spielberg after 1981?
   A: 
-  - The question asks for movies directed by Tim Burton that were released after 1980.
+  - The question asks for movies directed by Steven Spielberg that were released after 1981.
   - We start by retrieving entities of type "film".
   - Then, we filter these films by the "director" property.
-  - Next, we match the specific director "Tim Burton".
-  - Finally, we apply a date filter to include only movies released after 1980.
-  <commands>a film; forwardProperty director; Tim Burton; forwardProperty release date; after 1980</commands>
+  - Next, we match the specific director "Steven Spielberg ".
+  - Finally, we apply a date filter to include only movies released after 1981.
+  <commands>a film; forwardProperty director; Steven Spielberg; forwardProperty release date; after 1981</commands>
 
-  Q: among the founders of tencent company, who has been member of national people' congress?"
+  Q: among the founders of tencent company, who has been a chief executive officer?
   A: 
-  - The question asks for founders of Tencent who were also members of the National People's Congress.
+  - The question asks which of Tencent’s founders have also served as Chief Executive Officer.
   - We first retrieve "founders of" anything.
   - Then, we follow specify that the company is "Tencent".
   - Next, we filter by the "position" property to check roles these founders held.
-  - Finally, we match "National People's Congress" to find those who were members.
-  <commands>backwardProperty founder of; Tencent; forwardProperty position; National People's Congress</commands>  `;
+  - Finally, we match "chief executive officer" to find which of them occupied this position.
+  <commands>backwardProperty founder of; Tencent; forwardProperty position; chief executive officer</commands>  `;
 }
 
 function question_user_prompt(question) {
@@ -135,14 +135,14 @@ function commands_chain_system_prompt_the_most_improved() {
 **It is also possible to use it combined with "groupBy count". For example, "a film; property director ; groupBy count ; desc; limit 1" will give the director with the most films.**
 
 ## Examples:
-Q: Movies by Tim Burton after 1980?
+Q: Movies by Steven Spielberg after 1981?
 A: 
-- The question asks for movies directed by Tim Burton that were released after 1980.
+- The question asks for movies directed by Steven Spielberg that were released after 1981.
 - We start by retrieving entities of type "film".
 - Then, we filter these films by the "director" property.
-- Next, we match the specific director "Tim Burton".
-- Finally, we apply a date filter to include only movies released after 1980.
-<commands>a film; property director; Tim Burton; property release date; after 1980</commands>
+- Next, we match the specific director "Steven Spielberg".
+- Finally, we apply a date filter to include only movies released after 1981.
+<commands>a film; property director; Steven Spielberg; property release date; after 1981</commands>
 
 Q: Was ist die Hauptstadt von Deutschland?
 A:
@@ -151,13 +151,13 @@ A:
 - Then we have to find its property "capital".
 <commands>a country ; Germany; property capital</commands>
 
-Q: Who wrote the book The pillars of the Earth?
+Q: Who wrote the book The Hobbit?
 A:
-- The question asks for the author of the book "The pillars of the Earth".
+- The question asks for the author of the book "The Hobbit".
 - We start by retrieving entities of type "book".
-- Then, we filter these books by the title "The pillars of the Earth".
+- Then, we filter these books by the title "The Hobbit".
 - Finally, we retrieve the property "author" to find the author of the book.
-<commands>a book ; The pillars of the Earth; property author</commands>`;
+<commands>a book ; The Hobbit; property author</commands>`;
   } else if (endpoint_family === 'wikidata') {
     prompt = `
 ## Task: Generate knowledge graph query commands for Sparklis (SPARQL-based tool) on a Wikidata endpoint.
@@ -184,38 +184,38 @@ A:
 **It is also possible to use it combined with "groupBy count". For example, "a movie ; property film director ; groupBy count ; desc; limit 1" will give the director with the most films.**
 
 ## Examples:
-Q: At which school went Yayoi Kusama?
+Q: At which school went Alfons Zielonko?
 A: 
-- The question asks for the school where Yayoi Kusama studied.
-- We first retrieve the entity "Yayoi Kusama".
+- The question asks for the school where Alfons Zielonko studied.
+- We first retrieve the entity "Alfons Zielonko".
 - Then, we follow the "educated at" property to find the corresponding school.
-<commands>Yayoi Kusama; property educated at</commands>
+<commands>Alfons Zielonko; property educated at</commands>
 
-Q: Quel est le point d'ébullition de l'eau ?
+Q: Quel est le point d'ébullition du mercure ?
 A: 
-- In english, this question is: What is the boiling point of water?
-- The question asks for the boiling point of water.
-- We first retrieve the entity "water".
+- In english, this question is: What is the boiling point of mercury?
+- The question asks for the boiling point of mercury.
+- We first retrieve the entity "mercury".
 - Then, we follow the "boiling point" property to get the value.
-<commands>water; property boiling point</commands>
+<commands>mercury; property boiling point</commands>
 
-Q: Movies by Tim Burton after 1980?
+Q: Movies by Steven Spielberg after 1981?
 A: 
-- The question asks for movies directed by Tim Burton that were released after 1980.
+- The question asks for movies directed by Steven Spielberg that were released after 1981.
 - We start by retrieving entities of type "film".
 - Then, we filter these films by the "director" property.
-- Next, we match the specific director "Tim Burton".
-- Finally, we apply a date filter to include only movies released after 1980.
-<commands>a film; property director; Tim Burton; property release date; after 1980</commands>
+- Next, we match the specific director "Steven Spielberg".
+- Finally, we apply a date filter to include only movies released after 1981.
+<commands>a film; property director; Steven Spielberg; property release date; after 1981</commands>
 
-Q: among the founders of tencent company, who has been member of national people' congress?"
+Q: among the founders of tencent company, who has been a chief executive officer?
 A: 
-- The question asks for founders of Tencent who were also members of the National People's Congress.
+- The question asks which of Tencent’s founders have also served as Chief Executive Officer.
 - We first search for Tencent.
 - Then, we follow the "founder" property to find the founders.
 - Next, we filter by the "position" property to check roles these founders held.
-- Finally, we match "National People's Congress" to find those who were members.
-<commands>tencent ; property founder ; property position ; National People's Congress</commands>`;
+- Finally, we match "chief executive officer" to find which of them occupied this position.
+<commands>tencent ; property founder ; property position ; chief executive officer</commands>`;
   } else if (endpoint_family === 'corporate' || true) {
     prompt = `## Task: Generate knowledge graph query commands for Sparklis (a SPARQL-based tool) on a domain-specific knowledge graph representing a corporate setting.
 
@@ -302,37 +302,37 @@ function forward_commands_chain_system_prompt() {
     - a fictional human → fictional people
 
     ## Examples:
-    Q: At which school went Yayoi Kusama?
+    Q: At which school went Alfons Zielonko?
     A: 
-    - The question asks for the school where Yayoi Kusama studied.
-    - We first retrieve the entity "Yayoi Kusama".
+    - The question asks for the school where Alfons Zielonko studied.
+    - We first retrieve the entity "Alfons Zielonko".
     - Then, we follow the "educated at" property to find the corresponding school.
-     <commands>Yayoi Kusama; forwardProperty educated at</commands>
+     <commands>Alfons Zielonko; forwardProperty educated at</commands>
 
-    Q: What is the boiling point of water?
+    Q: What is the boiling point of mercury?
     A: 
-    - The question asks for the boiling point of water.
-    - We first retrieve the entity "water".
+    - The question asks for the boiling point of mercury.
+    - We first retrieve the entity "mercury".
     - Then, we follow the "boiling point" property to get the value.
-    <commands>water; forwardProperty boiling point</commands>
+    <commands>mercury; forwardProperty boiling point</commands>
 
-    Q: Movies by Tim Burton after 1980?
+    Q: Movies by Steven Spielberg after 1981?
     A: 
-    - The question asks for movies directed by Tim Burton that were released after 1980.
+    - The question asks for movies directed by Steven Spielberg that were released after 1981.
     - We start by retrieving entities of type "film".
     - Then, we filter these films by the "director" property.
-    - Next, we match the specific director "Tim Burton".
-    - Finally, we apply a date filter to include only movies released after 1980.
-    <commands>a film; forwardProperty director; Tim Burton; forwardProperty release date; after 1980</commands>
+    - Next, we match the specific director "Steven Spielberg".
+    - Finally, we apply a date filter to include only movies released after 1981.
+    <commands>a film; forwardProperty director; Steven Spielberg; forwardProperty release date; after 1981</commands>
 
-    Q: among the founders of tencent company, who has been member of national people' congress?"
+    Q: among the founders of tencent company, who has been a chief executive officer?
     A: 
-    - The question asks for founders of Tencent who were also members of the National People's Congress.
+    - The question asks which of Tencent’s founders have also served as Chief Executive Officer.
     - We first retrieve the entity "Tencent".
     - Then, we follow the "founder of" property to get its founders.
     - Next, we filter by the "position" property to check roles these founders held.
-    - Finally, we match "National People's Congress" to find those who were members.
-    <commands>Tencent;forwardProperty founder of; forwardProperty position; National People's Congress</commands>
+    - Finally, we match "chief executive officer" to find which of them occupied this position.
+    <commands>Tencent;forwardProperty founder of; forwardProperty position; chief executive officer</commands>
     `;
 }
 
@@ -371,9 +371,9 @@ function direct_qa_system_prompt(endpoint) {
     4. Output the final SPARQL query, wrapped in <sparql>...</sparql> (do **not** put comments in the sparql query, even with #).
     
     Example:
-    - **Q:** What is the boiling point of water?
-    - **A:** I need to find the boiling point of water. I can start by retrieving the entity "water" and then follow the property "boiling point".
-    <sparql>SELECT DISTINCT ?P2048_7 WHERE { wd:Q4176 wdt:P2048 ?P2048_7 . }</sparql>
+    - **Q:** What is the boiling point of mercury?
+    - **A:** I need to find the boiling point of mercury. I can start by retrieving the entity "mercury" and then follow the property "boiling point".
+    <sparql>SELECT DISTINCT ?P2102_7 WHERE { wd:Q925 p:P2102 [ ps:P2102 ?P2102_7 ] . }</sparql>
     `;
 }
 
@@ -403,7 +403,7 @@ Think step by step, then respond strictly with <answer>boolean</answer> if the a
 You must absolutely end your question with <answer>boolean</answer> or <answer>non-boolean</answer>.
 
 Examples:
-- What is the boiling point of water? → The question is asking for a specific value, not a yes/no question. → <answer>non-boolean</answer>
+- What is the boiling point of mercury? → The question is asking for a specific value, not a yes/no question. → <answer>non-boolean</answer>
 - Did Tom Brady win a Super Bowl before 2005? → The question is asking for a yes/no answer based on a specific event. → <answer>boolean</answer>
 - Do all of batman's partner speak english as native language? → The question is asking for a yes/no answer based on either or not every batman's partner speaks english as native language. → <answer>boolean</answer>
 - In welcher Abteilung ist Frau Müller? → The question is asking for a specific department, not a yes/no question. → <answer>non-boolean</answer>
@@ -429,14 +429,14 @@ function prompt_get_subquestions() { //todo revoir
 
     ### Examples:
 
-    - **Q:** "Do more than 100,000,000 people speak Japanese?"  
+    - **Q:** "Do more than 100,000,000 people speak Italian?"  
     **Response:**  
-    <subquestion>How many people speak Japanese?</subquestion>
+    <subquestion>How many people speak Italian?</subquestion>
 
-    - **Q:** "Were Angela Merkel and Tony Blair born in the same year?"  
+    - **Q:** "Were Charles Darwin and Leo Tolstoy born in the same year?"  
     **Response:**  
-    <subquestion>Which year was Angela Merkel born?</subquestion>  
-    <subquestion>Which year was Tony Blair born?</subquestion>
+    <subquestion>Which year was Charles Darwin born?</subquestion>  
+    <subquestion>Which year was Leo Tolstoy born?</subquestion>
 
     - **Q:** "Was Shaquille O'Neal a basketball player?"  
     **Response:**  
@@ -468,44 +468,44 @@ You are an AI system that answers a question using the answers to related subque
 
 ## Example 1: Direct Answer Already Obtained
 **Input:**
-<question>How high is the Cologne Cathedral?</question>
-<subquestion1>What is the height of the Cologne Cathedral?</subquestion1>
-<subquery1>SELECT DISTINCT ?P2048_7 WHERE { wd:Q4176 wdt:P2048 ?P2048_7 . } LIMIT 200</subquery1>
+<question>How high is the Eiffel Tower?</question>
+<subquestion1>What is the height of the Eiffel Tower?</subquestion1>
+<subquery1>SELECT DISTINCT ?P2048_7 WHERE { wd:Q243 wdt:P2048 ?P2048_7 . } LIMIT 200</subquery1>
 <subanswer1>[[{"number":157,"str":"157"}]]</subanswer1>
 
 **Your output:**
 The result is already given by the subquery, so I can keep it as is.
-<query>SELECT DISTINCT ?P2048_7 WHERE { wd:Q4176 wdt:P2048 ?P2048_7 . } LIMIT 200</query>
+<query>SELECT DISTINCT ?P2048_7 WHERE { wd:Q243 wdt:P2048 ?P2048_7 . } LIMIT 200</query>
 
 ---
 
 ## Example 2: Yes/No Question with several subquestions
 **Input:**
-<question>Were Angela Merkel and Tony Blair born in the same year?</question>  
-<subquestion1>Which year was Angela Merkel born in?</subquestion1>  
+<question>Were Charles Darwin and Leo Tolstoy born in the same year?</question>  
+<subquestion1>Which year was Charles Darwin born in?</subquestion1>  
 <subquery1>
 SELECT DISTINCT ?P569_7
-WHERE { wd:Q567 p:P569 [ ps:P569 ?P569_7 ] . }
+WHERE { wd:Q1035 p:P569 [ ps:P569 ?P569_7 ] . }
 LIMIT 200
 </subquery1>  
 <subanswer1>
-[[{"value":"1954-07-17T00:00:00Z"}]]
+[[{"value":"1809-02-12T00:00:00Z"}]]
 </subanswer1>  
-<subquestion2>Which year was Tony Blair born in?</subquestion2>  
+<subquestion2>Which year was Leo Tolstoy born in?</subquestion2>  
 <subquery2>
 SELECT DISTINCT ?P569_7
-WHERE { wd:Q9545 p:P569 [ ps:P569 ?P569_7 ] . }
+WHERE { wd:Q7243 p:P569 [ ps:P569 ?P569_7 ] . }
 LIMIT 200
 </subquery2>  
 <subanswer2>
-[[{"value":"1953-05-06T00:00:00Z"}]]
+[[{"value":"1828-09-09T00:00:00Z"}]]
 </subanswer2>
 
 **Your output:**
 <query>
 ASK WHERE {
-  wd:Q567 wdt:P569 ?date1 .
-  wd:Q9545 wdt:P569 ?date2 .
+  wd:Q1035 wdt:P569 ?date1 .
+  wd:Q7243 wdt:P569 ?date2 .
   FILTER(YEAR(?date1) = YEAR(?date2))
 }
 </query>
@@ -514,18 +514,18 @@ ASK WHERE {
   
 ## Example 3: Finding the most something
 **Input:**
-<question>Who is the oldest cast member of the Netflix show “Queer Eye”?</question>
-<subquestion1>Who are the actors in Queer Eye and what are their birth dates?</subquestion1>
-<subquery1>SELECT DISTINCT ?P161_104 ?P569_141 WHERE { wd:Q48817408 p:P161 [ ps:P161 ?P161_104 ] . ?P161_104 p:P569 [ ps:P569 ?P569_141 ] . } LIMIT 200</subquery1>
+<question>Who is the oldest actor in Avatar?</question>
+<subquestion1>Who are the actors in Avatar and what are their birth dates?</subquestion1>
+<subquery1>SELECT DISTINCT ?P161_7 ?P569_44 WHERE { wd:Q24871 p:P161 [ ps:P161 ?P161_7 ] . ?P161_7 p:P569 [ ps:P569 ?P569_44 ] . } LIMIT 200</subquery1>
 <subanswer1>
-[[{"uri": "http://www.wikidata.org/entity/Q29452671", "label": "Jeremiah Brent"},{"str": "1984-11-24T00:00:00Z"}],[{"uri": "http://www.wikidata.org/entity/Q44870529","label": "Karamo Brown"},{"str": "1980-11-02T00:00:00Z"}],and more truncated results...]
+[[{"label":"Matt Gerald","uri":"wd:Q1889482"},{"str":"1970-05-02T00:00:00Z"}],[{"label":"Laz Alonso","uri":"wd:Q302335"},{"str":"1974-03-25T00:00:00Z"}],[{"label":"Dileep Rao","uri":"wd:Q1225469"},{"str":"1973-07-29T00:00:00Z"}],and more truncated results...]
 </subanswer1>
 
 **Your output:**
 The subquery give the actors and their birthdate.
 To have the oldest, i need to order them by age and only keep the first one.
 I only want to output the actor, not the birthdate.
-<query>SELECT ?oldestActor WHERE { wd:Q48817408 p:P161 [ ps:P161 ?oldestActor ] . ?oldestActor p:P569 [ ps:P569 ?birthDate ] . } ORDER BY ASC(?birthDate) LIMIT 1</query>
+<query>SELECT DISTINCT ?oldestActor WHERE { wd:Q24871 p:P161 [ ps:P161 ?oldestActor ] . ?oldestActor p:P569 [ ps:P569 ?birthDate ] . } ORDER BY ASC(?birthDate) LIMIT 1</query>
   `;
 } 
 
@@ -542,14 +542,14 @@ Your task is to decompose a given **boolean question** (i.e., a yes/no question)
 
 ### Examples:
 
-- **Q:** "Do more than 100,000,000 people speak Japanese?"  
+- **Q:** "Do more than 100,000,000 people speak Italian?"  
 **Response:**  
-<subquestion>How many people speak Japanese?</subquestion>
+<subquestion>How many people speak Italian?</subquestion>
 
-- **Q:** "Were Angela Merkel and Tony Blair born in the same year?"  
+- **Q:** "Were Charles Darwin and Leo Tolstoy born in the same year?"  
 **Response:**  
-<subquestion>Which year was Angela Merkel born?</subquestion>  
-<subquestion>Which year was Tony Blair born?</subquestion>
+<subquestion>Which year was Charles Darwin born?</subquestion>  
+<subquestion>Which year was Leo Tolstoy born?</subquestion>
 
 - **Q:** "Was Shaquille O'Neal a basketball player?"  
 **Response:**  
@@ -586,22 +586,22 @@ You are an AI system that answers a **yes/no question** using the answers to rel
 
 #### Example 1:
 **Input:**
-<question>Do more than 100,000,000 people speak Japanese?</question>  
-<subquestion1>How many people speak Japanese?</subquestion1>  
+<question>Do more than 100,000,000 people speak Italian?</question>  
+<subquestion1>How many people speak Italian?</subquestion1>  
 <subquery1>
 SELECT DISTINCT ?P1098_7
-WHERE { wd:Q5287 p:P1098 [ ps:P1098 ?P1098_7 ] . }
+WHERE { wd:Q652 p:P1098 [ ps:P1098 ?P1098_7 ] . }
 LIMIT 200
 </subquery1>  
 <subanswer1>
-[[{"number":128000000}]]
+[[{"number":64800000}]]
 </subanswer1>
 
 **Your output:**
 <query>
 ASK WHERE {
-  wd:Q5287 wdt:P1098 ?count .
-  FILTER(?count > 100000000)
+  wd:Q652 wdt:P1098 ?count .
+  FILTER(?count > 64800000)
 }
 </query>
 
@@ -609,31 +609,31 @@ ASK WHERE {
 
 #### Example 2:
 **Input:**
-<question>Were Angela Merkel and Tony Blair born in the same year?</question>  
-<subquestion1>Which year was Angela Merkel born in?</subquestion1>  
+<question>Were Charles Darwin and Leo Tolstoy born in the same year?</question>  
+<subquestion1>Which year was Charles Darwin born in?</subquestion1>  
 <subquery1>
 SELECT DISTINCT ?P569_7
-WHERE { wd:Q567 p:P569 [ ps:P569 ?P569_7 ] . }
+WHERE { wd:Q1035 p:P569 [ ps:P569 ?P569_7 ] . }
 LIMIT 200
 </subquery1>  
 <subanswer1>
-[[{"value":"1954-07-17T00:00:00Z"}]]
+[[{"value":"1809-02-12T00:00:00Z"}]]
 </subanswer1>  
-<subquestion2>Which year was Tony Blair born in?</subquestion2>  
+<subquestion2>Which year was Leo Tolstoy born in?</subquestion2>  
 <subquery2>
 SELECT DISTINCT ?P569_7
-WHERE { wd:Q9545 p:P569 [ ps:P569 ?P569_7 ] . }
+WHERE { wd:Q7243 p:P569 [ ps:P569 ?P569_7 ] . }
 LIMIT 200
 </subquery2>  
 <subanswer2>
-[[{"value":"1953-05-06T00:00:00Z"}]]
+[[{"value":"1828-09-09T00:00:00Z"}]]
 </subanswer2>
 
 **Your output:**
 <query>
 ASK WHERE {
-  wd:Q567 wdt:P569 ?date1 .
-  wd:Q9545 wdt:P569 ?date2 .
+  wd:Q1035 wdt:P569 ?date1 .
+  wd:Q7243 wdt:P569 ?date2 .
   FILTER(YEAR(?date1) = YEAR(?date2))
 }
 </query>
@@ -746,34 +746,34 @@ The capital of France is Paris.
 
 #### Example 2:
 **Input:**
-<question>How many people speak Japanese?</question>  
+<question>How many people speak Italian?</question>  
 <query>
 SELECT DISTINCT ?count
-WHERE { wd:Q5287 wdt:P1098 ?count . }
+WHERE { wd:Q652 wdt:P1098 ?count . }
 </query>  
 <answer>
-[[{"count":128000000}]]
+[[{"count":64800000}]]
 </answer>
 
 **Output:**
-About 128 million people speak Japanese.
+Approximately 64.8 million people speak Italian.
 
 ---
 
 #### Example 3:
 **Input:**
-<question>When was Angela Merkel born?</question>  
+<question>When was Charles Darwin born?</question>  
 <query>
 SELECT ?date WHERE {
-  wd:Q567 wdt:P569 ?date .
+  wd:Q1035 wdt:P569 ?date .
 }
 </query>  
 <answer>
-[[{"date":"1954-07-17T00:00:00Z"}]]
+[[{"date":"1809-02-12T00:00:00Z"}]]
 </answer>
 
 **Output:**
-Angela Merkel was born on July 17, 1954.
+Charles Darwin was born on February 12, 1809.
 
 ---
 
