@@ -1,11 +1,23 @@
+"""
+ This script processes JSON benchmark results for LLM-based Sparklis runs.
+ It computes mean and standard deviation for precision, recall, and F1-score 
+ across different answer types (Boolean, URIs, Literals, Global).
+ It then generates a summary table in either LaTeX or Markdown format.
+
+ Configuration:
+ - Set JSON_DIR to the folder containing your JSON benchmark files.
+ - Set OUTPUT_FILE to the desired output file name.
+ - Choose OUTPUT_FORMAT: "latex" or "md".
+"""
 import json
 import statistics
 import os
 from glob import glob
 
 # === Configuration ===
-JSON_DIR = r'C:\Users\PC\Desktop\llmSparklis\benchmark\BestOutputs\for_egc\QALD9Plus\Wikidata\train\SimpleBoolean\greedy'
-OUTPUT_FILE = "latex_table.txt"  # File to save LaTeX table
+JSON_DIR = r'C:\Users\PC\Desktop\llmSparklis\benchmark\BestOutputs\for_egc\QALD9Plus\Wikidata\train\LLMFrameworkBooleanByMergeByPatterns\greedy'
+OUTPUT_FILE = "output_table.txt"  # Output file name
+OUTPUT_FORMAT = "md"  # "latex" or "md"
 
 # Recalculation options
 RECALCULATE_FILTER = ["unknown"]
@@ -54,7 +66,6 @@ def compute_stats(data, fields):
         stats_entry = {category: {metric: [] for metric in metrics} for category, metrics in fields.items()}
         for qid, item in entry.get("Data", {}).items():
             result_type = item.get("BenchmarkResultType", "").lower()
-            
             if result_type in RECALCULATE_FILTER:
                 ignored_number += 1
                 continue
@@ -73,7 +84,7 @@ def compute_stats(data, fields):
                 stats_entry["Tous"]["Rappel"].append(recall)
                 stats_entry["Tous"]["F1-score"].append(f1)
 
-                # Par type (si connu)
+                # Categorize based on result type (if applicable)
                 if result_type == "boolean":
                     category = "Bool"
                 elif result_type == "uri":
@@ -110,25 +121,32 @@ def format_mean_std(values):
     print(f"Mean: {mean}, Std: {std} for values: {values}")
     return f"{float_precision.format(mean)} $\\pm$ {float_precision.format(std)}"
 
-def generate_latex_table(stats, model_name,system_strategy,selection_tactic):
+def generate_latex_table(stats, model_name, system_strategy, selection_tactic, nb_files):
     rows = []
-    header = "\\begin{table}[ht]\n\\centering\n\\begin{tabular}{l|ccc}\n\\hline"
-    title = "\\textbf{Type} & Précision & Rappel & F1-score \\\\\n\\hline"
-    rows.append(header)
-    rows.append(title)
-
-    nb_files = len(data)
-
+    rows.append("\\begin{table}[ht]\n\\centering\n\\begin{tabular}{l|ccc}\n\\hline")
+    rows.append("\\textbf{Type} & Précision & Rappel & F1-score \\\\\n\\hline")
     for category in ["Tous", "Bool", "URIs", "Literals"]:
-        print(f"Processing category: {category}")
-        pr = format_mean_std(stats[category].get("Précision", []))
-        rc = format_mean_std(stats[category].get("Rappel", []))
-        f1 = format_mean_std(stats[category].get("F1-score", []))
-        row = f"{category} & {pr} & {rc} & {f1} \\\\"
-        rows.append(row)
+        pr = format_mean_std(stats[category]["Précision"])
+        rc = format_mean_std(stats[category]["Rappel"])
+        f1 = format_mean_std(stats[category]["F1-score"])
+        rows.append(f"{category} & {pr.replace('±','$\\pm$')} & {rc.replace('±','$\\pm$')} & {f1.replace('±','$\\pm$')} \\\\")
+    rows.append("\\hline\n\\end{tabular}")
+    rows.append(f"\\caption{{Performances du modèle \\textbf{{{model_name}}} avec la stratégie {system_strategy} et la tactique {selection_tactic} ({nb_files} exécutions)}}".replace("_", "\_"))
+    rows.append(f"\\label{{tab:{model_name}_{system_strategy}_{selection_tactic}}}")
+    rows.append("\\end{table}")
+    return "\n".join(rows)
 
-    footer = "\\hline\n\\end{tabular}\n\\caption{Performances du modèle \\textbf{"+model_name+"} pour la stratégie système "+system_strategy+" et la tactique de sélection "+selection_tactic+" (basé sur "+str(nb_files)+" exécutions)}\n\\label{tab:"+model_name+system_strategy+selection_tactic+"}\n\\end{table}"
-    rows.append(footer)
+def generate_markdown_table(stats, model_name, system_strategy, selection_tactic, nb_files):
+    rows = []
+    rows.append(f"# Résultats pour **{model_name}**")
+    rows.append(f"**Stratégie :** {system_strategy}  \n**Tactique :** {selection_tactic}  \n**Nombre d'exécutions :** {nb_files}\n")
+    rows.append("| Type | Précision | Rappel | F1-score |")
+    rows.append("|------|------------|--------|-----------|")
+    for category in ["Tous", "Bool", "URIs", "Literals"]:
+        pr = format_mean_std(stats[category]["Précision"])
+        rc = format_mean_std(stats[category]["Rappel"])
+        f1 = format_mean_std(stats[category]["F1-score"])
+        rows.append(f"| {category} | {pr} | {rc} | {f1} |")
     return "\n".join(rows)
 
 if __name__ == "__main__":
@@ -136,20 +154,23 @@ if __name__ == "__main__":
     data = load_json_files(JSON_DIR)
     print(f"Loaded {len(data)} files.")
 
-    print("Computing statistics...")
     stats = compute_stats(data, FIELDS)
 
     model_name = data[0].get(FIELD_MODEL_NAME, "Unknown Model")
-    #remove text before - in the strategy name
     system_strategy = data[0].get(FIELD_SYSTEM_STRATEGY, "Unknown Strategy").split('-')[-1] if data[0].get(FIELD_SYSTEM_STRATEGY) else "Unknown Strategy"
     selection_tactic = data[0].get(FIELD_SELECTION_TACTIC, "Unknown Tactic")
 
-    print("Generating LaTeX table...")
-    latex = generate_latex_table(stats, model_name,system_strategy,selection_tactic)
+    nb_files = len(data)
+
+    if OUTPUT_FORMAT == "latex":
+        table = generate_latex_table(stats, model_name, system_strategy, selection_tactic, nb_files)
+    elif OUTPUT_FORMAT == "md":
+        table = generate_markdown_table(stats, model_name, system_strategy, selection_tactic, nb_files)
+    else:
+        raise ValueError(f"Unknown OUTPUT_FORMAT: {OUTPUT_FORMAT}")
 
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
-        f.write(latex)
-    print(f"LaTeX table written to '{OUTPUT_FILE}'.")
+        f.write(table)
 
-    print("\n--- LaTeX Table ---\n")
-    print(latex)
+    print(f"Table ({OUTPUT_FORMAT}) written to '{OUTPUT_FILE}'.\n")
+    print(table)
