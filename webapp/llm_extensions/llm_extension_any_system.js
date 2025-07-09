@@ -779,13 +779,16 @@ window.LLMFrameworks.push(LLMFrameworkOneShot.name); //to be able to access the 
  */
 class LLMFrameworkRetry extends LLMFramework {
     constructor(question, question_id,
-        number_of_same_response_expected = 3) {
+        number_of_same_response_expected = 3,
+        global_max_try = Infinity
+    ) {
         super(question, question_id, "count_references");
         this.number_of_same_response_expected = number_of_same_response_expected;
+        this.global_max_try = global_max_try;
     }
 
     async answerQuestionLogic() {
-        await logic_retry(this, this.number_of_same_response_expected);
+        await logic_retry(this, this.number_of_same_response_expected, this.global_max_try);
     }
     
 }
@@ -798,13 +801,13 @@ window.LLMFrameworks.push(LLMFrameworkRetry.name); //to be able to access the cl
  * @param {*} framework 
  * @param {int} number_of_same_response_expected 
  */
-async function logic_retry(framework, number_of_same_response_expected) {
+async function logic_retry(framework, number_of_same_response_expected, global_max_try) {
     ////////////////////////// TRY ANSWERING WITH SPARKLIS
     let i = 1;
     let got_number_of_same_response_expected = false;
     let valid_responses_queries = [];
     let valid_responses_results = [];
-    while (!got_number_of_same_response_expected) {
+    while (!got_number_of_same_response_expected && i <= global_max_try) {
         disableProxyIfenabled(); // sometimes the proxy will activate itself and prevent from accessing the endpoint, so we desactivate it if it's the case
         framework.reasoning_text += "<br>Try " + i + "<br>";
         let place = await framework.generate_and_execute_commands(framework, framework.question, true);
@@ -868,7 +871,17 @@ async function logic_retry(framework, number_of_same_response_expected) {
             }
         }
         i++;
-    }   
+    }
+    //if we got to the max number of try, put the most returned result as the final query
+    if (!got_number_of_same_response_expected && valid_responses_queries.length > 0) {
+        let result = valid_responses_results.sort((a,b) => //get the most frequent result
+            valid_responses_results.filter(v => v === b).length - valid_responses_results.filter(v => v === a).length
+        )[0];
+        let idx = valid_responses_results.indexOf(result); //get the first index of the most frequent result
+        framework.sparql = valid_responses_queries[idx]; // get the query corresponding to the most frequent result
+        await framework.executeStep(step_get_results, "Get results", [framework, framework.sparql, get_labels, get_labels]);
+        framework.reasoning_text += `<br>Max tries reached, picked most frequent result: ${result}<br>`;
+    }
 }
 
 /**
