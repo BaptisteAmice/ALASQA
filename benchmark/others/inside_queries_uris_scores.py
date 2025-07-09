@@ -9,6 +9,7 @@ to check whether they hallucinate or misuse URIs.
 """
 import json
 import re
+import statistics
 
 def extract_final_parts(query):
     """
@@ -55,42 +56,65 @@ def compute_metrics(gold, system):
     return precision, recall, f1
 
 if __name__ == "__main__":
-    file = r'C:\Users\PC\Desktop\llmSparklis\QALD-9-plus_sparklisllm-LLMFrameworkSimpleBooleans_20250627_071715.json'
-    # Load JSON input from a file or a string
-    with open(file, "r") as f:
-        data = json.load(f)
+    input_files = [
+        r'C:\Users\PC\Desktop\llmSparklis\benchmark\BestOutputs\for_egc\QALD9Plus\Wikidata\train\SimpleBoolean\greedy\QALD-9-plus_sparklisllm-LLMFrameworkBooleanByMergeByPatterns_20250707_213735.json',
+        r'C:\Users\PC\Desktop\llmSparklis\benchmark\BestOutputs\for_egc\QALD9Plus\Wikidata\train\SimpleBoolean\greedy\QALD-9-plus_sparklisllm-LLMFrameworkBooleanByMergeByPatterns_20250708_020708.json',
+    ]
 
-    precisions = []
-    recalls = []
-    f1_scores = []
+    file_precisions = []
+    file_recalls = []
+    file_f1s = []
 
-    # Loop through the questions
-    for qid, qdata in data["Data"].items():
-        b_query = qdata.get("BenchmarkQuery", "")
-        s_query = qdata.get("SystemQuery", "")
+    for file in input_files:
+        precisions = []
+        recalls = []
+        f1_scores = []
 
-        gold_uris = extract_final_parts(b_query)
-        sys_uris = extract_final_parts(s_query)
+        with open(file, "r") as f:
+            data = json.load(f)
 
-        precision, recall, f1 = compute_metrics(gold_uris, sys_uris)
+        for qid, qdata in data["Data"].items():
+            b_query = qdata.get("BenchmarkQuery", "")
+            s_query = qdata.get("SystemQuery", "")
 
-        print(f"Question {qid}:")
-        print(f"  Benchmark URIs: {gold_uris}")
-        print(f"  System URIs: {sys_uris}")
-        print(f"  Precision: {precision:.2f}")
-        print(f"  Recall: {recall:.2f}")
-        print(f"  F1-score: {f1:.2f}\n")
+            gold_uris = extract_final_parts(b_query)
+            sys_uris = extract_final_parts(s_query)
 
-        precisions.append(precision)
-        recalls.append(recall)
-        f1_scores.append(f1)
+            precision, recall, f1 = compute_metrics(gold_uris, sys_uris)
 
-    # Calculate overall metrics
-    overall_precision = sum(precisions) / len(precisions) if precisions else 0.0
-    overall_recall = sum(recalls) / len(recalls) if recalls else 0.0
-    overall_f1 = sum(f1_scores) / len(f1_scores) if f1_scores else 0.0
-    print("Overall Metrics:")
-    print(f"  Overall Precision: {overall_precision:.2f}")
-    print(f"  Overall Recall: {overall_recall:.2f}")
-    print(f"  Overall F1-score: {overall_f1:.2f}")
+            print(f"File: {file} | Question {qid}:")
+            print(f"  Benchmark URIs: {gold_uris}")
+            print(f"  System URIs: {sys_uris}")
+            print(f"  Precision: {precision:.2f}")
+            print(f"  Recall: {recall:.2f}")
+            print(f"  F1-score: {f1:.2f}\n")
 
+            precisions.append(precision)
+            recalls.append(recall)
+            f1_scores.append(f1)
+
+        file_precision = sum(precisions) / len(precisions) if precisions else 0.0
+        file_recall = sum(recalls) / len(recalls) if recalls else 0.0
+        file_f1 = sum(f1_scores) / len(f1_scores) if f1_scores else 0.0
+
+        file_precisions.append(file_precision)
+        file_recalls.append(file_recall)
+        file_f1s.append(file_f1)
+
+        print(f"File Summary: {file}")
+        print(f"  Mean Precision: {file_precision:.2f}")
+        print(f"  Mean Recall: {file_recall:.2f}")
+        print(f"  Mean F1-score: {file_f1:.2f}\n")
+
+    mean_precision = statistics.mean(file_precisions)
+    mean_recall = statistics.mean(file_recalls)
+    mean_f1 = statistics.mean(file_f1s)
+
+    std_precision = statistics.stdev(file_precisions) if len(file_precisions) > 1 else 0.0
+    std_recall = statistics.stdev(file_recalls) if len(file_recalls) > 1 else 0.0
+    std_f1 = statistics.stdev(file_f1s) if len(file_f1s) > 1 else 0.0
+
+    print("=== Overall Metrics ===")
+    print(f"  Precision: {mean_precision:.2f} ± {std_precision:.2f}")
+    print(f"  Recall:    {mean_recall:.2f} ± {std_recall:.2f}")
+    print(f"  F1-score:  {mean_f1:.2f} ± {std_f1:.2f}")
