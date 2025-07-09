@@ -4,7 +4,7 @@ import os
 from glob import glob
 
 # === Configuration ===
-JSON_DIR = r'C:\Users\PC\Desktop\llmSparklis\benchmark\BestOutputs\for_paper\QALD9Plus\wikidata\test\one_shot_the_most\dfs\en'
+JSON_DIR = r'C:\Users\PC\Desktop\llmSparklis\benchmark\BestOutputs\for_egc\QALD9Plus\Wikidata\train\SimpleBoolean\greedy'
 OUTPUT_FILE = "latex_table.txt"  # File to save LaTeX table
 
 # Recalculation options
@@ -37,22 +37,15 @@ FIELDS = {
     }
 }
 
+FIELD_MODEL_NAME = "UsedLLM"  # Field to extract model name from JSON
+FIELD_SYSTEM_STRATEGY = "TestedSystem"  # Field to extract system strategy from JSON
+FIELD_SELECTION_TACTIC = "SuggestionCommandsTactic"  # Field to extract selection tactic from JSON
+
+# =====================
+
 def load_json_files(directory):
     filepaths = glob(os.path.join(directory, "*.json"))
     return [json.load(open(f, "r", encoding="utf-8")) for f in filepaths]
-
-def extract_stats_from_data(entry):
-    precisions = []
-    recalls = []
-    f1s = []
-    for item in entry.get("Data", {}).values():
-        precision = item.get("Precision")
-        precisions.append(precision)
-        recall = item.get("Recall")
-        recalls.append(recall)
-        f1 = item.get("F1Score")
-        f1s.append(f1)
-    return precisions, recalls, f1s
 
 def compute_stats(data, fields):
     stats = {category: {metric: [] for metric in metrics} for category, metrics in fields.items()}
@@ -117,14 +110,14 @@ def format_mean_std(values):
     print(f"Mean: {mean}, Std: {std} for values: {values}")
     return f"{float_precision.format(mean)} $\\pm$ {float_precision.format(std)}"
 
-def generate_latex_table(stats):
+def generate_latex_table(stats, model_name,system_strategy,selection_tactic):
     rows = []
     header = "\\begin{table}[ht]\n\\centering\n\\begin{tabular}{l|ccc}\n\\hline"
     title = "\\textbf{Type} & Précision & Rappel & F1-score \\\\\n\\hline"
     rows.append(header)
     rows.append(title)
 
-    nb_files = sum(1 for v in stats["Tous"].values() for _ in v)
+    nb_files = len(data)
 
     for category in ["Tous", "Bool", "URIs", "Literals"]:
         print(f"Processing category: {category}")
@@ -134,7 +127,7 @@ def generate_latex_table(stats):
         row = f"{category} & {pr} & {rc} & {f1} \\\\"
         rows.append(row)
 
-    footer = "\\hline\n\\end{tabular}\n\\caption{Performances du modèle \\textbf{nemo} selon le type de résultat (basé sur "+str(nb_files)+" exécutions)}\n\\label{tab:nemo-scores}\n\\end{table}"
+    footer = "\\hline\n\\end{tabular}\n\\caption{Performances du modèle \\textbf{"+model_name+"} pour la stratégie système "+system_strategy+" et la tactique de sélection "+selection_tactic+" (basé sur "+str(nb_files)+" exécutions)}\n\\label{tab:"+model_name+system_strategy+selection_tactic+"}\n\\end{table}"
     rows.append(footer)
     return "\n".join(rows)
 
@@ -146,8 +139,13 @@ if __name__ == "__main__":
     print("Computing statistics...")
     stats = compute_stats(data, FIELDS)
 
+    model_name = data[0].get(FIELD_MODEL_NAME, "Unknown Model")
+    #remove text before - in the strategy name
+    system_strategy = data[0].get(FIELD_SYSTEM_STRATEGY, "Unknown Strategy").split('-')[-1] if data[0].get(FIELD_SYSTEM_STRATEGY) else "Unknown Strategy"
+    selection_tactic = data[0].get(FIELD_SELECTION_TACTIC, "Unknown Tactic")
+
     print("Generating LaTeX table...")
-    latex = generate_latex_table(stats)
+    latex = generate_latex_table(stats, model_name,system_strategy,selection_tactic)
 
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
         f.write(latex)
