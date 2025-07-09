@@ -116,6 +116,8 @@ def sparklisllm_question(driver, question, endpoint_sparql, system_name, suggest
     // Assuming getALASQAConfig and setALASQAConfig are already defined on the page
     var temp_config = getALASQAConfig();
     temp_config.api_url = "{config.LLM_API_CHAT_COMPLETIONS}";
+    {f'temp_config.api_key = "{config.LLM_API_KEY}";' if config.LLM_API_KEY is not None else ''}
+    {f'temp_config.model = "{config.LLM_API_MODEL_NAME}";' if config.LLM_API_MODEL_NAME is not None else ''}
     temp_config.nl_post_processing = "{config.NL_POST_PROCESSING}";
     setALASQAConfig(temp_config);
     console.log("Updated ALASQAConfig");

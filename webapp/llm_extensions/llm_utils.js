@@ -2,6 +2,8 @@ console.log("LLM utility active");
 
 const DefaultALASQAConfig = {
     api_url: "http://localhost:1234/v1/chat/completions",
+    api_key: undefined, // API key for the LLM service, if needed
+    model: undefined, // Model to use for the LLM service (if unset, will use the default model of the service)
     nl_post_processing: true,
 };
 
@@ -53,10 +55,31 @@ function usualPrompt(systemPrompt, userPrompt) {
 async function sendPrompt(input, streamOption = true, updateCallback = null, usedTemperature = 0.8, stop_sequences = ["Q:"], max_response_length = 4096) {
     //careful the first parameter can be interpreted as several parameters...
     try {
+        let headers = {
+            "Content-Type": "application/json"
+        };
+        const apiKey = getALASQAConfig().api_key;
+        // If an API key is set in the config, add it to the headers
+        if (apiKey) {
+            headers["Authorization"] = `Bearer ${apiKey}`;
+        }
+        let body = { 
+            messages: input,
+            temperature: usedTemperature,
+            stream : streamOption,
+            stop: stop_sequences,
+            max_tokens: max_response_length 
+        };
+        // If a model is specified in the config, use it
+        let model = getALASQAConfig().model;
+        if (model) {
+            body.model = model;
+        }
+        
         const response = await fetch(getALASQAConfig().api_url, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ messages: input, temperature: usedTemperature,  stream : streamOption, stop: stop_sequences, max_tokens: max_response_length })
+            headers: headers,
+            body: JSON.stringify(body)
         });
         console.log("Ongoing LLM generation...")
         let text = "";

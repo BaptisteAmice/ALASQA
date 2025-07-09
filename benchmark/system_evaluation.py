@@ -368,21 +368,36 @@ def make_dict(meta: dict, questions_ids: list, questions: list,
         }
     return {**meta, 'Stats' : stats, 'Data' : data}
 
-def getModelName(model_api) -> str:
+def getModelName(models_api: str, model_name: str = None, api_key: str = None) -> str:
     """
     Get the name of the used LLM model from the model API.
     """
     try:
-        response = requests.get(model_api)
+        headers = {}
+        if api_key:
+            headers["Authorization"] = f"Bearer {api_key}"
+        response = requests.get(models_api, headers=headers)
         response.raise_for_status()  # Raise an error for bad responses (4xx and 5xx)
         data = response.json()  # Convert response to JSON
-        model_name = data["data"][0]["id"]
+        if model_name is None:
+            # If no specific model name is provided, return the first model in the list
+            model_name = data["data"][0]["id"]
+            # But ASK confirmation to the user to make the call if it's not local
+            if not ("localhost" in models_api):
+                input(f"You are using a remote model API ({models_api}) without specifying a model name. The first available model will be used: '{model_name}'. Press Enter to continue or Ctrl+C to cancel: ")
+            logging.info(f"Using model: {model_name}")
+        else:
+            # If a specific model name is provided, check if it exists in the list
+            model_names = [model["id"] for model in data["data"]]
+            if model_name not in model_names:
+                logging.error(f"Model '{model_name}' not found in the available models.")
+                exit(1)
         return model_name
     except requests.exceptions.RequestException as e:
-        logging.error("Failed to retrieve the LLM model name. The model may be unavailable, or the API endpoint could be incorrect.")
+        logging.error("Failed to retrieve the LLM model name. The model may be unavailable, or the API endpoint could be incorrect. You could also have forgot to define your API key in the config.py file.")
         exit(1)
     except (KeyError, IndexError) as e:
-        logging.error("Unexpected response format from the LLM API. Please check that the API is running and the endpoint is correct.")
+        logging.error("Unexpected response format from the LLM API. Please check that the API is running and the endpoint is correct. You could also have forgot to define your API key in the config.py file.")
         exit(1)
 
 def is_file_available(file_url: str) -> bool:
@@ -437,7 +452,7 @@ if __name__ == "__main__":
     logging.info("SPARQL endpoint: " + config.SPARQL_ENDPOINT)
 
     # Get the name of the used LLM model
-    used_llm = getModelName(config.LLM_API_MODEL)
+    used_llm = getModelName(config.LLM_API_MODELS, config.LLM_API_MODEL_NAME, config.LLM_API_KEY)
     logging.info(f"Used LLM model: {used_llm}")
 
     # Start the evaluation

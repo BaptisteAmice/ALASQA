@@ -7,5 +7,7 @@ Outputs/
 # Ignore the logs of the benchmarks
 *.log
 
+# Ignore env files
+.env
 
 

@@ -4,6 +4,9 @@ This file is used to manually configure the benchmark evaluation parameters.
 import os
 import logging
 import benchmark_extraction
+from dotenv import load_dotenv
+
+load_dotenv() # Load environment variables from a .env file if it exists
 script_dir = os.path.dirname(os.path.realpath(__file__))
 
 # FILE TO BE MODIFIED BY THE USER
@@ -28,11 +31,12 @@ BATCH_SIZE = 1
 SPARKLIS_FILE = "http://localhost:8000/static/osparklis.html"
 
 # Location of the LLM API (not used by Sparklis, but just to test if it is reachable when running the benchmark), to update in llm_utils.js if you want to use a different API
-LLM_API = 'http://localhost:1234/v1/'
-LLM_API_MODEL = LLM_API + 'models'
+LLM_API = 'http://localhost:1234/v1/' # http://localhost:1234/v1/ with LMStudio, https://api.openai.com/v1/ for OpenAI
+LLM_API_MODELS = LLM_API + 'models' # LLM_API + 'models' get the list of available models
+LLM_API_MODEL_NAME = None # If None, the first model in the list will be used, else it will use the specified model name (e.g., "gpt-4o-mini", "gpt-4o", etc.)
 LLM_API_CHAT_COMPLETIONS = LLM_API + 'chat/completions' # e.g., "http://localhost:1234/v1/chat/completions"
+LLM_API_KEY = os.getenv('LLM_API_KEY') or None # If None, the API key will not be used (e.g., for LMStudio), else it will use the specified API key (e.g., "sk-...") to access the LLM API
 
-#todo pass to false
 NL_POST_PROCESSING = False # If True, the answers will be post-processed into natural language
 
 # User agent for the simulated browser (to avoid being blocked)
