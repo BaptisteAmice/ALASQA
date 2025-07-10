@@ -807,6 +807,8 @@ async function logic_retry(framework, number_of_same_response_expected, global_m
     let got_number_of_same_response_expected = false;
     let valid_responses_queries = [];
     let valid_responses_results = [];
+    let get_labels = getALASQAConfig().nl_post_processing === true;
+
     while (!got_number_of_same_response_expected && i <= global_max_try) {
         disableProxyIfenabled(); // sometimes the proxy will activate itself and prevent from accessing the endpoint, so we desactivate it if it's the case
         framework.reasoning_text += "<br>Try " + i + "<br>";
