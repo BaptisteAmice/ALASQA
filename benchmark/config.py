@@ -54,7 +54,7 @@ NB_TESTS = 3
 #BENCHMARK_FILE = script_dir + '/Inputs/' + 'qald_10_patched.json'
 BENCHMARK_FILE = script_dir + '/Inputs/' + 'qald_9_plus_train_wikidata_patched.json'
 
-# Name of the tested benchmark (MINTAKA1K | QALD10 | QALD9_PLUS)
+# Name of the tested benchmark (MINTAKA1K | QALD10 | QALD9_PLUS | TEXT2SPARQL)
 BENCHMARK_NAME = benchmark_extraction.QALD9_PLUS
 # Filter on the extracted questions of the benchmark (examples: {} to get all questions, {"tags": lambda x: x is not None and "aggregation" in x} to only get the questions with the tag "aggregation" in a QALD benchmarks, {"answers": lambda answers: any("boolean" in answer for answer in answers)} to only get boolean questions in a QALD benchmark)
 BENCHMARK_QUESTIONS_FILTER = {}
