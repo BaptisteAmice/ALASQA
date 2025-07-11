@@ -64,3 +64,14 @@ Because of that, ALASQA doesn't return the same results as Sparklis. The workaro
 ---
 
 - String matching sometimes does weird things (in commands, but also in the Sparklis interface). It’s probably due to Wikidata and the way it handles labels. For example, for the entity The Storm on the Sea of Galilee (Q2246489), there is a property creator (and labelized as such in the interface), and this property can be found when using the filter “painter” but not when using the filter “creator”. So a command chain like “The Storm on the Sea of Galilee ; property creator” will fail — it stops at “The Storm on the Sea of Galilee” and shows a property labeled “creator” among the suggestions in the interface, but the chain does not proceed correctly.
+
+---
+
+The system strategy handling boolean by merging queries (LLMFrameworkBooleanByMergeByPatterns) is able to handle positive boolean question based on the presence of entities and properties in triple. It is also able to handle negative boolean questions based on the absence of object or subject in triple. However, it is not able to handle boolean questions based on the absence of a property in a triple. For example, it can't answer the question "Does Albert Einstein not have a date of death?".
+The strategy use a comparison between the resulting sparql query of two commands sequences (e.g. <commands1>paris ; property capital</commands1> <operator>=</operator> <commands2>match paris</commands2>). To solve a question like "Is Albert Einstein still alive?", we could think to something like:
+```xml
+<commands1>albert einstein</commands1>
+<operator>has property</operator>
+<commands2>matchProperties date of death</commands2>
+```
+The problem being that a Sparklis focus only containing an entity and nothing else doesn't have a corresponding Sparql query. SO we would need to have an alternate way to get the first query. Also a command like matchProperties currently don't exist in Sparklis commands.
