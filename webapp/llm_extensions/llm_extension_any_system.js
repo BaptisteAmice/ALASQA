@@ -63,7 +63,11 @@ const PREFIX_MAPS = {
  * @returns 
  */
 function shortenUri(uri, graph) {
-    const prefixes = PREFIX_MAPS[graph];
+    const prefixes = PREFIX_MAPS[graph] || {};
+    if (!uri || !prefixes) {
+        return uri; // Return the original URI if no prefixes are defined for the graph
+    }
+    // Iterate over the prefixes and replace the full URI with the shortened version
     for (const [full, prefix] of Object.entries(prefixes)) {
         if (uri.startsWith(full)) {
             return uri.replace(full, prefix);
