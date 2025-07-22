@@ -1,3 +1,5 @@
+# QALD-9-Plus (Wikidata) Test Set Modifications
+
 # Remarks
 
 ## Problem with subclass
@@ -41,9 +43,6 @@ empty
 
 ## 206
 empty 
-
-## 207
-empty
 
 ## 210
 empty

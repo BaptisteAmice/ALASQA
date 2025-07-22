@@ -1,7 +1,4 @@
-# todo
-
-
-75 bizarre
+# QALD-9-Plus (Wikidata) Training Set Modifications
 
 # Added tags
 added tags to questions for post-processing
@@ -11,7 +8,6 @@ todo 243
 todo add location, time etc. list   to question already done (replace all by list ?)
 traitemant auto
 - This uses COUNT, GROUP BY, and ORDER BY → an aggregation query.
-
 
 # Ambiguity between entity and relation
 first death cause maybe????

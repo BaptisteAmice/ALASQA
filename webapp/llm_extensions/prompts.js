@@ -413,7 +413,7 @@ Now, analyze the following question accordingly:
     `;
 }
 
-function prompt_get_subquestions() { //todo revoir
+function prompt_get_subquestions() {
     return `
     Your task is to decompose a given question into a set of necessary subquestions that will provide the data needed to answer it. Follow these principles:
 
@@ -448,7 +448,7 @@ function prompt_get_subquestions() { //todo revoir
     `;
 }
 
-function prompt_use_subquestions_for_any() { //todo revoir
+function prompt_use_subquestions_for_any() {
   return `
 You are an AI system that answers a question using the answers to related subquestions. Your job is to read the subanswers and write a **valid SPARQL query** that directly gives the final answer.
 
@@ -557,9 +557,7 @@ Your task is to decompose a given **boolean question** (i.e., a yes/no question)
     `;
 }
 
-//todo manque traduction des uris pour wikidata: pour les requetes aussi?
-//todo remove useless fields from input (type, etc.)
-function prompt_use_subquestions_for_boolean() { //todo wikidata vs dbpedia vs corporate
+function prompt_use_subquestions_for_boolean() {
     let endpoint_family = getEndpointFamily();
     let prompt;
     if (endpoint_family === 'dbpedia') {

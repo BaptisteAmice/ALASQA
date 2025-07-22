@@ -1,4 +1,4 @@
-# Remarks
+# QALD-9-Plus (DBPedia) Test Set Modifications
 
 # Removed not working now (on dbpedia.org)
 

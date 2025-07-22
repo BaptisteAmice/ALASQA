@@ -33,9 +33,24 @@ if __name__ == "__main__":
 
     # Find duplicate questions
     duplicates = set(questions1) & set(questions2)
-
-    #Print number of duplicates
-    print(f"Number of duplicate questions: {len(duplicates)}")
+    
     # Print duplicate questions
+    print("=============Duplicate questions found:")
     for question in duplicates:
         print(question)
+
+    # Print unique questions in each benchmark
+    unique_questions1 = set(questions1) - duplicates
+    unique_questions2 = set(questions2) - duplicates
+
+    print("\n=============Unique questions in benchmark 1:")
+    for question in unique_questions1:
+        print(question)
+    print("\n=============Unique questions in benchmark 2:")
+    for question in unique_questions2:
+        print(question)
+
+    # Print numbers
+    print(f"\nNumber of duplicate questions: {len(duplicates)}")
+    print(f"Number of unique questions in benchmark 1: {len(unique_questions1)}")
+    print(f"Number of unique questions in benchmark 2: {len(unique_questions2)}")

@@ -231,7 +231,7 @@ async function process_step(place, step, target_suggestion_ranking = 1) {
 	//Keep the current place and does nothing
 	return place;
 	} else if ((match = /^group\s*(.+)$/.exec(step))) { //group by in sparklis
-		return new Promise((resolve, reject) => { //todo add the other direction if possible
+		return new Promise((resolve, reject) => {
 			apply_suggestion(place, "foreach", "IncrForeach")
 				.then(next_place => {
 					let next_sugg = { type: "IncrAggregId", aggreg: "SAMPLE", id: 1 };
@@ -565,7 +565,7 @@ async function process_step(place, step, target_suggestion_ranking = 1) {
 			}
 		}
 		return result;
-		} else if ((match = /^propertyWithoutConstraint\s+(.+)$/.exec(step))) { //todo priority order??
+		} else if ((match = /^propertyWithoutConstraint\s+(.+)$/.exec(step))) {
 			LAST_INITIATED_COMMAND = "propertyWithoutConstraint";
 			return search_and_apply_suggestion(
 				place, "fwd property", match[1],

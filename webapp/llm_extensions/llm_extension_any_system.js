@@ -7,15 +7,14 @@ console.log("LLM any sytem extension loaded");
 const bus = new EventTarget();
 
 // If updated, also update the post-processing script 
-var error_messages = [ //todo update pp
+var error_messages = [
     "Empty LLM output",
     "Error: No match found in tags",
     "Warning: Commands failed to finish commands: ",
     "Error: error while evaluating SPARQL query",
     "Error: error while parsing SPARQL results",
     "Error: condition shouldn't have matched"
-];
-//todo update pp et implementation steps
+]; //todo updates figures related to steps in post_process.py
 
 const STATUS_NOT_STARTED = "Not started";
 const STATUS_ONGOING = "ONGOING";
@@ -284,7 +283,6 @@ class LLMFramework {
                 this.sparql = await this.executeStep(step_change_order_type_to_date, "Change order type to date", [this, this.sparql]);
             }
         }
-        //todo remove prefixes that aren't needed -> to simplify query for the llm
 
         return place;
 
@@ -977,15 +975,8 @@ window.LLMFrameworks.push(LLMFrameworkDirect.name); // to be able to access the 
 //////////////////// EXPERIMENTAL STRATEGIES //////////////////////
 
 
-//todo omni strategy
+//todo a strategy first testing the type then choosing the strategy based on the type (boolean strategy or retry strategy)
 
-
-//todo
-//todo find where the crash causes timeout
-//<operator>higherThan</operator> -> invalid operator, should be >
-//one of the command chains fails, so the result is null
-//<commands2>match []</commands2> -> query less than 3 caracters shouldn't be possible
-//match no -> same
 class LLMFrameworkBooleanByMergeByPatterns extends LLMFramework {
     constructor(question, question_id,
                 global_max_try = Infinity,
@@ -1083,8 +1074,6 @@ async function logic_boolean_by_subquestion_merge_by_patterns(
                     && extracted_commands2 && extracted_commands2 !== "" 
                     && operator && operator !== "") { // Two commands chains with an operator
 
-            //todo check if the operator is valid //else retry
-
             let place1 = await framework.execute_commands(framework, extracted_commands1, true);
             // Get SPARQL query from the first place
             let sparql1 = framework.sparql; // Get the SPARQL query from the framework (because of outside sparklis treatments)
@@ -1165,7 +1154,6 @@ async function logic_boolean_by_subquestion_merge_by_patterns(
 //todo when command chain fail, the expected result can be false, but we need to get the uri to build the final query
 //todo problem: if a command chain fail, it can end on a valid entity and return true
 //maybe we should do a and between return true and all commands executed ?
-//todo the check of boolean failed, see if the patch worked
 /**
  * LLM Framework that generates subquestions to answer a boolean question.
  * Use several tries to generate the subquestions and the final query.
@@ -1307,7 +1295,7 @@ async function logic_boolean_by_subquestion_merge_by_llm(framework,
             let output_combined = await framework.executeStep(step_generation, "LLM generation", 
                 [framework, prompt_use_subquestions_for_boolean(),"prompt_use_subquestions_for_boolean",
                     input_comparison]
-            ); //todo alternatives prompt
+            );
             let extracted_query_list = await framework.executeStep(step_extract_tags, "Extracted query", [framework, output_combined, "query"]);
             let extracted_query = extracted_query_list.at(-1) || ""; 
             framework.reasoning_text += "<br>Generated final query:<br>" + extracted_query;
@@ -1440,7 +1428,7 @@ async function logic_any_by_subquestions_merge_llm(
             //Generation of the subquestions by the LLM
             let outputed_subquestions = await framework.executeStep(step_generation, "LLM generation 1", 
                 [framework, prompt_get_subquestions(),"prompt_get_subquestions", framework.question]
-            ); //todo update prompt
+            );
             
             // Extract the subquestions from the LLM output
             framework.reasoning_text += "<br>Extracting subquestions<br>";
@@ -1508,8 +1496,8 @@ async function logic_any_by_subquestions_merge_llm(
             console.log("input_comparison",input_comparison);
             let output_combined = await framework.executeStep(step_generation, "LLM generation", 
                 [framework, prompt_use_subquestions_for_any(),"prompt_use_subquestions_for_any",
-                    input_comparison] //todo update prompt
-            ); //todo alternatives prompt
+                    input_comparison]
+            );
             let extracted_query_list = await framework.executeStep(step_extract_tags, "Extracted query", [framework, output_combined, "query"]);
             let extracted_query = extracted_query_list.at(-1) || ""; 
             framework.reasoning_text += "<br>Generated final query:<br>" + extracted_query;
