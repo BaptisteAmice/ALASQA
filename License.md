@@ -3,14 +3,14 @@
 ## ALASQA
 **License**: Apache License 2.0
 
-## Licenses of Used Components
+## Licenses of used Components
 
 ### Sparklis
 **License**: Apache License 2.0  
 [https://github.com/sebferre/sparklis](https://github.com/sebferre/sparklis)
 
 
-## Benchmark Datasets
+## Benchmark datasets
 
 ### QALD-9-Plus
 **License**: CC-BY-4.0
@@ -28,6 +28,6 @@
 **License**: CC BY-SA 4.0
 [https://github.com/AKSW/text2sparql.aksw.org](https://github.com/AKSW/text2sparql.aksw.org)
 
-### CK25 Dataset
+### CK25 dataset
 **License**: Creative Commons Attribution 4.0 International
 [https://github.com/eccenca/ck25-dataset](https://github.com/eccenca/ck25-dataset)
