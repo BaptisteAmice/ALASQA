@@ -32,6 +32,7 @@ window.addEventListener(
     let suggestion_commands_tactic_dropdown = document.createElement("select");
     suggestion_commands_tactic_dropdown.id = "suggestion-commands-tactic-dropdown";
     suggestion_commands_tactic_dropdown.name = "suggestion-commands-tactic-dropdown";
+	suggestion_commands_tactic_dropdown.title = "Algorithm used to select suggestions for a sequence of commands";
     suggestion_commands_tactic_dropdown.style.marginBottom = "10px";
 	suggestion_commands_tactic_dropdown.style.marginRight = "10px";
     suggestion_commands_tactic_dropdown.style.padding = "8px";
