@@ -893,9 +893,11 @@ class SparklisState {
 
 /**
  * Performs a depth-first search to find the best place based on the given commands.
- * @param {SparklisPlace} place - The current place in the Sparklis application.
+ * @param {*} qa - The QA element in the Sparklis application, used to update the query.
  * @param {Array} commands - The list of commands to process.
+ * @param {SparklisPlace} place - The current place in the Sparklis application.
  * @param {number} number_of_top_sugg_considered - The number of top suggestions to consider for each command.
+ * @returns 
  */
 async function depth_first_search(qa, commands, place, number_of_top_sugg_considered = 3) {
 	let initial_state = new SparklisState(place, 
@@ -938,10 +940,12 @@ async function depth_first_search(qa, commands, place, number_of_top_sugg_consid
 
 /**
  * Performs a beam search to find the best place based on the given commands.
- * @param {SparklisPlace} place - The current place in the Sparklis application.
- * @param {Array} commands - The list of commands to process.
- * @param {number} number_of_top_sugg_considered - The number of top suggestions to consider for each command.
- * @param {number} beam_width - The beam width (how many candidates to keep at each level).
+ * @param {*} qa - The QA element in the Sparklis application, used to update the query.
+ * @param {*} commands - The list of commands to process.
+ * @param {*} place - The current place in the Sparklis application.
+ * @param {*} number_of_top_sugg_considered - The number of top suggestions to consider for each command.
+ * @param {*} beam_width - The beam width (how many candidates to keep at each level).
+ * @returns 
  */
 async function beam_search(qa, commands, place, number_of_top_sugg_considered = 3, beam_width = 3) {
 	let initial_state = new SparklisState(place, commands, 0, number_of_top_sugg_considered);
