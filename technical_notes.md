@@ -1,5 +1,25 @@
 # Technical Notes and Known Issues
 
+# About constants and limits
+
+- To avoid infinite evaluation times, each question has a timeout (usually set to 3600 s during evaluations).
+
+- To prevent excessive retries when using a paid LLM, the number of retries is limited to 30 (instead of being unlimited apart from the timeout).
+
+- For the DFS tactic, the number of considered suggestions is usually limited to 3 (only the top 3 suggestions are considered to avoid excessive attempts).
+
+- For the beam search tactic, the same constraint as for DFS applies: only the top 3 suggestions are considered, and the beam size is set to 3. The beam size should always be less than or equal to the number of considered suggestions.
+
+---
+
+# About the strategy Boolean (merge by patterns)
+
+- Instead of performing an exact equality (=) check, this strategy checks whether two sets have at least one element in common. This is useful for command sequences such as "paris; property capital", which returns the list of capitals that the city has had in history, whereas we might, for example, want to check whether this list includes Paris.
+
+- This strategy currently only works to compare a maximum of two command sequences. It is not yet possible to compare more than two elements, which could be a potential improvement.
+
+---
+
 - You can implement new system strategies by adding classes in the file llm_extension_any_system.js. The tools for post-processing are already available, but only used in strategies after the "EXPERIMENTAL STRATEGIES" comment. As the name suggests, these systems are experimental and have yet to be validated.
 
 ---
