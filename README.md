@@ -19,7 +19,7 @@ todo README file includes table of results accompanied by precise command to run
 
 ## Installation
 
-This system has been tested on Linux and Windows, in Firefox and Brave (a chrome-based browser) with LM Studio (between versions 0.3.9 and 0.3.14).
+This system has been tested on Linux and Windows, in Firefox (140.0, 64 bits) and Brave (1.80.120, 64 bits, Chromium: 138.0.7204.101) with LM Studio (between versions 0.3.9 and 0.3.17).
 
 To ensure the system works correctly, an LLM must be available through an API. The system has been tested with mistral-nemo-instruct-2407 hosted thanks to LM Studio and accessible through an OpenAI-like API. You will need to update the LLM endpoint URL in both [`llm_utils.js`](webapp\llm_extensions\llm_utils.js) and [`benchmark/config.py`](benchmark\config.py) to match your local API address.
 
