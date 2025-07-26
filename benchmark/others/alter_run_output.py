@@ -12,12 +12,29 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def get_question_ids(json_file):
-    """Return a list of all question IDs in the JSON file."""
+def get_question_ids(json_file, filter_dict={}):
+    """
+    Return a list of all question IDs in the JSON file.
+    If filter_dict is provided, only include questions where all filter_dict key/value pairs match.
+    """
     with open(json_file, 'r', encoding='utf-8') as f:
         data = json.load(f)
-    question_ids = list(data.get("Data", {}).keys())
-    logger.info(f"Found {len(question_ids)} question IDs")
+
+    question_ids = []
+    for qid, qdata in data.get("Data", {}).items():
+        if not filter_dict:
+            question_ids.append(qid)
+        else:
+            # All filter keys must match exactly
+            match = True
+            for key, value in filter_dict.items():
+                if qdata.get(key) != value:
+                    match = False
+                    break
+            if match:
+                question_ids.append(qid)
+
+    logger.info(f"Found {len(question_ids)} question IDs matching filter")
     return question_ids
 
 
