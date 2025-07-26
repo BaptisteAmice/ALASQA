@@ -13,7 +13,7 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def merge_benchmark_files(input_files, output_file):
+def merge_benchmark_files(input_files, output_file, ignore_questions_failed_by_benchmark=False):
     combined_data = {}
     all_questions = {}
 
@@ -49,6 +49,8 @@ def merge_benchmark_files(input_files, output_file):
     # For consistency checks
     input_stats = []
 
+    nb_ignored_questions = 0
+
     for file in input_files:
         with open(file, 'r', encoding='utf-8') as f:
             result = json.load(f)
@@ -72,6 +74,14 @@ def merge_benchmark_files(input_files, output_file):
         for qid, qdata in data.items():
             if qid in all_questions:
                 raise ValueError(f"Duplicate question ID found: {qid}")
+            
+            # ignore questions that failed by benchmark if specified
+            if ignore_questions_failed_by_benchmark and qdata.get("BenchmarkResultType") in ["unknown", "None"]:
+                logger.warning(f"Ignoring question {qid} that failed by benchmark")
+                nb_ignored_questions += 1
+                continue
+
+
             all_questions[qid] = qdata
 
             system_time = qdata.get("SystemTime")
@@ -118,6 +128,7 @@ def merge_benchmark_files(input_files, output_file):
 
     nb_questions = len(all_questions)
     mean_system_time = total_system_time / nb_questions if nb_questions else 0.0
+    logger.warning(f"Total ignored questions: {nb_ignored_questions}")
 
     def safe_mean(values):
         return sum(values) / len(values) if values else 0.0
@@ -193,4 +204,5 @@ if __name__ == "__main__":
         r'C:\Users\PC\Desktop\llmSparklis\benchmark\QALD-9-plus_sparklisllm-LLMFrameworkOneShot_20250709_145353.json'
     ]
     output_file = "combined_results.json"
-    merge_benchmark_files(input_results_files, output_file)
+    ignore_questions_failed_by_benchmark = True
+    merge_benchmark_files(input_results_files, output_file, ignore_questions_failed_by_benchmark)
