@@ -6,7 +6,38 @@ This repository contains **ALASQA**, a system integrating [Sparklis](https://git
 
 ## Results
 
-todo README file includes table of results accompanied by precise command to run to produce those results.
+Several runs with different configurations have been made and stored in the [`BestOutputs/`](benchmark/BestOutputs/) folder in order to evaluate the system and its different configurations.
+
+### Performances F1-score (%) — with Mistral-Nemo-Instruct-2407@q4_k_m
+
+Below are the results of the evaluation of three different configurations on two benchmarks:
+
+- Each evaluation uses beam search as the suggestion selection strategy.
+
+- The LLM used is Mistral-Nemo-Instruct-2407@q4_k_m.
+
+- The system strategies tested are:
+
+    - One-Shot — the base strategy
+
+    - Retry — confirms an answer only if it is produced three times
+
+    - Boolean — uses a two-command sequence to generate an ASK query
+
+
+| Dataset                          | Type     | OS     | Retry Beam  | Boolean Beam |
+|----------------------------------|----------|-------------|-------------|---------------|
+| **QALD-9-Plus Wikidata train (EN)** | Tous     | 28 ± 1      | **39 ± 1**  | -             |
+|                                  | bool     | 6 ± 2       | 0 ± 0       | 61 ± 6        |
+|                                  | URIs     | 29 ± 3      | **42 ± 1**  | -             |
+|                                  | Literals | 36 ± 4      | **53 ± 2**  | -             |
+| **QALD-10 (EN)**                | Tous     | 20 ± 1      | **26**      | -             |
+|                                  | bool     | 2 ± 1       | 5           | 38 ± 7        |
+|                                  | URIs     | 28 ± 2      | **38**      | -             |
+|                                  | Literals | 17 ± 2      | **21**      | -             |
+
+
+LLMs are highly effective at distinguishing boolean questions from factual ones (98.5% ± 5 correct predictions for Mistral-Nemo on the QALD-9-Plus Wikidata train set in English). Combining our best strategy (Retry) with the boolean-specific handling strategy could boost the overall F1-score up to 46% ± 1 on the same dataset.
 
 ## Folder Structure
 
