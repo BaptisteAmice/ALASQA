@@ -83,6 +83,47 @@ def delete_questions_by_ids(json_file, output_file, ids_to_delete):
 
     logger.info(f"Deleted {len(ids_to_delete)} IDs and saved to {output_file}")
 
+def keep_questions_by_ids(json_file, output_file, ids_to_keep):
+    """
+    Keep only questions with IDs in the given list and save to a new file.
+    """
+    with open(json_file, 'r', encoding='utf-8') as f:
+        content = json.load(f)
+
+    data = content.get("Data", {})
+    new_data = {qid: data[qid] for qid in ids_to_keep if qid in data}
+
+    content["Data"] = new_data
+    content["Stats"]["NbQuestions"] = len(new_data)
+
+    with open(output_file, 'w', encoding='utf-8') as f:
+        json.dump(content, f, indent=4, ensure_ascii=False)
+
+    logger.info(f"Kept {len(ids_to_keep)} IDs and saved to {output_file}")
+
+
+def order_questions_by_id(json_file, output_file, ids_str_are_numbers = False):
+    """
+    Order questions by their IDs and save to a new file.
+    If ids_str_are_numbers is True, IDs are treated as numbers for sorting.
+    """
+    with open(json_file, 'r', encoding='utf-8') as f:
+        content = json.load(f)
+
+    data = content.get("Data", {})
+    if ids_str_are_numbers:
+        ordered_ids = sorted(data.keys(), key=lambda x: int(x))
+    else:
+        ordered_ids = sorted(data.keys())
+
+    ordered_data = {qid: data[qid] for qid in ordered_ids}
+
+    content["Data"] = ordered_data
+
+    with open(output_file, 'w', encoding='utf-8') as f:
+        json.dump(content, f, indent=4, ensure_ascii=False)
+
+    logger.info(f"Ordered questions by ID and saved to {output_file}")
 
 if __name__ == "__main__":
     # Example usage
