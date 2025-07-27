@@ -25,7 +25,7 @@ Below are the results of the evaluation of three different configurations on two
     - Boolean — uses a two-command sequence to generate an ASK query
 
 
-| Dataset                          | Type     | OS     | Retry Beam  | Boolean Beam |
+| Dataset                          | Type     | OS Beam    | Retry Beam  | Boolean Beam |
 |----------------------------------|----------|-------------|-------------|---------------|
 | **QALD-9-Plus Wikidata train (EN)** | Tous     | 28 ± 1      | **39 ± 1**  | -             |
 |                                  | bool     | 6 ± 2       | 0 ± 0       | 61 ± 6        |
