@@ -39,8 +39,8 @@ LLM_API_KEY = os.getenv('LLM_API_KEY') or None # If None, the API key will not b
 
 NL_POST_PROCESSING = False # If True, the answers will be post-processed into natural language
 
-# User agent for the simulated browser (to avoid being blocked)
-USER_AGENT = 'ALASQA/0.2 ; baptiste.amice@irisa.fr'
+# User agent (to avoid being blocked), needs to be updated with a valid email address to respect Wikimedia Foundation User-Agent Policy
+USER_AGENT = 'ALASQA/0.2 ; [your email here]'
 
 # Output folder
 OUTPUT_FOLDER = script_dir + '/Outputs/'
