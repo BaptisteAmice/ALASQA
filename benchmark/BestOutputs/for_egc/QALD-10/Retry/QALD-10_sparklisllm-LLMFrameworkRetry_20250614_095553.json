@@ -1,6 +1,7 @@
 {
     "BenchmarkName": "QALD-10",
     "TestedSystem": "sparklisllm-LLMFrameworkRetryWithoutTimeout",
+    "SuggestionCommandsTactic": "beam_search",
     "Date": "2025-07-26 10:14:56",
     "Endpoint": "https://query.wikidata.org/sparql",
     "UsedLLM": "mistral-nemo-instruct-2407",
