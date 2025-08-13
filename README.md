@@ -34,7 +34,7 @@ Below are the results of the evaluation of three different configurations on two
 | **QALD-10 (EN)**                | Tous     | 20 ± 1      | **26** ± 0     | -             |
 |                                  | bool     | 2 ± 1       | 2 ± 3           | 38 ± 7        |
 |                                  | URIs     | 28 ± 2      | **38** ± 1     | -             |
-|                                  | Literals | 17 ± 2      | **21** ± 0     | -             |
+|                                  | Literals | 17 ± 2      | **22** ± 2     | -             |
 
 
 LLMs are highly effective at distinguishing boolean questions from factual ones (98.5% ± 5 correct predictions for Mistral-Nemo on the QALD-9-Plus Wikidata train set in English). Combining our best strategy (Retry) with the boolean-specific handling strategy could boost the overall F1-score up to 46% ± 1 on the same dataset.
