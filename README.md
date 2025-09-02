@@ -27,11 +27,11 @@ Below are the results of the evaluation of three different configurations on two
 
 | Dataset                          | Type     | OS Beam    | Retry Beam  | Boolean Beam |
 |----------------------------------|----------|-------------|-------------|---------------|
-| **QALD-9-Plus Wikidata train (EN)** | Tous     | 28 ± 1      | **39 ± 1**  | -             |
+| **QALD-9-Plus Wikidata train (EN)** | All     | 28 ± 1      | **39 ± 1**  | -             |
 |                                  | bool     | 6 ± 2       | 0 ± 0       | 61 ± 6        |
 |                                  | URIs     | 29 ± 3      | **42 ± 1**  | -             |
 |                                  | Literals | 36 ± 4      | **53 ± 2**  | -             |
-| **QALD-10 (EN)**                | Tous     | 20 ± 1      | **26** ± 0     | -             |
+| **QALD-10 (EN)**                | All     | 20 ± 1      | **26** ± 0     | -             |
 |                                  | bool     | 2 ± 1       | 2 ± 3           | 38 ± 7        |
 |                                  | URIs     | 28 ± 2      | **38** ± 1     | -             |
 |                                  | Literals | 17 ± 2      | **22** ± 2     | -             |
